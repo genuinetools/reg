@@ -1,7 +1,5 @@
 # reg
 
-[![Travis CI](https://travis-ci.org/jfrazelle/reg.svg?branch=master)](https://travis-ci.org/jfrazelle/reg)
-
 Docker registry v2 client.
 
 > **NOTE:** There is a way better version of this @  [`docker-ls`](https://github.com/mayflower/docker-ls)
@@ -64,5 +62,5 @@ $ reg --help
 * unauthenticated registries
 * http basic auth
 * output image history
- 
+
 For more advanced registry usage please use [`docker-ls`](https://github.com/mayflower/docker-ls)
