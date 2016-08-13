@@ -4,13 +4,15 @@
 		{
 			"importpath": "github.com/Sirupsen/logrus",
 			"repository": "https://github.com/Sirupsen/logrus",
-			"revision": "4b6ea7319e214d98c938f12692336f7ca9348d6b",
+			"vcs": "git",
+			"revision": "a283a10442df8dc09befd873fab202bf8a253d6a",
 			"branch": "master",
 			"notests": true
 		},
 		{
 			"importpath": "github.com/docker/distribution/digest",
 			"repository": "https://github.com/docker/distribution",
+			"vcs": "",
 			"revision": "04ff3c0359d7ff6a5eef61d0d4c5cb2fe2f4234c",
 			"branch": "master",
 			"path": "/digest",
@@ -19,6 +21,7 @@
 		{
 			"importpath": "github.com/docker/docker/cliconfig",
 			"repository": "https://github.com/docker/docker",
+			"vcs": "",
 			"revision": "c7b63338f0c46b2ca0efee3b8a590c2e2033ea14",
 			"branch": "master",
 			"path": "/cliconfig",
@@ -27,6 +30,7 @@
 		{
 			"importpath": "github.com/docker/docker/pkg/homedir",
 			"repository": "https://github.com/docker/docker",
+			"vcs": "",
 			"revision": "c7b63338f0c46b2ca0efee3b8a590c2e2033ea14",
 			"branch": "master",
 			"path": "/pkg/homedir",
@@ -35,6 +39,7 @@
 		{
 			"importpath": "github.com/docker/engine-api/types",
 			"repository": "https://github.com/docker/engine-api",
+			"vcs": "",
 			"revision": "128e584a01009b9519306ba2718a78d512f05545",
 			"branch": "master",
 			"path": "/types",
@@ -43,6 +48,7 @@
 		{
 			"importpath": "github.com/docker/go-connections/nat",
 			"repository": "https://github.com/docker/go-connections",
+			"vcs": "",
 			"revision": "f549a9393d05688dff0992ef3efd8bbe6c628aeb",
 			"branch": "master",
 			"path": "/nat",
@@ -51,6 +57,7 @@
 		{
 			"importpath": "github.com/docker/go-units",
 			"repository": "https://github.com/docker/go-units",
+			"vcs": "",
 			"revision": "5d2041e26a699eaca682e2ea41c8f891e1060444",
 			"branch": "master",
 			"notests": true
@@ -58,9 +65,35 @@
 		{
 			"importpath": "github.com/opencontainers/runc/libcontainer/user",
 			"repository": "https://github.com/opencontainers/runc",
+			"vcs": "",
 			"revision": "0c1c615ebd6a15545b6a82ead01d2745ea49b242",
 			"branch": "master",
 			"path": "/libcontainer/user",
+			"notests": true
+		},
+		{
+			"importpath": "golang.org/x/sys/unix",
+			"repository": "https://go.googlesource.com/sys",
+			"vcs": "git",
+			"revision": "a646d33e2ee3172a661fc09bca23bb4889a41bc8",
+			"branch": "master",
+			"path": "/unix",
+			"notests": true
+		},
+		{
+			"importpath": "gopkg.in/airbrake/gobrake.v2",
+			"repository": "https://gopkg.in/airbrake/gobrake.v2",
+			"vcs": "git",
+			"revision": "31c8ff1fb8b79a6947e6565e9a6df535f98a6b94",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "gopkg.in/gemnasium/logrus-airbrake-hook.v2",
+			"repository": "https://gopkg.in/gemnasium/logrus-airbrake-hook.v2",
+			"vcs": "git",
+			"revision": "31e6fd4bd5a98d8ee7673d24bc54ec73c31810dd",
+			"branch": "master",
 			"notests": true
 		}
 	]

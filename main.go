@@ -9,7 +9,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/cliconfig"
-	"github.com/jfrazelle/reg/registry"
+	"github.com/jfrazelle/junk/reg/registry"
 )
 
 const (
