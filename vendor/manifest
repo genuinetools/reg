@@ -1,0 +1,67 @@
+{
+	"version": 0,
+	"dependencies": [
+		{
+			"importpath": "github.com/Sirupsen/logrus",
+			"repository": "https://github.com/Sirupsen/logrus",
+			"revision": "4b6ea7319e214d98c938f12692336f7ca9348d6b",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/docker/distribution/digest",
+			"repository": "https://github.com/docker/distribution",
+			"revision": "04ff3c0359d7ff6a5eef61d0d4c5cb2fe2f4234c",
+			"branch": "master",
+			"path": "/digest",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/docker/docker/cliconfig",
+			"repository": "https://github.com/docker/docker",
+			"revision": "c7b63338f0c46b2ca0efee3b8a590c2e2033ea14",
+			"branch": "master",
+			"path": "/cliconfig",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/docker/docker/pkg/homedir",
+			"repository": "https://github.com/docker/docker",
+			"revision": "c7b63338f0c46b2ca0efee3b8a590c2e2033ea14",
+			"branch": "master",
+			"path": "/pkg/homedir",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/docker/engine-api/types",
+			"repository": "https://github.com/docker/engine-api",
+			"revision": "128e584a01009b9519306ba2718a78d512f05545",
+			"branch": "master",
+			"path": "/types",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/docker/go-connections/nat",
+			"repository": "https://github.com/docker/go-connections",
+			"revision": "f549a9393d05688dff0992ef3efd8bbe6c628aeb",
+			"branch": "master",
+			"path": "/nat",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/docker/go-units",
+			"repository": "https://github.com/docker/go-units",
+			"revision": "5d2041e26a699eaca682e2ea41c8f891e1060444",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/opencontainers/runc/libcontainer/user",
+			"repository": "https://github.com/opencontainers/runc",
+			"revision": "0c1c615ebd6a15545b6a82ead01d2745ea49b242",
+			"branch": "master",
+			"path": "/libcontainer/user",
+			"notests": true
+		}
+	]
+}
