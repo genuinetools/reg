@@ -136,7 +136,14 @@ func main() {
 					return fmt.Errorf("pass the name of the repository")
 				}
 
-				parts := strings.Split(c.Args()[0], ":")
+				arg := c.Args()[0]
+				parts := []string{}
+				if strings.Contains(arg, "@") {
+					parts = strings.Split(c.Args()[0], "@")
+				} else if strings.Contains(arg, ":") {
+					parts = strings.Split(c.Args()[0], ":")
+				}
+
 				repo := parts[0]
 				ref := "latest"
 				if len(parts) > 1 {
@@ -180,6 +187,11 @@ func getAuthConfig(c *cli.Context) (types.AuthConfig, error) {
 
 	// return error early if there are no auths saved
 	if !dcfg.ContainsAuth() {
+		if c.GlobalString("registry") != "" {
+			return types.AuthConfig{
+				ServerAddress: c.GlobalString("registry"),
+			}, nil
+		}
 		return types.AuthConfig{}, fmt.Errorf("No auth was present in %s, please pass a registry, username, and password", cliconfig.ConfigDir())
 	}
 

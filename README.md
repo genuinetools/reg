@@ -2,18 +2,20 @@
 
 Docker registry v2 client.
 
-> **NOTE:** There is a way better version of this @  [`docker-ls`](https://github.com/mayflower/docker-ls)
+> **NOTE:** There is a way better, _maintained_ version of this @
+> [`docker-ls`](https://github.com/mayflower/docker-ls)
 
 **Auth**
 
 `reg` will automatically try to parse your docker config credentials, but if
-not saved there you can pass through flags directly.
+not present, you can pass through flags directly.
 
 **List Repositories and Tags**
 
 ```console
-$ ./reg
-Repositories for registry.jess.co
+# this command might take a while if you have hundreds of images like I do
+$ reg -r r.j3ss.co ls
+Repositories for r.j3ss.co
 REPO                  TAGS
 ab                    latest
 android-tools         latest
@@ -34,33 +36,35 @@ chrome                beta, latest, stable
 **Usage**
 
 ```console
-$ reg --help
- _ __ ___  __ _
-| '__/ _ \/ _` |
-| | |  __/ (_| |
-|_|  \___|\__, |
-          |___/
+$ reg
+NAME:
+   reg - Docker registry v2 client.
 
- Docker registry v2 client.
- Version: v0.1.0
+USAGE:
+   reg [global options] command [command options] [arguments...]
 
-  -d	run in debug mode
-  -p string
-    	Password for the registry
-  -r string
-    	Url to the private registry (ex. https://registry.jess.co)
-  -u string
-    	Username for the registry
-  -v	print version and exit (shorthand)
-  -version
-    	print version and exit
+VERSION:
+   v0.2.0
+
+AUTHOR(S):
+   @jfrazelle <no-reply@butts.com>
+
+COMMANDS:
+     list, ls  list all repositories
+     tags      get the tags for a repository
+     manifest  get the json manifest for the specific reference of a repository
+     help, h   Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --debug, -d                 run in debug mode
+   --username value, -u value  username for the registry
+   --password value, -p value  password for the registry
+   --registry value, -r value  URL to the provate registry (ex. r.j3ss.co)
+   --help, -h                  show help
+   --version, -v               print the version
 ```
 
 **Known Issues**
 
-`reg` does not work with
-* unauthenticated registries
-* http basic auth
+`reg` does not work to:
 * output image history
-
-For more advanced registry usage please use [`docker-ls`](https://github.com/mayflower/docker-ls)
