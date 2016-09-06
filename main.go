@@ -1,7 +1,7 @@
 package main
 
 import (
-	"flag"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -9,130 +9,192 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/cliconfig"
+	"github.com/docker/engine-api/types"
 	"github.com/jfrazelle/junk/reg/registry"
+	"github.com/urfave/cli"
 )
 
 const (
-	// BANNER is what is printed for help/info output
-	BANNER = ` _ __ ___  __ _
-| '__/ _ \/ _` + "`" + ` |
-| | |  __/ (_| |
-|_|  \___|\__, |
-          |___/
-
- Docker registry v2 client.
- Version: %s
-
-`
 	// VERSION is the binary version.
-	VERSION = "v0.1.0"
+	VERSION = "v0.2.0"
 
 	dockerConfigPath = ".docker/config.json"
 )
 
 var (
-	registryURL string
-	username    string
-	password    string
-
-	debug   bool
-	version bool
+	auth types.AuthConfig
+	r    *registry.Registry
 )
 
-func init() {
-	// Parse flags
-	flag.StringVar(&registryURL, "r", "", "Url to the private registry (ex. https://registry.jess.co)")
-	flag.StringVar(&username, "u", "", "Username for the registry")
-	flag.StringVar(&password, "p", "", "Password for the registry")
-	flag.BoolVar(&version, "version", false, "print version and exit")
-	flag.BoolVar(&version, "v", false, "print version and exit (shorthand)")
-	flag.BoolVar(&debug, "d", false, "run in debug mode")
-
-	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, fmt.Sprintf(BANNER, VERSION))
-		flag.PrintDefaults()
-	}
-
-	flag.Parse()
-
-	if version {
-		fmt.Printf("%s", VERSION)
-		os.Exit(0)
-	}
-
-	// Set log level
-	if debug {
+// preload initializes any global options and configuration
+// before the main or sub commands are run.
+func preload(c *cli.Context) (err error) {
+	if c.GlobalBool("debug") {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
+
+	if len(c.Args()) > 0 {
+		auth, err = getAuthConfig(c)
+		if err != nil {
+			return err
+		}
+
+		// create the registry client
+		r, err = registry.New(auth, c.GlobalBool("debug"))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func main() {
-	// try to read the docker config, if they did not pass
-	// a registry URL, username, or password
-	if registryURL == "" || username == "" || password == "" {
-		if err := readDockerConfig(); err != nil {
-			logrus.Fatal(err)
-		}
+	app := cli.NewApp()
+	app.Name = "reg"
+	app.Version = VERSION
+	app.Author = "@jfrazelle"
+	app.Email = "no-reply@butts.com"
+	app.Usage = "Docker registry v2 client."
+	app.Before = preload
+	app.Flags = []cli.Flag{
+		cli.BoolFlag{
+			Name:  "debug, d",
+			Usage: "run in debug mode",
+		},
+		cli.StringFlag{
+			Name:  "username, u",
+			Usage: "username for the registry",
+		},
+		cli.StringFlag{
+			Name:  "password, p",
+			Usage: "password for the registry",
+		},
+		cli.StringFlag{
+			Name:  "registry, r",
+			Usage: "URL to the provate registry (ex. r.j3ss.co)",
+		},
+	}
+	app.Commands = []cli.Command{
+		{
+			Name:    "list",
+			Aliases: []string{"ls"},
+			Usage:   "list all repositories",
+			Action: func(c *cli.Context) error {
+				// get the repositories via catalog
+				repos, err := r.Catalog()
+				if err != nil {
+					return err
+				}
+
+				fmt.Printf("Repositories for %s\n", auth.ServerAddress)
+
+				// setup the tab writer
+				w := tabwriter.NewWriter(os.Stdout, 20, 1, 3, ' ', 0)
+
+				// print header
+				fmt.Fprintln(w, "REPO\tTAGS")
+
+				for _, repo := range repos {
+					// get the tags and print to stdout
+					tags, err := r.Tags(repo)
+					if err != nil {
+						return err
+					}
+
+					fmt.Fprintf(w, "%s\t%s\n", repo, strings.Join(tags, ", "))
+				}
+
+				w.Flush()
+				return nil
+			},
+		},
+		{
+			Name:  "tags",
+			Usage: "get the tags for a repository",
+			Action: func(c *cli.Context) error {
+				if len(c.Args()) < 1 {
+					return fmt.Errorf("pass the name of the repository")
+				}
+
+				tags, err := r.Tags(c.Args()[0])
+				if err != nil {
+					return err
+				}
+
+				// print the tags
+				fmt.Println(strings.Join(tags, "\n"))
+
+				return nil
+			},
+		},
+		{
+			Name:  "manifest",
+			Usage: "get the json manifest for the specific reference of a repository",
+			Action: func(c *cli.Context) error {
+				if len(c.Args()) < 1 {
+					return fmt.Errorf("pass the name of the repository")
+				}
+
+				parts := strings.Split(c.Args()[0], ":")
+				repo := parts[0]
+				ref := "latest"
+				if len(parts) > 1 {
+					ref = parts[1]
+				}
+
+				manifest, err := r.Manifest(repo, ref)
+				if err != nil {
+					return err
+				}
+
+				b, err := json.MarshalIndent(manifest, " ", "  ")
+				if err != nil {
+					return err
+				}
+
+				// print the tags
+				fmt.Println(string(b))
+
+				return nil
+			},
+		},
 	}
 
-	// create the registry client
-	r, err := registry.New(registryURL, username, password, debug)
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	// get the repositories via catalog
-	repos, err := r.Catalog()
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	fmt.Printf("Repositories for %s\n", registryURL)
-
-	// setup the tab writer
-	w := tabwriter.NewWriter(os.Stdout, 20, 1, 3, ' ', 0)
-
-	// print header
-	fmt.Fprintln(w, "REPO\tTAGS")
-
-	for _, repo := range repos {
-		// get the tags and print to stdout
-		tags, err := r.Tags(repo)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		fmt.Fprintf(w, "%s\t%s\n", repo, strings.Join(tags, ", "))
-	}
-	w.Flush()
+	app.Run(os.Args)
 }
 
-func readDockerConfig() error {
-	dcfg, err := cliconfig.Load(cliconfig.ConfigDir())
-	if err != nil {
-		return fmt.Errorf("Loading config file failed: %v", err)
-	}
-	if !dcfg.ContainsAuth() {
-		return fmt.Errorf("No auth was present in %s, please pass a registry URL, username, and password", cliconfig.ConfigDir())
+func getAuthConfig(c *cli.Context) (types.AuthConfig, error) {
+	if c.GlobalString("username") != "" && c.GlobalString("password") != "" && c.GlobalString("registry") != "" {
+		return types.AuthConfig{
+			Username:      c.GlobalString("username"),
+			Password:      c.GlobalString("password"),
+			ServerAddress: c.GlobalString("registry"),
+		}, nil
 	}
 
-	// if they passed the registryURL let's return those creds _if_ they exist
-	if registryURL != "" {
-		if creds, ok := dcfg.AuthConfigs[registryURL]; ok {
-			username = creds.Username
-			password = creds.Password
-			return nil
+	dcfg, err := cliconfig.Load(cliconfig.ConfigDir())
+	if err != nil {
+		return types.AuthConfig{}, fmt.Errorf("Loading config file failed: %v", err)
+	}
+
+	// return error early if there are no auths saved
+	if !dcfg.ContainsAuth() {
+		return types.AuthConfig{}, fmt.Errorf("No auth was present in %s, please pass a registry, username, and password", cliconfig.ConfigDir())
+	}
+
+	// if they passed a specific registry, return those creds _if_ they exist
+	if c.GlobalString("registry") != "" {
+		if creds, ok := dcfg.AuthConfigs[c.GlobalString("registry")]; ok {
+			return creds, nil
 		}
-		return fmt.Errorf("User passed registry URL as %s but no auth creds exist", registryURL)
+		return types.AuthConfig{}, fmt.Errorf("No authentication credentials exist for %s", c.GlobalString("registry"))
 	}
 
 	// set the auth config as the registryURL, username and Password
 	for _, creds := range dcfg.AuthConfigs {
-		username = creds.Username
-		password = creds.Password
-		registryURL = creds.ServerAddress
-		return nil
+		return creds, nil
 	}
 
-	return nil
+	return types.AuthConfig{}, fmt.Errorf("Could not find any authentication credentials")
 }

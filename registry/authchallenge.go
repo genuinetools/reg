@@ -1,150 +1,53 @@
 package registry
 
 import (
+	"fmt"
 	"net/http"
-	"strings"
+	"net/url"
+	"regexp"
 )
 
-// Octet types from RFC 2616.
-type octetType byte
+var (
+	authChallengeRegex = regexp.MustCompile(
+		`^\s*Bearer\s+realm="([^"]+)",service="([^"]+)"\s*$`)
+	challengeRegex = regexp.MustCompile(
+		`^\s*Bearer\s+realm="([^"]+)",service="([^"]+)",scope="([^"]+)"\s*$`)
 
-// AuthorizationChallenge carries information from a WWW-Authenticate response
-// header.
-type AuthorizationChallenge struct {
-	Scheme     string
-	Parameters map[string]string
-}
-
-var octetTypes [256]octetType
-
-const (
-	isToken octetType = 1 << iota
-	isSpace
+	scopeSeparatorRegex = regexp.MustCompile(`\s+`)
 )
 
-func init() {
-	// OCTET      = <any 8-bit sequence of data>
-	// CHAR       = <any US-ASCII character (octets 0 - 127)>
-	// CTL        = <any US-ASCII control character (octets 0 - 31) and DEL (127)>
-	// CR         = <US-ASCII CR, carriage return (13)>
-	// LF         = <US-ASCII LF, linefeed (10)>
-	// SP         = <US-ASCII SP, space (32)>
-	// HT         = <US-ASCII HT, horizontal-tab (9)>
-	// <">        = <US-ASCII double-quote mark (34)>
-	// CRLF       = CR LF
-	// LWS        = [CRLF] 1*( SP | HT )
-	// TEXT       = <any OCTET except CTLs, but including LWS>
-	// separators = "(" | ")" | "<" | ">" | "@" | "," | ";" | ":" | "\" | <">
-	//              | "/" | "[" | "]" | "?" | "=" | "{" | "}" | SP | HT
-	// token      = 1*<any CHAR except CTLs or separators>
-	// qdtext     = <any TEXT except <">>
-
-	for c := 0; c < 256; c++ {
-		var t octetType
-		isCtl := c <= 31 || c == 127
-		isChar := 0 <= c && c <= 127
-		isSeparator := strings.IndexRune(" \t\"(),/:;<=>?@[]\\{}", rune(c)) >= 0
-		if strings.IndexRune(" \t\r\n", rune(c)) >= 0 {
-			t |= isSpace
-		}
-		if isChar && !isCtl && !isSeparator {
-			t |= isToken
-		}
-		octetTypes[c] = t
+func parseAuthHeader(header http.Header) (*authService, error) {
+	ch, err := parseChallenge(header.Get("www-authenticate"))
+	if err != nil {
+		return nil, err
 	}
+
+	return ch, nil
 }
 
-func parseAuthHeader(header http.Header) []*AuthorizationChallenge {
-	var challenges []*AuthorizationChallenge
-	for _, h := range header[http.CanonicalHeaderKey("WWW-Authenticate")] {
-		v, p := parseValueAndParams(h)
-		if v != "" {
-			challenges = append(challenges, &AuthorizationChallenge{Scheme: v, Parameters: p})
-		}
-	}
-	return challenges
-}
+func parseChallenge(challengeHeader string) (*authService, error) {
+	match := challengeRegex.FindAllStringSubmatch(challengeHeader, -1)
 
-func parseValueAndParams(header string) (value string, params map[string]string) {
-	params = make(map[string]string)
-	value, s := expectToken(header)
-	if value == "" {
-		return
+	if len(match) != 1 {
+		match = authChallengeRegex.FindAllStringSubmatch(challengeHeader, -1)
+		if len(match) != 1 {
+			return nil, fmt.Errorf("malformed auth challenge header: '%s'", challengeHeader)
+		}
 	}
-	value = strings.ToLower(value)
-	s = "," + skipSpace(s)
-	for strings.HasPrefix(s, ",") {
-		var pkey string
-		pkey, s = expectToken(skipSpace(s[1:]))
-		if pkey == "" {
-			return
-		}
-		if !strings.HasPrefix(s, "=") {
-			return
-		}
-		var pvalue string
-		pvalue, s = expectTokenOrQuoted(s[1:])
-		if pvalue == "" {
-			return
-		}
-		pkey = strings.ToLower(pkey)
-		params[pkey] = pvalue
-		s = skipSpace(s)
-	}
-	return
-}
 
-func skipSpace(s string) (rest string) {
-	i := 0
-	for ; i < len(s); i++ {
-		if octetTypes[s[i]]&isSpace == 0 {
-			break
-		}
+	parsedRealm, err := url.Parse(match[0][1])
+	if err != nil {
+		return nil, err
 	}
-	return s[i:]
-}
 
-func expectToken(s string) (token, rest string) {
-	i := 0
-	for ; i < len(s); i++ {
-		if octetTypes[s[i]]&isToken == 0 {
-			break
-		}
+	a := &authService{
+		Realm:   parsedRealm,
+		Service: match[0][2],
 	}
-	return s[:i], s[i:]
-}
 
-func expectTokenOrQuoted(s string) (value string, rest string) {
-	if !strings.HasPrefix(s, "\"") {
-		return expectToken(s)
+	if len(match[0]) >= 4 {
+		a.Scope = scopeSeparatorRegex.Split(match[0][3], -1)
 	}
-	s = s[1:]
-	for i := 0; i < len(s); i++ {
-		switch s[i] {
-		case '"':
-			return s[:i], s[i+1:]
-		case '\\':
-			p := make([]byte, len(s)-1)
-			j := copy(p, s[:i])
-			escape := true
-			for i = i + i; i < len(s); i++ {
-				b := s[i]
-				switch {
-				case escape:
-					escape = false
-					p[j] = b
-					j++
-				case b == '\\':
-					escape = true
-				case b == '"':
-					return string(p[:j]), s[i+1:]
-				default:
-					p[j] = b
-					j++
-				}
-			}
-			return "", ""
-		}
-	}
-	return "", ""
+
+	return a, nil
 }

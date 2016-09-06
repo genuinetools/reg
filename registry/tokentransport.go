@@ -20,10 +20,17 @@ func (t *TokenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		return resp, err
 	}
-	if authService := isTokenDemand(resp); authService != nil {
-		resp, err = t.authAndRetry(authService, req)
+
+	authService, err := isTokenDemand(resp)
+	if err != nil {
+		return nil, err
 	}
-	return resp, err
+
+	if authService == nil {
+		return resp, nil
+	}
+
+	return t.authAndRetry(authService, req)
 }
 
 type authToken struct {
@@ -36,8 +43,7 @@ func (t *TokenTransport) authAndRetry(authService *authService, req *http.Reques
 		return authResp, err
 	}
 
-	retryResp, err := t.retry(req, token)
-	return retryResp, err
+	return t.retry(req, token)
 }
 
 func (t *TokenTransport) auth(authService *authService) (string, *http.Response, error) {
@@ -46,24 +52,22 @@ func (t *TokenTransport) auth(authService *authService) (string, *http.Response,
 		return "", nil, err
 	}
 
-	client := http.Client{
+	c := http.Client{
 		Transport: t.Transport,
 	}
 
-	response, err := client.Do(authReq)
+	resp, err := c.Do(authReq)
 	if err != nil {
 		return "", nil, err
 	}
+	defer resp.Body.Close()
 
-	if response.StatusCode != http.StatusOK {
-		return "", response, err
+	if resp.StatusCode != http.StatusOK {
+		return "", resp, err
 	}
-	defer response.Body.Close()
 
 	var authToken authToken
-	decoder := json.NewDecoder(response.Body)
-	err = decoder.Decode(&authToken)
-	if err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&authToken); err != nil {
 		return "", nil, err
 	}
 
@@ -72,56 +76,38 @@ func (t *TokenTransport) auth(authService *authService) (string, *http.Response,
 
 func (t *TokenTransport) retry(req *http.Request, token string) (*http.Response, error) {
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	resp, err := t.Transport.RoundTrip(req)
-	return resp, err
+	return t.Transport.RoundTrip(req)
 }
 
 type authService struct {
-	Realm   string
+	Realm   *url.URL
 	Service string
-	Scope   string
+	Scope   []string
 }
 
-func (authService *authService) Request(username, password string) (*http.Request, error) {
-	url, err := url.Parse(authService.Realm)
-	if err != nil {
-		return nil, err
+func (a *authService) Request(username, password string) (*http.Request, error) {
+	q := a.Realm.Query()
+	q.Set("service", a.Service)
+	for _, s := range a.Scope {
+		q.Set("scope", s)
 	}
+	a.Realm.RawQuery = q.Encode()
 
-	q := url.Query()
-	q.Set("service", authService.Service)
-	q.Set("scope", authService.Scope)
-	url.RawQuery = q.Encode()
-
-	request, err := http.NewRequest("GET", url.String(), nil)
+	req, err := http.NewRequest("GET", a.Realm.String(), nil)
 
 	if username != "" || password != "" {
-		request.SetBasicAuth(username, password)
+		req.SetBasicAuth(username, password)
 	}
 
-	return request, err
+	return req, err
 }
 
-func isTokenDemand(resp *http.Response) *authService {
+func isTokenDemand(resp *http.Response) (*authService, error) {
 	if resp == nil {
-		return nil
+		return nil, nil
 	}
 	if resp.StatusCode != http.StatusUnauthorized {
-		return nil
+		return nil, nil
 	}
-	return parseOauthHeader(resp)
-}
-
-func parseOauthHeader(resp *http.Response) *authService {
-	challenges := parseAuthHeader(resp.Header)
-	for _, challenge := range challenges {
-		if challenge.Scheme == "bearer" {
-			return &authService{
-				Realm:   challenge.Parameters["realm"],
-				Service: challenge.Parameters["service"],
-				Scope:   challenge.Parameters["scope"],
-			}
-		}
-	}
-	return nil
+	return parseAuthHeader(resp.Header)
 }
