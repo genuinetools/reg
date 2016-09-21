@@ -93,16 +93,16 @@ func (r *Registry) url(pathTemplate string, args ...interface{}) string {
 	return url
 }
 
-func (r *Registry) getJSON(url string, response interface{}) error {
+func (r *Registry) getJSON(url string, response interface{}) (http.Header, error) {
 	resp, err := r.Client.Get(url)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if err := json.NewDecoder(resp.Body).Decode(response); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return resp.Header, nil
 }

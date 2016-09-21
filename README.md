@@ -50,9 +50,10 @@ AUTHOR(S):
    @jfrazelle <no-reply@butts.com>
 
 COMMANDS:
+     delete    delete a specific reference of a repository
      list, ls  list all repositories
-     tags      get the tags for a repository
      manifest  get the json manifest for the specific reference of a repository
+     tags      get the tags for a repository
      help, h   Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:

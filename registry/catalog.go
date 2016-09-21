@@ -10,7 +10,7 @@ func (r *Registry) Catalog() ([]string, error) {
 	r.Logf("registry.catalog url=%s", url)
 
 	var response catalogResponse
-	if err := r.getJSON(url, &response); err != nil {
+	if _, err := r.getJSON(url, &response); err != nil {
 		return nil, err
 	}
 

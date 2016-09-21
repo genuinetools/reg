@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -34,15 +35,17 @@ func preload(c *cli.Context) (err error) {
 	}
 
 	if len(c.Args()) > 0 {
-		auth, err = getAuthConfig(c)
-		if err != nil {
-			return err
-		}
+		if c.Args()[0] != "help" {
+			auth, err = getAuthConfig(c)
+			if err != nil {
+				return err
+			}
 
-		// create the registry client
-		r, err = registry.New(auth, c.GlobalBool("debug"))
-		if err != nil {
-			return err
+			// create the registry client
+			r, err = registry.New(auth, c.GlobalBool("debug"))
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -77,6 +80,22 @@ func main() {
 	}
 	app.Commands = []cli.Command{
 		{
+			Name:  "delete",
+			Usage: "delete a specific reference of a repository",
+			Action: func(c *cli.Context) error {
+				repo, ref, err := getRepoAndRef(c)
+				if err != nil {
+					return err
+				}
+
+				if err := r.Delete(repo, ref); err != nil {
+					return err
+				}
+
+				return nil
+			},
+		},
+		{
 			Name:    "list",
 			Aliases: []string{"ls"},
 			Usage:   "list all repositories",
@@ -110,44 +129,12 @@ func main() {
 			},
 		},
 		{
-			Name:  "tags",
-			Usage: "get the tags for a repository",
-			Action: func(c *cli.Context) error {
-				if len(c.Args()) < 1 {
-					return fmt.Errorf("pass the name of the repository")
-				}
-
-				tags, err := r.Tags(c.Args()[0])
-				if err != nil {
-					return err
-				}
-
-				// print the tags
-				fmt.Println(strings.Join(tags, "\n"))
-
-				return nil
-			},
-		},
-		{
 			Name:  "manifest",
 			Usage: "get the json manifest for the specific reference of a repository",
 			Action: func(c *cli.Context) error {
-				if len(c.Args()) < 1 {
-					return fmt.Errorf("pass the name of the repository")
-				}
-
-				arg := c.Args()[0]
-				parts := []string{}
-				if strings.Contains(arg, "@") {
-					parts = strings.Split(c.Args()[0], "@")
-				} else if strings.Contains(arg, ":") {
-					parts = strings.Split(c.Args()[0], ":")
-				}
-
-				repo := parts[0]
-				ref := "latest"
-				if len(parts) > 1 {
-					ref = parts[1]
+				repo, ref, err := getRepoAndRef(c)
+				if err != nil {
+					return err
 				}
 
 				manifest, err := r.Manifest(repo, ref)
@@ -162,6 +149,25 @@ func main() {
 
 				// print the tags
 				fmt.Println(string(b))
+
+				return nil
+			},
+		},
+		{
+			Name:  "tags",
+			Usage: "get the tags for a repository",
+			Action: func(c *cli.Context) error {
+				if len(c.Args()) < 1 {
+					return fmt.Errorf("pass the name of the repository")
+				}
+
+				tags, err := r.Tags(c.Args()[0])
+				if err != nil {
+					return err
+				}
+
+				// print the tags
+				fmt.Println(strings.Join(tags, "\n"))
 
 				return nil
 			},
@@ -209,4 +215,28 @@ func getAuthConfig(c *cli.Context) (types.AuthConfig, error) {
 	}
 
 	return types.AuthConfig{}, fmt.Errorf("Could not find any authentication credentials")
+}
+
+func getRepoAndRef(c *cli.Context) (repo, ref string, err error) {
+	if len(c.Args()) < 1 {
+		return "", "", errors.New("pass the name of the repository")
+	}
+
+	arg := c.Args()[0]
+	parts := []string{}
+	if strings.Contains(arg, "@") {
+		parts = strings.Split(c.Args()[0], "@")
+	} else if strings.Contains(arg, ":") {
+		parts = strings.Split(c.Args()[0], ":")
+	} else {
+		parts = []string{arg}
+	}
+
+	repo = parts[0]
+	ref = "latest"
+	if len(parts) > 1 {
+		ref = parts[1]
+	}
+
+	return
 }
