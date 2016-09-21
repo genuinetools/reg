@@ -91,6 +91,7 @@ func main() {
 				if err := r.Delete(repo, ref); err != nil {
 					return err
 				}
+				fmt.Printf("Deleted %s@%s\n", repo, ref)
 
 				return nil
 			},
