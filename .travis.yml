@@ -12,7 +12,6 @@
       - GO15VENDOREXPERIMENT=1
   install:
     - go get github.com/golang/lint/golint
-    - go get -t -d -v ./...
   script:
     - go build -v
     - go vet $(go list ./... | grep -v vendor)
