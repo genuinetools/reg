@@ -11,7 +11,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/cliconfig"
 	"github.com/docker/engine-api/types"
-	"github.com/jfrazelle/junk/reg/registry"
+	"github.com/jfrazelle/reg/registry"
 	"github.com/urfave/cli"
 )
 

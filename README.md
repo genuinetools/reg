@@ -1,6 +1,8 @@
 # reg
 
-Docker registry v2 client.
+[![Travis CI](https://travis-ci.org/jfrazelle/reg.svg?branch=master)](https://travis-ci.org/jfrazelle/reg)
+
+Docker registry v2 command line client.
 
 > **NOTE:** There is a way better, _maintained_ version of this @
 > [`docker-ls`](https://github.com/mayflower/docker-ls)
