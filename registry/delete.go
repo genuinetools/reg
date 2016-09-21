@@ -21,7 +21,7 @@ func (r *Registry) Delete(repository, ref string) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusAccepted {
+	if resp.StatusCode == http.StatusAccepted || resp.StatusCode == http.StatusNotFound {
 		return nil
 	}
 

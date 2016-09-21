@@ -29,7 +29,7 @@ func (t *ErrorTransport) RoundTrip(request *http.Request) (*http.Response, error
 		return resp, err
 	}
 
-	if resp.StatusCode >= 400 {
+	if resp.StatusCode >= 500 {
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
