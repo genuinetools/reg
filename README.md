@@ -1,6 +1,6 @@
 # reg
 
-[![Travis CI](https://travis-ci.org/jfrazelle/reg.svg?branch=master)](https://travis-ci.org/jfrazelle/reg)
+[![Travis CI](https://travis-ci.org/jessfraz/reg.svg?branch=master)](https://travis-ci.org/jessfraz/reg)
 
 Docker registry v2 command line client.
 
@@ -49,7 +49,7 @@ VERSION:
    v0.2.0
 
 AUTHOR(S):
-   @jfrazelle <no-reply@butts.com>
+   @jessfraz <no-reply@butts.com>
 
 COMMANDS:
      delete    delete a specific reference of a repository

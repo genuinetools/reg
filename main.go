@@ -11,7 +11,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/cliconfig"
 	"github.com/docker/engine-api/types"
-	"github.com/jfrazelle/reg/registry"
+	"github.com/jessfraz/reg/registry"
 	"github.com/urfave/cli"
 )
 
@@ -56,7 +56,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "reg"
 	app.Version = VERSION
-	app.Author = "@jfrazelle"
+	app.Author = "@jessfraz"
 	app.Email = "no-reply@butts.com"
 	app.Usage = "Docker registry v2 client."
 	app.Before = preload
