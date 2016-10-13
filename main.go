@@ -80,8 +80,9 @@ func main() {
 	}
 	app.Commands = []cli.Command{
 		{
-			Name:  "delete",
-			Usage: "delete a specific reference of a repository",
+			Name:    "delete",
+			Aliases: []string{"rm"},
+			Usage:   "delete a specific reference of a repository",
 			Action: func(c *cli.Context) error {
 				repo, ref, err := getRepoAndRef(c)
 				if err != nil {
@@ -89,7 +90,7 @@ func main() {
 				}
 
 				if err := r.Delete(repo, ref); err != nil {
-					return err
+					return fmt.Errorf("Delete %s@%s failed: %v", repo, ref, err)
 				}
 				fmt.Printf("Deleted %s@%s\n", repo, ref)
 
