@@ -269,6 +269,7 @@ func createStaticIndex(r *registry.Registry, staticDir string) error {
 						return fmt.Errorf("unmarshal v1compatibility failed: %v", err)
 					}
 					createdDate = comp.Created.Format(time.RFC1123)
+					break
 				}
 			}
 
