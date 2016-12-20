@@ -1,10 +1,6 @@
 package registry
 
-import (
-	"fmt"
-
-	"github.com/peterhellberg/link"
-)
+import "github.com/peterhellberg/link"
 
 type catalogResponse struct {
 	Repositories []string `json:"repositories"`
@@ -23,7 +19,6 @@ func (r *Registry) Catalog(u string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("header: %#v\n", h)
 
 	for _, l := range link.ParseHeader(h) {
 		if l.Rel == "next" {
