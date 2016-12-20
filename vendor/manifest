@@ -105,6 +105,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/peterhellberg/link",
+			"repository": "https://github.com/peterhellberg/link",
+			"vcs": "git",
+			"revision": "d1cebc7ea14a5fc0de7cb4a45acae773161642c6",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/urfave/cli",
 			"repository": "https://github.com/urfave/cli",
 			"vcs": "git",

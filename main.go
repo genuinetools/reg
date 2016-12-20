@@ -105,7 +105,7 @@ func main() {
 			Usage:   "list all repositories",
 			Action: func(c *cli.Context) error {
 				// get the repositories via catalog
-				repos, err := r.Catalog()
+				repos, err := r.Catalog("")
 				if err != nil {
 					return err
 				}

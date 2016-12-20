@@ -240,7 +240,7 @@ type v1Compatibility struct {
 func createStaticIndex(r *registry.Registry, staticDir string) error {
 	updating = true
 	logrus.Info("fetching catalog")
-	repoList, err := r.Catalog()
+	repoList, err := r.Catalog("")
 	if err != nil {
 		return fmt.Errorf("getting catalog failed: %v", err)
 	}
