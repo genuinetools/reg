@@ -14,6 +14,7 @@ import (
 // Registry defines the client for retriving information from the registry API.
 type Registry struct {
 	URL    string
+	Domain string
 	Client *http.Client
 	Logf   LogfCallback
 }
@@ -72,7 +73,8 @@ func newFromTransport(auth types.AuthConfig, transport http.RoundTripper, debug 
 	}
 
 	registry := &Registry{
-		URL: url,
+		URL:    url,
+		Domain: strings.TrimPrefix(url, "https://"),
 		Client: &http.Client{
 			Transport: errorTransport,
 		},

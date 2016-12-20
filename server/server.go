@@ -247,7 +247,7 @@ func createStaticIndex(r *registry.Registry, staticDir string) error {
 		repos = append(repos, repository{
 			Name:        repo,
 			Tags:        strings.Join(tags, "<br/>"),
-			RegistryURL: r.URL,
+			RegistryURL: r.Domain,
 		})
 	}
 
@@ -266,9 +266,9 @@ func createStaticIndex(r *registry.Registry, staticDir string) error {
 	lp := filepath.Join(templateDir, "layout.html")
 
 	d := data{
-		RegistryURL: r.URL,
+		RegistryURL: r.Domain,
 		Repos:       repos,
-		LastUpdated: time.Now().String(),
+		LastUpdated: time.Now().Format(time.RFC1123),
 	}
 	tmpl := template.Must(template.New("").ParseFiles(lp))
 	if err := tmpl.ExecuteTemplate(f, "layout", d); err != nil {

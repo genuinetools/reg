@@ -174,6 +174,31 @@ func main() {
 				return nil
 			},
 		},
+		{
+			Name:  "timestamp",
+			Usage: "get the notary timestamp for the specific reference of a repository",
+			Action: func(c *cli.Context) error {
+				repo, ref, err := getRepoAndRef(c)
+				if err != nil {
+					return err
+				}
+
+				timestamp, err := r.NotaryTimestamp(repo, ref)
+				if err != nil {
+					return err
+				}
+
+				b, err := json.MarshalIndent(timestamp, " ", "  ")
+				if err != nil {
+					return err
+				}
+
+				// print the tags
+				fmt.Println(string(b))
+
+				return nil
+			},
+		},
 	}
 
 	app.Run(os.Args)
