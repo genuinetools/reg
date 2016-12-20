@@ -49,7 +49,7 @@ if (el.textContent == 'Parent Directory'){
 var rows = document.querySelectorAll('tr:not(.parent)');
 Array.prototype.forEach.call(rows, function(item, index){
     if (index !== 0) {
-        var date_holder = item.querySelectorAll('td:nth-child(2)')[0];
+        var date_holder = item.querySelectorAll('td:nth-child(3)')[0];
         var date = date_holder.textContent;
         date = prettyDate(date);
         date_holder.innerHTML = date;
