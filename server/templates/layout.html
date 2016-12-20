@@ -38,7 +38,7 @@
                     {{ $value.CreatedDate }}
                 </td>
                 <td align="right" nowrap>
-                    <code>docker pull {{ $value.RegistryURL }}/{{ $value.Name }}</code>
+                    <code>docker pull {{ $value.RepoURI }}</code>
                 </td>
             </tr>
             {{ end }}

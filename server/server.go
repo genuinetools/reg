@@ -227,7 +227,7 @@ type data struct {
 type repository struct {
 	Name        string
 	Tag         string
-	RegistryURL string
+	RepoURI     string
 	CreatedDate string
 }
 
@@ -272,10 +272,15 @@ func createStaticIndex(r *registry.Registry, staticDir string) error {
 				}
 			}
 
+			repoURI := fmt.Sprintf("%s/%s", r.Domain, repo)
+			if tag != "latest" {
+				repoURI += ":" + tag
+			}
+
 			repos = append(repos, repository{
 				Name:        repo,
 				Tag:         tag,
-				RegistryURL: r.Domain,
+				RepoURI:     repoURI,
 				CreatedDate: createdDate,
 			})
 		}
