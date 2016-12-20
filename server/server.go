@@ -246,7 +246,7 @@ func createStaticIndex(r *registry.Registry, staticDir string) error {
 		}
 		repos = append(repos, repository{
 			Name:        repo,
-			Tags:        strings.Join(tags, "<br/>"),
+			Tags:        strings.Join(tags, " | "),
 			RegistryURL: r.Domain,
 		})
 	}
