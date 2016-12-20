@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 	"text/tabwriter"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/docker/distribution/digest"
 	"github.com/docker/docker/cliconfig"
 	"github.com/docker/engine-api/types"
 	"github.com/jessfraz/reg/registry"
@@ -149,7 +151,6 @@ func main() {
 					return err
 				}
 
-				// print the tags
 				fmt.Println(string(b))
 
 				return nil
@@ -175,26 +176,37 @@ func main() {
 			},
 		},
 		{
-			Name:  "timestamp",
-			Usage: "get the notary timestamp for the specific reference of a repository",
+			Name:    "download",
+			Aliases: []string{"layer"},
+			Usage:   "download a layer for the specific reference of a repository",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "output, o",
+					Usage: "output file, default to stdout",
+				},
+			},
 			Action: func(c *cli.Context) error {
 				repo, ref, err := getRepoAndRef(c)
 				if err != nil {
 					return err
 				}
 
-				timestamp, err := r.NotaryTimestamp(repo, ref)
+				layer, err := r.DownloadLayer(repo, digest.Digest(ref))
+				if err != nil {
+					return err
+				}
+				defer layer.Close()
+
+				b, err := ioutil.ReadAll(layer)
 				if err != nil {
 					return err
 				}
 
-				b, err := json.MarshalIndent(timestamp, " ", "  ")
-				if err != nil {
-					return err
+				if c.String("output") != "" {
+					return ioutil.WriteFile(c.String("output"), b, 0644)
 				}
 
-				// print the tags
-				fmt.Println(string(b))
+				fmt.Fprint(os.Stdout, string(b))
 
 				return nil
 			},

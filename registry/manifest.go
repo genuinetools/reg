@@ -1,7 +1,6 @@
 package registry
 
 import (
-	"log"
 	"strings"
 
 	"github.com/docker/distribution/manifest/schema1"
@@ -21,7 +20,7 @@ func (r *Registry) Manifest(repository, ref string) (interface{}, error) {
 
 	if !strings.Contains(ref, ":") {
 		// we got a tag, get the manifest for the ref
-		log.Printf("ref: %s", h.Get("Docker-Content-Digest"))
+		r.Logf("ref: %s", h.Get("Docker-Content-Digest"))
 	}
 
 	if m.Versioned.SchemaVersion == 1 {

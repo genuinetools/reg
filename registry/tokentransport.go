@@ -91,6 +91,7 @@ func (a *authService) Request(username, password string) (*http.Request, error) 
 	for _, s := range a.Scope {
 		q.Set("scope", s)
 	}
+	//	q.Set("scope", "repository:r.j3ss.co/htop:push,pull")
 	a.Realm.RawQuery = q.Encode()
 
 	req, err := http.NewRequest("GET", a.Realm.String(), nil)
