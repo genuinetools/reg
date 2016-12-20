@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/docker/cliconfig"
 	"github.com/docker/engine-api/types"
 	"github.com/jessfraz/reg/registry"
@@ -224,9 +226,14 @@ type data struct {
 
 type repository struct {
 	Name        string
-	Tags        string
+	Tag         string
 	RegistryURL string
-	// TODO: add date last uploaded
+	CreatedDate string
+}
+
+type v1Compatibility struct {
+	ID      string    `json:"id"`
+	Created time.Time `json:"created"`
 }
 
 func createStaticIndex(r *registry.Registry, staticDir string) error {
@@ -240,15 +247,38 @@ func createStaticIndex(r *registry.Registry, staticDir string) error {
 	logrus.Info("fetching tags")
 	var repos []repository
 	for _, repo := range repoList {
+		// get the tags
 		tags, err := r.Tags(repo)
 		if err != nil {
 			return fmt.Errorf("getting tags for %s failed: %v", repo, err)
 		}
-		repos = append(repos, repository{
-			Name:        repo,
-			Tags:        strings.Join(tags, " | "),
-			RegistryURL: r.Domain,
-		})
+		for _, tag := range tags {
+			// get the manifest
+
+			manifest, err := r.Manifest(repo, tag)
+			if err != nil {
+				return fmt.Errorf("getting tags for %s:%s failed: %v", repo, tag, err)
+			}
+
+			var createdDate string
+			if m1, ok := manifest.(schema1.SignedManifest); ok {
+				history := m1.History
+				for _, h := range history {
+					var comp v1Compatibility
+					if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
+						return fmt.Errorf("unmarshal v1compatibility failed: %v", err)
+					}
+					createdDate = comp.Created.Format(time.RFC1123)
+				}
+			}
+
+			repos = append(repos, repository{
+				Name:        repo,
+				Tag:         tag,
+				RegistryURL: r.Domain,
+				CreatedDate: createdDate,
+			})
+		}
 	}
 
 	// create temporoary file to save template to
