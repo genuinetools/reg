@@ -23,7 +23,7 @@ function prettyDate(time){
 function search(search_val){
 	var suche = search_val.toLowerCase();
 	var table = document.getElementById("directory");
-	var cellNr = 0;
+	var cellNr = 3;
 	var ele;
 	for (var r = 1; r < table.rows.length; r++){
 		ele = table.rows[r].cells[cellNr].innerHTML.replace(/<[^>]+>/g,"");
