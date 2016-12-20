@@ -268,7 +268,7 @@ func createStaticIndex(r *registry.Registry, staticDir string) error {
 					if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
 						return fmt.Errorf("unmarshal v1compatibility failed: %v", err)
 					}
-					createdDate = comp.Created.Format(time.RFC1123)
+					createdDate = comp.Created.String()
 					break
 				}
 			}
