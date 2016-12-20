@@ -52,11 +52,12 @@ AUTHOR(S):
    @jessfraz <no-reply@butts.com>
 
 COMMANDS:
-     delete    delete a specific reference of a repository
-     list, ls  list all repositories
-     manifest  get the json manifest for the specific reference of a repository
-     tags      get the tags for a repository
-     help, h   Shows a list of commands or help for one command
+     delete, rm       delete a specific reference of a repository
+     list, ls         list all repositories
+     manifest         get the json manifest for the specific reference of a repository
+     tags             get the tags for a repository
+     download, layer  download a layer for the specific reference of a repository
+     help, h          Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
    --debug, -d                 run in debug mode
