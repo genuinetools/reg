@@ -16,6 +16,7 @@ import (
 	"github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/docker/cliconfig"
 	"github.com/docker/engine-api/types"
+	humanize "github.com/dustin/go-humanize"
 	"github.com/jessfraz/reg/registry"
 	"github.com/urfave/cli"
 )
@@ -268,7 +269,7 @@ func createStaticIndex(r *registry.Registry, staticDir string) error {
 					if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
 						return fmt.Errorf("unmarshal v1compatibility failed: %v", err)
 					}
-					createdDate = comp.Created.String()
+					createdDate = humanize.Time(comp.Created)
 					break
 				}
 			}
