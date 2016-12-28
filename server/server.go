@@ -305,7 +305,7 @@ func createStaticIndex(r *registry.Registry, staticDir string) error {
 	d := data{
 		RegistryURL: r.Domain,
 		Repos:       repos,
-		LastUpdated: time.Now().Format(time.RFC1123),
+		LastUpdated: time.Now().Local().Format(time.RFC1123),
 	}
 	tmpl := template.Must(template.New("").ParseFiles(lp))
 	if err := tmpl.ExecuteTemplate(f, "layout", d); err != nil {
