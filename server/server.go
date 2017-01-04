@@ -313,8 +313,8 @@ func createStaticIndex(r *registry.Registry, staticDir string) error {
 	}
 	f.Close()
 
-	logrus.Info("renaming the temporary file to index.html")
 	index := filepath.Join(staticDir, "index.html")
+	logrus.Infof("renaming the temporary file %s to %s", f.Name(), index)
 	if err := os.Rename(f.Name(), index); err != nil {
 		return fmt.Errorf("renaming result from %s to %s failed: %v", f.Name(), index, err)
 	}
