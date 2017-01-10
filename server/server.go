@@ -123,6 +123,7 @@ func main() {
 				if !updating {
 					if err := createStaticIndex(r, staticDir); err != nil {
 						logrus.Warnf("creating static index failed: %v", err)
+						updating = false
 					}
 				}
 			}
