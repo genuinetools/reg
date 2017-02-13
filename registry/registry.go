@@ -33,8 +33,11 @@ func Log(format string, args ...interface{}) {
 }
 
 // New creates a new Registry struct with the given URL and credentials.
-func New(auth types.AuthConfig, debug bool) (*Registry, error) {
-	transport := http.DefaultTransport
+func New(auth types.AuthConfig, debug bool, skipverify bool) (*Registry, error) {
+	transport := http.DefaultTransport.(*http.Transport)
+	transport.TLSClientConfig = &tls.Config{
+		InsecureSkipVerify: skipverify,
+	}
 
 	return newFromTransport(auth, transport, debug)
 }
