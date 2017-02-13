@@ -4,38 +4,15 @@
 
 Docker registry v2 command line client.
 
-> **NOTE:** There is a way better, _maintained_ version of this @
-> [`docker-ls`](https://github.com/mayflower/docker-ls)
+- [Usage](#usage)
+- [Auth](#auth)
+- [List Repositories and Tags](#list-repositories-and-tags)
+- [Get a Manifest](#get-a-manifest)
+- [Download a Layer](#download-a-layer)
+- [Delete an Image](#delete-an-image)
+- [Vulnerability Reports](#vulnerability-reports)
 
-**Auth**
-
-`reg` will automatically try to parse your docker config credentials, but if
-not present, you can pass through flags directly.
-
-**List Repositories and Tags**
-
-```console
-# this command might take a while if you have hundreds of images like I do
-$ reg -r r.j3ss.co ls
-Repositories for r.j3ss.co
-REPO                  TAGS
-ab                    latest
-android-tools         latest
-apt-file              latest
-atom                  latest
-audacity              latest
-awscli                latest
-beeswithmachineguns   latest
-buttslock             latest
-camlistore            latest
-cathode               latest
-cf-reset-cache        latest
-cheese                latest
-chrome                beta, latest, stable
-...
-```
-
-**Usage**
+## Usage
 
 ```console
 $ reg
@@ -55,9 +32,9 @@ COMMANDS:
      delete, rm       delete a specific reference of a repository
      list, ls         list all repositories
      manifest         get the json manifest for the specific reference of a repository
-     vulns            get a vulnerability report for the image from CoreOS Clair
      tags             get the tags for a repository
      download, layer  download a layer for the specific reference of a repository
+     vulns            get a vulnerability report for the image from CoreOS Clair
      help, h          Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
@@ -69,7 +46,75 @@ GLOBAL OPTIONS:
    --version, -v               print the version
 ```
 
-**Get a vulnerability report**
+## Auth
+
+`reg` will automatically try to parse your docker config credentials, but if
+not present, you can pass through flags directly.
+
+## List Repositories and Tags
+
+**Repositories**
+
+```console
+# this command might take a while if you have hundreds of images like I do
+$ reg -r r.j3ss.co ls
+Repositories for r.j3ss.co
+REPO                  TAGS
+awscli                latest
+beeswithmachineguns   latest
+camlistore            latest
+chrome                beta, latest, stable
+...
+```
+
+**Tags**
+
+```console
+$ reg tags tor-browser
+alpha
+hardened
+latest
+stable
+```
+
+## Get a Manifest
+
+```console
+$ reg manifest htop
+{
+   "schemaVersion": 1,
+   "name": "htop",
+   "tag": "latest",
+   "architecture": "amd64",
+   "fsLayers": [
+     {
+       "blobSum": "sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4"
+     },
+     ....
+   ],
+   "history": [
+     ....
+   ]
+ }
+```
+
+## Download a Layer
+
+```console
+$ reg layer -o chrome@sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
+OR
+$ reg layer chrome@sha256:a3ed95caeb0.. > layer.tar
+```
+
+
+## Delete an Image
+
+```console
+$ reg rm chrome@sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
+Deleted chrome@sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
+```
+
+## Vulnerability Reports
 
 ```console
 $ $ reg vulns --clair https://clair.j3ss.co chrome

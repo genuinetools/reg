@@ -159,6 +159,61 @@ func main() {
 			},
 		},
 		{
+			Name:  "tags",
+			Usage: "get the tags for a repository",
+			Action: func(c *cli.Context) error {
+				if len(c.Args()) < 1 {
+					return fmt.Errorf("pass the name of the repository")
+				}
+
+				tags, err := r.Tags(c.Args()[0])
+				if err != nil {
+					return err
+				}
+
+				// print the tags
+				fmt.Println(strings.Join(tags, "\n"))
+
+				return nil
+			},
+		},
+		{
+			Name:    "download",
+			Aliases: []string{"layer"},
+			Usage:   "download a layer for the specific reference of a repository",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "output, o",
+					Usage: "output file, default to stdout",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				repo, ref, err := getRepoAndRef(c)
+				if err != nil {
+					return err
+				}
+
+				layer, err := r.DownloadLayer(repo, digest.Digest(ref))
+				if err != nil {
+					return err
+				}
+				defer layer.Close()
+
+				b, err := ioutil.ReadAll(layer)
+				if err != nil {
+					return err
+				}
+
+				if c.String("output") != "" {
+					return ioutil.WriteFile(c.String("output"), b, 0644)
+				}
+
+				fmt.Fprint(os.Stdout, string(b))
+
+				return nil
+			},
+		},
+		{
 			Name:  "vulns",
 			Usage: "get a vulnerability report for the image from CoreOS Clair",
 			Flags: []cli.Flag{
@@ -268,61 +323,6 @@ func main() {
 				if lenBadVulns > 10 {
 					logrus.Fatalf("%d bad vunerabilities found", lenBadVulns)
 				}
-
-				return nil
-			},
-		},
-		{
-			Name:  "tags",
-			Usage: "get the tags for a repository",
-			Action: func(c *cli.Context) error {
-				if len(c.Args()) < 1 {
-					return fmt.Errorf("pass the name of the repository")
-				}
-
-				tags, err := r.Tags(c.Args()[0])
-				if err != nil {
-					return err
-				}
-
-				// print the tags
-				fmt.Println(strings.Join(tags, "\n"))
-
-				return nil
-			},
-		},
-		{
-			Name:    "download",
-			Aliases: []string{"layer"},
-			Usage:   "download a layer for the specific reference of a repository",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "output, o",
-					Usage: "output file, default to stdout",
-				},
-			},
-			Action: func(c *cli.Context) error {
-				repo, ref, err := getRepoAndRef(c)
-				if err != nil {
-					return err
-				}
-
-				layer, err := r.DownloadLayer(repo, digest.Digest(ref))
-				if err != nil {
-					return err
-				}
-				defer layer.Close()
-
-				b, err := ioutil.ReadAll(layer)
-				if err != nil {
-					return err
-				}
-
-				if c.String("output") != "" {
-					return ioutil.WriteFile(c.String("output"), b, 0644)
-				}
-
-				fmt.Fprint(os.Stdout, string(b))
 
 				return nil
 			},
