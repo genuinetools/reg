@@ -93,7 +93,7 @@ func main() {
 		}
 
 		// create the registry client
-		r, err := registry.New(auth, c.GlobalBool("debug"), c.GlobalBool("skipverify"))
+		r, err := registry.New(auth, c.GlobalBool("debug"))
 		if err != nil {
 			return err
 		}
