@@ -8,38 +8,48 @@ import (
 )
 
 // GetLayer displays a Layer and optionally all of its features and vulnerabilities.
-func (c *Clair) GetLayer(name string, features, vulnerabilities bool) (layer Layer, err error) {
+func (c *Clair) GetLayer(name string, features, vulnerabilities bool) (*Layer, error) {
 	url := c.url("/v1/layers/%s?features=%t&vulnerabilities=%t", name, features, vulnerabilities)
 	c.Logf("clair.layers.get url=%s name=%s", url, name)
 
-	if _, err := c.getJSON(url, &layer); err != nil {
-		return layer, err
+	var respLayer layerEnvelope
+	if _, err := c.getJSON(url, &respLayer); err != nil {
+		return nil, err
 	}
 
-	return layer, nil
+	if respLayer.Error != nil {
+		return nil, fmt.Errorf("clair error: %s", respLayer.Error.Message)
+	}
+
+	return respLayer.Layer, nil
 }
 
 // PostLayer performs the analysis of a Layer from the provided path.
-func (c *Clair) PostLayer(layer Layer) (respLayer Layer, err error) {
+func (c *Clair) PostLayer(layer *Layer) (*Layer, error) {
 	url := c.url("/v1/layers")
 	c.Logf("clair.layers.post url=%s name=%s", url, layer.Name)
 
-	b, err := json.Marshal(layer)
+	b, err := json.Marshal(layerEnvelope{Layer: layer})
 	if err != nil {
-		return respLayer, err
+		return nil, err
 	}
 
 	resp, err := c.Client.Post(url, "application/json", bytes.NewReader(b))
 	if err != nil {
-		return respLayer, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
+	var respLayer layerEnvelope
 	if err := json.NewDecoder(resp.Body).Decode(&respLayer); err != nil {
-		return respLayer, err
+		return nil, err
 	}
 
-	return respLayer, err
+	if respLayer.Error != nil {
+		return nil, fmt.Errorf("clair error: %s", respLayer.Error.Message)
+	}
+
+	return respLayer.Layer, err
 }
 
 // DeleteLayer removes a layer reference from clair.

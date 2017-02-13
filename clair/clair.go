@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 )
 
 // Clair defines the client for retriving information from the clair API.
@@ -42,6 +43,7 @@ func New(url string, debug bool) (*Clair, error) {
 	registry := &Clair{
 		URL: url,
 		Client: &http.Client{
+			Timeout:   time.Minute,
 			Transport: errorTransport,
 		},
 		Logf: logf,

@@ -55,6 +55,7 @@ COMMANDS:
      delete, rm       delete a specific reference of a repository
      list, ls         list all repositories
      manifest         get the json manifest for the specific reference of a repository
+     vulns            get a vulnerability report for the image from CoreOS Clair
      tags             get the tags for a repository
      download, layer  download a layer for the specific reference of a repository
      help, h          Shows a list of commands or help for one command

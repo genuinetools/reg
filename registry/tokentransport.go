@@ -112,3 +112,37 @@ func isTokenDemand(resp *http.Response) (*authService, error) {
 	}
 	return parseAuthHeader(resp.Header)
 }
+
+// Token returns the required token for the specific resource url.
+func (r *Registry) Token(url string) (string, error) {
+	r.Logf("registry.token url=%s", url)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	a, err := parseAuthHeader(resp.Header)
+	if err != nil {
+		return "", err
+	}
+
+	authReq, err := a.Request(r.Username, r.Password)
+	resp, err = http.DefaultClient.Do(authReq)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", err
+	}
+
+	var authToken authToken
+	if err := json.NewDecoder(resp.Body).Decode(&authToken); err != nil {
+		return "", err
+	}
+
+	return authToken.Token, nil
+}

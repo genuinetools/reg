@@ -24,13 +24,14 @@ func (r *Registry) Manifest(repository, ref string) (interface{}, error) {
 	}
 
 	if m.Versioned.SchemaVersion == 1 {
-		return r.v1Manifest(repository, ref)
+		return r.ManifestV1(repository, ref)
 	}
 
 	return m, nil
 }
 
-func (r *Registry) v1Manifest(repository, ref string) (schema1.SignedManifest, error) {
+// ManifestV1 gets the registry v1 manifest.
+func (r *Registry) ManifestV1(repository, ref string) (schema1.SignedManifest, error) {
 	url := r.url("/v2/%s/manifests/%s", repository, ref)
 	r.Logf("registry.manifests url=%s repository=%s ref=%s", url, repository, ref)
 

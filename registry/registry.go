@@ -13,10 +13,12 @@ import (
 
 // Registry defines the client for retriving information from the registry API.
 type Registry struct {
-	URL    string
-	Domain string
-	Client *http.Client
-	Logf   LogfCallback
+	URL      string
+	Domain   string
+	Username string
+	Password string
+	Client   *http.Client
+	Logf     LogfCallback
 }
 
 // LogfCallback is the callback for formatting logs.
@@ -78,7 +80,9 @@ func newFromTransport(auth types.AuthConfig, transport http.RoundTripper, debug 
 		Client: &http.Client{
 			Transport: errorTransport,
 		},
-		Logf: logf,
+		Username: auth.Username,
+		Password: auth.Password,
+		Logf:     logf,
 	}
 
 	if err := registry.Ping(); err != nil {

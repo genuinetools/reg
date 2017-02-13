@@ -1,5 +1,20 @@
 package clair
 
+const (
+	// EmptyLayerBlobSum is the blob sum of empty layers.
+	EmptyLayerBlobSum = "sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4"
+)
+
+var (
+	// Priorities are the vulnerability priority labels.
+	Priorities = []string{"Unknown", "Negligible", "Low", "Medium", "High", "Critical", "Defcon1"}
+)
+
+// Error describes the structure of a clair error.
+type Error struct {
+	Message string `json:"Message,omitempty"`
+}
+
 // Layer represents an image layer.
 type Layer struct {
 	Name             string            `json:"Name,omitempty"`
@@ -10,6 +25,11 @@ type Layer struct {
 	Format           string            `json:"Format,omitempty"`
 	IndexedByVersion int               `json:"IndexedByVersion,omitempty"`
 	Features         []feature         `json:"Features,omitempty"`
+}
+
+type layerEnvelope struct {
+	Layer *Layer `json:"Layer,omitempty"`
+	Error *Error `json:"Error,omitempty"`
 }
 
 // Vulnerability represents vulnerability entity returned by Clair.
