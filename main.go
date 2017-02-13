@@ -46,7 +46,7 @@ func preload(c *cli.Context) (err error) {
 			}
 
 			// create the registry client
-			r, err = registry.New(auth, c.GlobalBool("debug"))
+			r, err = registry.New(auth, c.GlobalBool("debug"), c.GlobalBool("skipverify"))
 			if err != nil {
 				return err
 			}
@@ -68,6 +68,10 @@ func main() {
 		cli.BoolFlag{
 			Name:  "debug, d",
 			Usage: "run in debug mode",
+		},
+		cli.BoolFlag{
+			Name:  "skipverify, k",
+			Usage: "do not verify tls certificates",
 		},
 		cli.StringFlag{
 			Name:  "username, u",
