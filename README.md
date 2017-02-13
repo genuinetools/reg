@@ -153,8 +153,3 @@ Low: 3
 Medium: 3
 High: 1
 ```
-
-**Known Issues**
-
-`reg` does not work to:
-* output image history
