@@ -1,7 +1,10 @@
 package registry
 
-import "github.com/peterhellberg/link"
-import nurl "net/url"
+import (
+	"net/url"
+
+	"github.com/peterhellberg/link"
+)
 
 type catalogResponse struct {
 	Repositories []string `json:"repositories"`
@@ -12,18 +15,18 @@ func (r *Registry) Catalog(u string) ([]string, error) {
 	if u == "" {
 		u = "/v2/_catalog"
 	}
-	url := r.url(u)
-	r.Logf("registry.catalog url=%s", url)
+	uri := r.url(u)
+	r.Logf("registry.catalog url=%s", uri)
 
 	var response catalogResponse
-	h, err := r.getJSON(url, &response)
+	h, err := r.getJSON(uri, &response)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, l := range link.ParseHeader(h) {
 		if l.Rel == "next" {
-			unescaped, _ := nurl.QueryUnescape(l.URI)
+			unescaped, _ := url.QueryUnescape(l.URI)
 			repos, err := r.Catalog(unescaped)
 			if err != nil {
 				return nil, err
