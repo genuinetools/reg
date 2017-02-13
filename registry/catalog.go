@@ -1,6 +1,7 @@
 package registry
 
 import "github.com/peterhellberg/link"
+import nurl "net/url"
 
 type catalogResponse struct {
 	Repositories []string `json:"repositories"`
@@ -22,7 +23,8 @@ func (r *Registry) Catalog(u string) ([]string, error) {
 
 	for _, l := range link.ParseHeader(h) {
 		if l.Rel == "next" {
-			repos, err := r.Catalog(l.URI)
+			unescaped, _ := nurl.QueryUnescape(l.URI)
+			repos, err := r.Catalog(unescaped)
 			if err != nil {
 				return nil, err
 			}
