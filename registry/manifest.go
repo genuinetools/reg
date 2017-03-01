@@ -1,7 +1,6 @@
 package registry
 
 import (
-	"net/url"
 	"strings"
 
 	"github.com/docker/distribution/manifest/schema1"
@@ -10,7 +9,7 @@ import (
 
 // Manifest returns the manifest for a specific repository:tag.
 func (r *Registry) Manifest(repository, ref string) (interface{}, error) {
-	uri := r.url("/v2/%s/manifests/%s", repository, url.PathEscape(ref))
+	uri := r.url("/v2/%s/manifests/%s", repository, ref)
 	r.Logf("registry.manifests uri=%s repository=%s ref=%s", uri, repository, ref)
 
 	var m schema2.Manifest
@@ -33,7 +32,7 @@ func (r *Registry) Manifest(repository, ref string) (interface{}, error) {
 
 // ManifestV1 gets the registry v1 manifest.
 func (r *Registry) ManifestV1(repository, ref string) (schema1.SignedManifest, error) {
-	uri := r.url("/v2/%s/manifests/%s", repository, url.PathEscape(ref))
+	uri := r.url("/v2/%s/manifests/%s", repository, ref)
 	r.Logf("registry.manifests uri=%s repository=%s ref=%s", uri, repository, ref)
 
 	var m schema1.SignedManifest
