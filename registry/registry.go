@@ -99,8 +99,16 @@ func (r *Registry) url(pathTemplate string, args ...interface{}) string {
 	return url
 }
 
-func (r *Registry) getJSON(url string, response interface{}) (http.Header, error) {
-	resp, err := r.Client.Get(url)
+func (r *Registry) getJSON(url string, response interface{}, addV2Header bool) (http.Header, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	if addV2Header {
+		req.Header.Add("Accept", "application/vnd.docker.distribution.manifest.v2+json")
+		req.Header.Add("Accept", "application/vnd.docker.distribution.manifest.list.v2+json")
+	}
+	resp, err := r.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}
