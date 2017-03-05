@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
 )
 
 // Registry defines the client for retriving information from the registry API.

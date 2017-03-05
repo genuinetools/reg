@@ -1,6 +1,7 @@
 package configuration
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -22,6 +23,12 @@ type Configuration struct {
 	// Log supports setting various parameters related to the logging
 	// subsystem.
 	Log struct {
+		// AccessLog configures access logging.
+		AccessLog struct {
+			// Disabled disables access logging.
+			Disabled bool `yaml:"disabled,omitempty"`
+		} `yaml:"accesslog,omitempty"`
+
 		// Level is the granularity at which registry operations are logged.
 		Level Loglevel `yaml:"level"`
 
@@ -126,7 +133,7 @@ type Configuration struct {
 
 		// HTTP2 configuration options
 		HTTP2 struct {
-			// Specifies wether the registry should disallow clients attempting
+			// Specifies whether the registry should disallow clients attempting
 			// to connect via http2. If set to true, only http/1.1 is supported.
 			Disabled bool `yaml:"disabled,omitempty"`
 		} `yaml:"http2,omitempty"`
@@ -182,8 +189,11 @@ type Configuration struct {
 
 	// Validation configures validation options for the registry.
 	Validation struct {
-		// Enabled enables the other options in this section.
+		// Enabled enables the other options in this section. This field is
+		// deprecated in favor of Disabled.
 		Enabled bool `yaml:"enabled,omitempty"`
+		// Disabled disables the other options in this section.
+		Disabled bool `yaml:"disabled,omitempty"`
 		// Manifests configures manifest validation.
 		Manifests struct {
 			// URLs configures validation for URLs in pushed manifests.
@@ -197,6 +207,19 @@ type Configuration struct {
 			} `yaml:"urls,omitempty"`
 		} `yaml:"manifests,omitempty"`
 	} `yaml:"validation,omitempty"`
+
+	// Policy configures registry policy options.
+	Policy struct {
+		// Repository configures policies for repositories
+		Repository struct {
+			// Classes is a list of repository classes which the
+			// registry allows content for. This class is matched
+			// against the configuration media type inside uploaded
+			// manifests. When non-empty, the registry will enforce
+			// the class in authorized resources.
+			Classes []string `yaml:"classes"`
+		} `yaml:"repository,omitempty"`
+	} `yaml:"policy,omitempty"`
 }
 
 // LogHook is composed of hook Level and Type.
@@ -213,7 +236,7 @@ type LogHook struct {
 	// Levels set which levels of log message will let hook executed.
 	Levels []string `yaml:"levels,omitempty"`
 
-	// MailOptions allows user to configurate email parameters.
+	// MailOptions allows user to configure email parameters.
 	MailOptions MailOptions `yaml:"options,omitempty"`
 }
 
@@ -521,13 +544,14 @@ type Notifications struct {
 // Endpoint describes the configuration of an http webhook notification
 // endpoint.
 type Endpoint struct {
-	Name      string        `yaml:"name"`      // identifies the endpoint in the registry instance.
-	Disabled  bool          `yaml:"disabled"`  // disables the endpoint
-	URL       string        `yaml:"url"`       // post url for the endpoint.
-	Headers   http.Header   `yaml:"headers"`   // static headers that should be added to all requests
-	Timeout   time.Duration `yaml:"timeout"`   // HTTP timeout
-	Threshold int           `yaml:"threshold"` // circuit breaker threshold before backing off on failure
-	Backoff   time.Duration `yaml:"backoff"`   // backoff duration
+	Name              string        `yaml:"name"`              // identifies the endpoint in the registry instance.
+	Disabled          bool          `yaml:"disabled"`          // disables the endpoint
+	URL               string        `yaml:"url"`               // post url for the endpoint.
+	Headers           http.Header   `yaml:"headers"`           // static headers that should be added to all requests
+	Timeout           time.Duration `yaml:"timeout"`           // HTTP timeout
+	Threshold         int           `yaml:"threshold"`         // circuit breaker threshold before backing off on failure
+	Backoff           time.Duration `yaml:"backoff"`           // backoff duration
+	IgnoredMediaTypes []string      `yaml:"ignoredmediatypes"` // target media types to ignore
 }
 
 // Reporting defines error reporting methods.
@@ -604,7 +628,7 @@ func Parse(rd io.Reader) (*Configuration, error) {
 						v0_1.Loglevel = Loglevel("info")
 					}
 					if v0_1.Storage.Type() == "" {
-						return nil, fmt.Errorf("No storage configuration provided")
+						return nil, errors.New("No storage configuration provided")
 					}
 					return (*Configuration)(v0_1), nil
 				}

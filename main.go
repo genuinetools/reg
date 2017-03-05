@@ -10,12 +10,12 @@ import (
 	"text/tabwriter"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/docker/distribution/digest"
 	"github.com/docker/distribution/manifest/schema1"
-	"github.com/docker/docker/cliconfig"
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
 	"github.com/jessfraz/reg/clair"
 	"github.com/jessfraz/reg/registry"
+	"github.com/jessfraz/reg/utils"
+	digest "github.com/opencontainers/go-digest"
 	"github.com/urfave/cli"
 )
 
@@ -40,7 +40,7 @@ func preload(c *cli.Context) (err error) {
 
 	if len(c.Args()) > 0 {
 		if c.Args()[0] != "help" {
-			auth, err = getAuthConfig(c)
+			auth, err = utils.GetAuthConfig(c)
 			if err != nil {
 				return err
 			}
@@ -99,7 +99,7 @@ func main() {
 			Aliases: []string{"rm"},
 			Usage:   "delete a specific reference of a repository",
 			Action: func(c *cli.Context) error {
-				repo, ref, err := getRepoAndRef(c)
+				repo, ref, err := utils.GetRepoAndRef(c)
 				if err != nil {
 					return err
 				}
@@ -149,7 +149,7 @@ func main() {
 			Name:  "manifest",
 			Usage: "get the json manifest for the specific reference of a repository",
 			Action: func(c *cli.Context) error {
-				repo, ref, err := getRepoAndRef(c)
+				repo, ref, err := utils.GetRepoAndRef(c)
 				if err != nil {
 					return err
 				}
@@ -199,7 +199,7 @@ func main() {
 				},
 			},
 			Action: func(c *cli.Context) error {
-				repo, ref, err := getRepoAndRef(c)
+				repo, ref, err := utils.GetRepoAndRef(c)
 				if err != nil {
 					return err
 				}
@@ -238,7 +238,7 @@ func main() {
 					return errors.New("clair url cannot be empty, pass --clair")
 				}
 
-				repo, ref, err := getRepoAndRef(c)
+				repo, ref, err := utils.GetRepoAndRef(c)
 				if err != nil {
 					return err
 				}
@@ -270,7 +270,7 @@ func main() {
 
 				for i := len(m.FSLayers) - 1; i >= 0; i-- {
 					// form the clair layer
-					l, err := newClairLayer(r, repo, m.FSLayers, i)
+					l, err := utils.NewClairLayer(r, repo, m.FSLayers, i)
 					if err != nil {
 						return err
 					}
@@ -341,94 +341,4 @@ func main() {
 	}
 
 	app.Run(os.Args)
-}
-
-func getAuthConfig(c *cli.Context) (types.AuthConfig, error) {
-	if c.GlobalString("username") != "" && c.GlobalString("password") != "" && c.GlobalString("registry") != "" {
-		return types.AuthConfig{
-			Username:      c.GlobalString("username"),
-			Password:      c.GlobalString("password"),
-			ServerAddress: c.GlobalString("registry"),
-		}, nil
-	}
-
-	dcfg, err := cliconfig.Load(cliconfig.ConfigDir())
-	if err != nil {
-		return types.AuthConfig{}, fmt.Errorf("Loading config file failed: %v", err)
-	}
-
-	// return error early if there are no auths saved
-	if !dcfg.ContainsAuth() {
-		if c.GlobalString("registry") != "" {
-			return types.AuthConfig{
-				ServerAddress: c.GlobalString("registry"),
-			}, nil
-		}
-		return types.AuthConfig{}, fmt.Errorf("No auth was present in %s, please pass a registry, username, and password", cliconfig.ConfigDir())
-	}
-
-	// if they passed a specific registry, return those creds _if_ they exist
-	if c.GlobalString("registry") != "" {
-		if creds, ok := dcfg.AuthConfigs[c.GlobalString("registry")]; ok {
-			return creds, nil
-		}
-		return types.AuthConfig{}, fmt.Errorf("No authentication credentials exist for %s", c.GlobalString("registry"))
-	}
-
-	// set the auth config as the registryURL, username and Password
-	for _, creds := range dcfg.AuthConfigs {
-		return creds, nil
-	}
-
-	return types.AuthConfig{}, fmt.Errorf("Could not find any authentication credentials")
-}
-
-func getRepoAndRef(c *cli.Context) (repo, ref string, err error) {
-	if len(c.Args()) < 1 {
-		return "", "", errors.New("pass the name of the repository")
-	}
-
-	arg := c.Args()[0]
-	parts := []string{}
-	if strings.Contains(arg, "@") {
-		parts = strings.Split(c.Args()[0], "@")
-	} else if strings.Contains(arg, ":") {
-		parts = strings.Split(c.Args()[0], ":")
-	} else {
-		parts = []string{arg}
-	}
-
-	repo = parts[0]
-	ref = "latest"
-	if len(parts) > 1 {
-		ref = parts[1]
-	}
-
-	return
-}
-
-func newClairLayer(r *registry.Registry, image string, fsLayers []schema1.FSLayer, index int) (*clair.Layer, error) {
-	var parentName string
-	if index < len(fsLayers)-1 {
-		parentName = fsLayers[index+1].BlobSum.String()
-	}
-
-	// form the path
-	p := strings.Join([]string{r.URL, "v2", image, "blobs", fsLayers[index].BlobSum.String()}, "/")
-
-	// get the token
-	token, err := r.Token(p)
-	if err != nil {
-		return nil, err
-	}
-
-	return &clair.Layer{
-		Name:       fsLayers[index].BlobSum.String(),
-		Path:       p,
-		ParentName: parentName,
-		Format:     "Docker",
-		Headers: map[string]string{
-			"Authorization": fmt.Sprintf("Bearer %s", token),
-		},
-	}, nil
 }

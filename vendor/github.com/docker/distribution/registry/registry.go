@@ -12,7 +12,7 @@ import (
 	"rsc.io/letsencrypt"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/Sirupsen/logrus/formatters/logstash"
+	logstash "github.com/bshuster-repo/logrus-logstash-hook"
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/docker/distribution/configuration"
 	"github.com/docker/distribution/context"
@@ -91,7 +91,9 @@ func NewRegistry(ctx context.Context, config *configuration.Configuration) (*Reg
 	handler = alive("/", handler)
 	handler = health.Handler(handler)
 	handler = panicHandler(handler)
-	handler = gorhandlers.CombinedLoggingHandler(os.Stdout, handler)
+	if !config.Log.AccessLog.Disabled {
+		handler = gorhandlers.CombinedLoggingHandler(os.Stdout, handler)
+	}
 
 	server := &http.Server{
 		Handler: handler,

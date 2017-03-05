@@ -7,10 +7,10 @@ import (
 
 	"github.com/docker/distribution"
 	ctxu "github.com/docker/distribution/context"
-	"github.com/docker/distribution/digest"
 	"github.com/docker/distribution/registry/api/errcode"
 	"github.com/docker/distribution/registry/api/v2"
 	"github.com/docker/distribution/registry/auth"
+	"github.com/opencontainers/go-digest"
 	"golang.org/x/net/context"
 )
 
@@ -62,7 +62,7 @@ func getDigest(ctx context.Context) (dgst digest.Digest, err error) {
 		return "", errDigestNotAvailable
 	}
 
-	d, err := digest.ParseDigest(dgstStr)
+	d, err := digest.Parse(dgstStr)
 	if err != nil {
 		ctxu.GetLogger(ctx).Errorf("error parsing digest=%q: %v", dgstStr, err)
 		return "", err
