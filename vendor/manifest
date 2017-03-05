@@ -395,10 +395,51 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/docker/go-connections/nat",
+			"repository": "https://github.com/docker/go-connections",
+			"vcs": "git",
+			"revision": "a2afab9802043837035592f1c24827fb70766de9",
+			"branch": "master",
+			"path": "/nat",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/docker/go-units",
+			"repository": "https://github.com/docker/go-units",
+			"vcs": "git",
+			"revision": "0dadbb0345b35ec7ef35e228dabb8de89a65bf52",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/docker/libtrust",
+			"repository": "https://github.com/docker/libtrust",
+			"vcs": "git",
+			"revision": "aabc10ec26b754e797f9028f4589c5b7bd90dc20",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/dustin/go-humanize",
 			"repository": "https://github.com/dustin/go-humanize",
 			"vcs": "git",
 			"revision": "259d2a102b871d17f30e3cd9881a642961a1e486",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/gorilla/context",
+			"repository": "https://github.com/gorilla/context",
+			"vcs": "git",
+			"revision": "08b5f424b9271eedf6f9f0ce86cb9396ed337a42",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/gorilla/mux",
+			"repository": "https://github.com/gorilla/mux",
+			"vcs": "git",
+			"revision": "599cba5e7b6137d46ddf58fb1765f5d928e69604",
 			"branch": "master",
 			"notests": true
 		},
@@ -408,6 +449,15 @@
 			"vcs": "git",
 			"revision": "aa2ec055abd10d26d539eb630a92241b781ce4bc",
 			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/opencontainers/runc/libcontainer/user",
+			"repository": "https://github.com/opencontainers/runc",
+			"vcs": "git",
+			"revision": "291bf601105c97dc1aa631fdfb7fca63c947319b",
+			"branch": "master",
+			"path": "/libcontainer/user",
 			"notests": true
 		},
 		{
@@ -424,6 +474,15 @@
 			"vcs": "git",
 			"revision": "9e5b04886c4bfee2ceba1465b8121057355c4e53",
 			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "golang.org/x/net/context",
+			"repository": "https://go.googlesource.com/net",
+			"vcs": "git",
+			"revision": "d379faa25cbdc04d653984913a2ceb43b0bc46d7",
+			"branch": "master",
+			"path": "/context",
 			"notests": true
 		},
 		{
