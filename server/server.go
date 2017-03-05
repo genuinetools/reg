@@ -234,7 +234,7 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 				go func(repo, tag string, i, j int) {
 					defer wg.Done()
 
-					throttle := time.Tick(time.Duration(time.Duration((i+1)*(j+1)) * time.Microsecond))
+					throttle := time.Tick(time.Duration(time.Duration((i+1)*(j+1)) * time.Second))
 					<-throttle
 
 					logrus.Infof("creating vulns.txt for %s:%s", repo, tag)
