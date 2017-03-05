@@ -437,21 +437,26 @@ func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag s
 			}
 		}
 	}
+
+	iteratePriorities(func(sev string) {
+		fmt.Fprintf(file, "%s: %d\n", sev, len(store[sev]))
+	})
+	fmt.Fprintln(file, "")
+
+	// return an error if there are more than 10 bad vulns
+	lenBadVulns := len(store["High"]) + len(store["Critical"]) + len(store["Defcon1"])
+	if lenBadVulns > 10 {
+		fmt.Fprintln(file, "--------------- ALERT ---------------")
+		fmt.Fprintf(file, "%d bad vunerabilities found", lenBadVulns)
+	}
+	fmt.Fprintln(file, "")
+
 	iteratePriorities(func(sev string) {
 		for _, v := range store[sev] {
 			fmt.Fprintf(file, "%s: [%s] \n%s\n%s\n", v.Name, v.Severity, v.Description, v.Link)
 			fmt.Fprintln(file, "-----------------------------------------")
 		}
 	})
-	iteratePriorities(func(sev string) {
-		fmt.Fprintf(file, "%s: %d\n", sev, len(store[sev]))
-	})
-
-	// return an error if there are more than 10 bad vulns
-	lenBadVulns := len(store["High"]) + len(store["Critical"]) + len(store["Defcon1"])
-	if lenBadVulns > 10 {
-		fmt.Fprintf(file, "%d bad vunerabilities found", lenBadVulns)
-	}
 
 	return nil
 }
