@@ -301,6 +301,9 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 				go func(repo, tag string) {
 					defer wg.Done()
 
+					throttle := time.Tick(time.Duration(1e6/int(3)) * time.Microsecond)
+					<-throttle
+
 					logrus.Infof("creating vulns.txt for %s:%s", repo, tag)
 
 					if err := createVulnStaticPage(r, staticDir, clairURI, repo, tag); err != nil {
