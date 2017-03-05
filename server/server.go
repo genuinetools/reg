@@ -297,14 +297,18 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 
 			if clairURI != "" {
 				wg.Add(1)
+
 				go func(repo, tag string) {
 					defer wg.Done()
+
 					logrus.Infof("creating vulns.txt for %s:%s", repo, tag)
+
 					if err := createVulnStaticPage(r, staticDir, clairURI, repo, tag); err != nil {
 						// return fmt.Errorf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
 						logrus.Warnf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
 					}
 				}(repo, tag)
+
 				newrepo.VulnURI = filepath.Join(repo, tag, "vulns.txt")
 			}
 			repos = append(repos, newrepo)
@@ -366,7 +370,7 @@ func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag s
 	}
 
 	// initialize clair
-	cr, err := clair.New(clairURI, true)
+	cr, err := clair.New(clairURI, false)
 	if err != nil {
 		return err
 	}
