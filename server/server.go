@@ -294,7 +294,8 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 
 			if clairURI != "" {
 				if err := createVulnStaticPage(r, staticDir, clairURI, repo, tag); err != nil {
-					return fmt.Errorf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
+					//return fmt.Errorf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
+					logrus.Warnf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
 				}
 				newrepo.VulnURI = filepath.Join(repo, tag, "vulns.txt")
 			}
