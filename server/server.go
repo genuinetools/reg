@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -31,6 +32,7 @@ const (
 
 var (
 	updating = false
+	wg       sync.WaitGroup
 )
 
 // preload initializes any global options and configuration
@@ -128,6 +130,7 @@ func main() {
 				if !updating {
 					if err := createStaticIndex(r, staticDir, c.GlobalString("clair")); err != nil {
 						logrus.Warnf("creating static index failed: %v", err)
+						wg.Wait()
 						updating = false
 					}
 				}
@@ -293,11 +296,15 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 			}
 
 			if clairURI != "" {
-				logrus.Infof("creating vulns.txt for %s:%s", repo, tag)
-				if err := createVulnStaticPage(r, staticDir, clairURI, repo, tag); err != nil {
-					//return fmt.Errorf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
-					logrus.Warnf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
-				}
+				wg.Add(1)
+				go func(repo, tag string) {
+					defer wg.Done()
+					logrus.Infof("creating vulns.txt for %s:%s", repo, tag)
+					if err := createVulnStaticPage(r, staticDir, clairURI, repo, tag); err != nil {
+						// return fmt.Errorf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
+						logrus.Warnf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
+					}
+				}(repo, tag)
 				newrepo.VulnURI = filepath.Join(repo, tag, "vulns.txt")
 			}
 			repos = append(repos, newrepo)
