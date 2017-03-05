@@ -293,6 +293,7 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 			}
 
 			if clairURI != "" {
+				logrus.Infof("creating vulns.txt for %s:%s", repo, tag)
 				if err := createVulnStaticPage(r, staticDir, clairURI, repo, tag); err != nil {
 					//return fmt.Errorf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
 					logrus.Warnf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
