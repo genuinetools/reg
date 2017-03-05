@@ -189,13 +189,13 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 
 	logrus.Info("fetching tags")
 	var repos []repository
-	for _, repo := range repoList {
+	for i, repo := range repoList {
 		// get the tags
 		tags, err := r.Tags(repo)
 		if err != nil {
 			return fmt.Errorf("getting tags for %s failed: %v", repo, err)
 		}
-		for _, tag := range tags {
+		for j, tag := range tags {
 			// get the manifest
 
 			manifest, err := r.Manifest(repo, tag)
@@ -231,10 +231,10 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 			if clairURI != "" {
 				wg.Add(1)
 
-				go func(repo, tag string) {
+				go func(repo, tag string, i, j int) {
 					defer wg.Done()
 
-					throttle := time.Tick(time.Duration(1e6/int(3)) * time.Microsecond)
+					throttle := time.Tick(time.Duration(time.Duration(i*j) * time.Second))
 					<-throttle
 
 					logrus.Infof("creating vulns.txt for %s:%s", repo, tag)
@@ -243,7 +243,7 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 						// return fmt.Errorf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
 						logrus.Warnf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
 					}
-				}(repo, tag)
+				}(repo, tag, i, j)
 
 				newrepo.VulnURI = filepath.Join(repo, tag, "vulns.txt")
 			}
