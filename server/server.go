@@ -348,6 +348,7 @@ func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag s
 	defer file.Close()
 
 	fmt.Fprintf(file, "Found %d vulnerabilities \n", len(vulns))
+	fmt.Fprintln(file, "")
 
 	vulnsBy := func(sev string, store map[string][]clair.Vulnerability) []clair.Vulnerability {
 		items, found := store[sev]
