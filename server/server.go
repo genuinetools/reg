@@ -388,7 +388,11 @@ func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag s
 		}
 	}
 
-	file, err := os.Create(filepath.Join(staticDir, repo, tag, "vulns.txt"))
+	path := filepath.Join(staticDir, repo, tag, "vulns.txt")
+	if err := os.MkdirAll(filepath.Dir(path, 0644)); err != nil {
+		return err
+	}
+	file, err := os.Create(path)
 	if err != nil {
 		return err
 	}
