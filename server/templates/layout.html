@@ -27,22 +27,28 @@
                 <th>Pull Command</th>
             </tr>
             {{ range $key, $value := .Repos }}
-            {{ if $value.VulnURI }}<a href="{{ $value.VulnURI }}">{{ end }}
             <tr>
                 <td valign="top">
-                    {{ $value.Name }}
+                    {{ if $value.VulnURI }}<a href="{{ $value.VulnURI }}">{{ end }}
+                        {{ $value.Name }}
+                    {{ if $value.VulnURI }}</a>{{ end }}
                 </td>
                 <td>
-                    {{ $value.Tag }}
+                    {{ if $value.VulnURI }}<a href="{{ $value.VulnURI }}">{{ end }}
+                        {{ $value.Tag }}
+                    {{ if $value.VulnURI }}</a>{{ end }}
                 </td>
                 <td>
-                    {{ $value.CreatedDate }}
+                    {{ if $value.VulnURI }}<a href="{{ $value.VulnURI }}">{{ end }}
+                        {{ $value.CreatedDate }}
+                    {{ if $value.VulnURI }}</a>{{ end }}
                 </td>
                 <td align="right" nowrap>
-                    <code>docker pull {{ $value.RepoURI }}</code>
+                    {{ if $value.VulnURI }}<a href="{{ $value.VulnURI }}">{{ end }}
+                        <code>docker pull {{ $value.RepoURI }}</code>
+                    {{ if $value.VulnURI }}</a>{{ end }}
                 </td>
             </tr>
-            {{ if $value.VulnURI }}</a>{{ end }}
             {{ end }}
         </table>
     </div>
