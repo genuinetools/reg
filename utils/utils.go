@@ -7,7 +7,7 @@ import (
 
 	"github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/docker/api/types"
-	cliconfig "github.com/docker/docker/cli/config"
+	"github.com/docker/docker/cli/config"
 	"github.com/jessfraz/reg/clair"
 	"github.com/jessfraz/reg/registry"
 	"github.com/urfave/cli"
@@ -23,7 +23,7 @@ func GetAuthConfig(c *cli.Context) (types.AuthConfig, error) {
 		}, nil
 	}
 
-	dcfg, err := cliconfig.Load(cliconfig.Dir())
+	dcfg, err := config.Load(config.Dir())
 	if err != nil {
 		return types.AuthConfig{}, fmt.Errorf("Loading config file failed: %v", err)
 	}
@@ -35,7 +35,7 @@ func GetAuthConfig(c *cli.Context) (types.AuthConfig, error) {
 				ServerAddress: c.GlobalString("registry"),
 			}, nil
 		}
-		return types.AuthConfig{}, fmt.Errorf("No auth was present in %s, please pass a registry, username, and password", cliconfig.Dir())
+		return types.AuthConfig{}, fmt.Errorf("No auth was present in %s, please pass a registry, username, and password", config.Dir())
 	}
 
 	// if they passed a specific registry, return those creds _if_ they exist

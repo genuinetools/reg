@@ -395,6 +395,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/dustin/go-humanize",
+			"repository": "https://github.com/dustin/go-humanize",
+			"vcs": "git",
+			"revision": "259d2a102b871d17f30e3cd9881a642961a1e486",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/opencontainers/go-digest",
 			"repository": "https://github.com/opencontainers/go-digest",
 			"vcs": "git",
