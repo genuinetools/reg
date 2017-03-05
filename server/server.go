@@ -198,22 +198,19 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 		for j, tag := range tags {
 			// get the manifest
 
-			manifest, err := r.Manifest(repo, tag)
+			m1, err := r.ManifestV1(repo, tag)
 			if err != nil {
 				return fmt.Errorf("getting tags for %s:%s failed: %v", repo, tag, err)
 			}
 
 			var createdDate string
-			if m1, ok := manifest.(schema1.SignedManifest); ok {
-				history := m1.History
-				for _, h := range history {
-					var comp v1Compatibility
-					if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
-						return fmt.Errorf("unmarshal v1compatibility failed: %v", err)
-					}
-					createdDate = humanize.Time(comp.Created)
-					break
+			for _, h := range m1.History {
+				var comp v1Compatibility
+				if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
+					return fmt.Errorf("unmarshal v1compatibility failed: %v", err)
 				}
+				createdDate = humanize.Time(comp.Created)
+				break
 			}
 
 			repoURI := fmt.Sprintf("%s/%s", r.Domain, repo)
@@ -239,7 +236,7 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 
 					logrus.Infof("creating vulns.txt for %s:%s", repo, tag)
 
-					if err := createVulnStaticPage(r, staticDir, clairURI, repo, tag); err != nil {
+					if err := createVulnStaticPage(r, staticDir, clairURI, repo, tag, m1); err != nil {
 						// return fmt.Errorf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
 						logrus.Warnf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
 					}
@@ -285,13 +282,7 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 	return nil
 }
 
-func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag string) error {
-	// get the manifest
-	m, err := r.ManifestV1(repo, tag)
-	if err != nil {
-		return err
-	}
-
+func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag string, m schema1.SignedManifest) error {
 	// filter out the empty layers
 	var filteredLayers []schema1.FSLayer
 	for _, layer := range m.FSLayers {
