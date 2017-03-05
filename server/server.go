@@ -17,6 +17,7 @@ import (
 	"github.com/docker/docker/cliconfig"
 	"github.com/docker/engine-api/types"
 	humanize "github.com/dustin/go-humanize"
+	"github.com/jessfraz/reg/clair"
 	"github.com/jessfraz/reg/registry"
 	"github.com/urfave/cli"
 )
@@ -85,6 +86,10 @@ func main() {
 			Value: "5m",
 			Usage: "interval to generate new index.html's at",
 		},
+		cli.StringFlag{
+			Name:  "clair",
+			Usage: "url to clair instance",
+		},
 	}
 	app.Action = func(c *cli.Context) error {
 		auth, err := getAuthConfig(c)
@@ -106,7 +111,7 @@ func main() {
 		staticDir := filepath.Join(wd, "static")
 
 		// create the initial index
-		if err := createStaticIndex(r, staticDir); err != nil {
+		if err := createStaticIndex(r, staticDir, c.GlobalString("clair")); err != nil {
 			return err
 		}
 
@@ -121,7 +126,7 @@ func main() {
 			// create more indexes every X minutes based off interval
 			for range ticker.C {
 				if !updating {
-					if err := createStaticIndex(r, staticDir); err != nil {
+					if err := createStaticIndex(r, staticDir, c.GlobalString("clair")); err != nil {
 						logrus.Warnf("creating static index failed: %v", err)
 						updating = false
 					}
@@ -135,7 +140,6 @@ func main() {
 		// static files handler
 		staticHandler := http.FileServer(http.Dir(staticDir))
 		mux.Handle("/", staticHandler)
-		// TODO: add handler for individual repos
 
 		// set up the server
 		port := c.String("port")
@@ -231,6 +235,7 @@ type repository struct {
 	Tag         string
 	RepoURI     string
 	CreatedDate string
+	VulnURI     string
 }
 
 type v1Compatibility struct {
@@ -238,7 +243,7 @@ type v1Compatibility struct {
 	Created time.Time `json:"created"`
 }
 
-func createStaticIndex(r *registry.Registry, staticDir string) error {
+func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 	updating = true
 	logrus.Info("fetching catalog")
 	repoList, err := r.Catalog("")
@@ -280,12 +285,20 @@ func createStaticIndex(r *registry.Registry, staticDir string) error {
 				repoURI += ":" + tag
 			}
 
-			repos = append(repos, repository{
+			newrepo := repository{
 				Name:        repo,
 				Tag:         tag,
 				RepoURI:     repoURI,
 				CreatedDate: createdDate,
-			})
+			}
+
+			if clairURI != "" {
+				if err := createVulnStaticPage(r, staticDir, clairURI, repo, tag); err != nil {
+					return fmt.Errorf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
+				}
+				newrepo.VulnURI = filepath.Join(repo, tag, "vulns.txt")
+			}
+			repos = append(repos, newrepo)
 		}
 	}
 
@@ -321,4 +334,133 @@ func createStaticIndex(r *registry.Registry, staticDir string) error {
 	}
 	updating = false
 	return nil
+}
+
+func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag string) error {
+	// get the manifest
+	m, err := r.ManifestV1(repo, tag)
+	if err != nil {
+		return err
+	}
+
+	// filter out the empty layers
+	var filteredLayers []schema1.FSLayer
+	for _, layer := range m.FSLayers {
+		if layer.BlobSum != clair.EmptyLayerBlobSum {
+			filteredLayers = append(filteredLayers, layer)
+		}
+	}
+	m.FSLayers = filteredLayers
+	if len(m.FSLayers) == 0 {
+		fmt.Printf("No need to analyse image %s:%s as there is no non-emtpy layer", repo, tag)
+		return nil
+	}
+
+	// initialize clair
+	cr, err := clair.New(clairURI, true)
+	if err != nil {
+		return err
+	}
+
+	for i := len(m.FSLayers) - 1; i >= 0; i-- {
+		// form the clair layer
+		l, err := newClairLayer(r, repo, m.FSLayers, i)
+		if err != nil {
+			return err
+		}
+
+		// post the layer
+		if _, err := cr.PostLayer(l); err != nil {
+			return err
+		}
+	}
+
+	vl, err := cr.GetLayer(m.FSLayers[0].BlobSum.String(), false, true)
+	if err != nil {
+		return err
+	}
+
+	// get the vulns
+	var vulns []clair.Vulnerability
+	for _, f := range vl.Features {
+		for _, v := range f.Vulnerabilities {
+			vulns = append(vulns, v)
+		}
+	}
+
+	file, err := os.Create(filepath.Join(staticDir, repo, tag, "vulns.txt"))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	fmt.Fprintf(file, "Found %d vulnerabilities \n", len(vulns))
+
+	vulnsBy := func(sev string, store map[string][]clair.Vulnerability) []clair.Vulnerability {
+		items, found := store[sev]
+		if !found {
+			items = make([]clair.Vulnerability, 0)
+			store[sev] = items
+		}
+		return items
+	}
+
+	// group by severity
+	store := make(map[string][]clair.Vulnerability)
+	for _, v := range vulns {
+		sevRow := vulnsBy(v.Severity, store)
+		store[v.Severity] = append(sevRow, v)
+	}
+
+	// iterate over the priorities list
+	iteratePriorities := func(f func(sev string)) {
+		for _, sev := range clair.Priorities {
+			if len(store[sev]) != 0 {
+				f(sev)
+			}
+		}
+	}
+	iteratePriorities(func(sev string) {
+		for _, v := range store[sev] {
+			fmt.Fprintf(file, "%s: [%s] \n%s\n%s\n", v.Name, v.Severity, v.Description, v.Link)
+			fmt.Fprintln(file, "-----------------------------------------")
+		}
+	})
+	iteratePriorities(func(sev string) {
+		fmt.Fprintf(file, "%s: %d\n", sev, len(store[sev]))
+	})
+
+	// return an error if there are more than 10 bad vulns
+	lenBadVulns := len(store["High"]) + len(store["Critical"]) + len(store["Defcon1"])
+	if lenBadVulns > 10 {
+		fmt.Fprintf(file, "%d bad vunerabilities found", lenBadVulns)
+	}
+
+	return nil
+}
+
+func newClairLayer(r *registry.Registry, image string, fsLayers []schema1.FSLayer, index int) (*clair.Layer, error) {
+	var parentName string
+	if index < len(fsLayers)-1 {
+		parentName = fsLayers[index+1].BlobSum.String()
+	}
+
+	// form the path
+	p := strings.Join([]string{r.URL, "v2", image, "blobs", fsLayers[index].BlobSum.String()}, "/")
+
+	// get the token
+	token, err := r.Token(p)
+	if err != nil {
+		return nil, err
+	}
+
+	return &clair.Layer{
+		Name:       fsLayers[index].BlobSum.String(),
+		Path:       p,
+		ParentName: parentName,
+		Format:     "Docker",
+		Headers: map[string]string{
+			"Authorization": fmt.Sprintf("Bearer %s", token),
+		},
+	}, nil
 }

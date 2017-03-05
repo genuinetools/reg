@@ -29,10 +29,14 @@
             {{ range $key, $value := .Repos }}
             <tr>
                 <td valign="top">
-                    {{ $value.Name }}
+                    {{ if $value.VulnURI }}<a href="{{ $value.VulnURI }}">{{ end }}
+                        {{ $value.Name }}
+                    {{ if $value.VulnURI }}</a>{{ end }}
                 </td>
                 <td>
-                    {{ $value.Tag }}
+                    {{ if $value.VulnURI }}<a href="{{ $value.VulnURI }}">{{ end }}
+                        {{ $value.Tag }}
+                    {{ if $value.VulnURI }}</a>{{ end }}
                 </td>
                 <td>
                     {{ $value.CreatedDate }}
