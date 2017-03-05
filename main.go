@@ -148,15 +148,29 @@ func main() {
 		{
 			Name:  "manifest",
 			Usage: "get the json manifest for the specific reference of a repository",
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "v1",
+					Usage: "force get v1 manifest",
+				},
+			},
 			Action: func(c *cli.Context) error {
 				repo, ref, err := utils.GetRepoAndRef(c)
 				if err != nil {
 					return err
 				}
 
-				manifest, err := r.Manifest(repo, ref)
-				if err != nil {
-					return err
+				var manifest interface{}
+				if c.Bool("v1") {
+					manifest, err = r.ManifestV1(repo, ref)
+					if err != nil {
+						return err
+					}
+				} else {
+					manifest, err = r.Manifest(repo, ref)
+					if err != nil {
+						return err
+					}
 				}
 
 				b, err := json.MarshalIndent(manifest, " ", "  ")
