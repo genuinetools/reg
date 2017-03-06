@@ -118,7 +118,7 @@ Deleted chrome@sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c2295
 ## Vulnerability Reports
 
 ```console
-$ $ reg vulns --clair https://clair.j3ss.co chrome
+$ reg vulns --clair https://clair.j3ss.co chrome
 Found 32 vulnerabilities
 CVE-2015-5180: [Low]
 
