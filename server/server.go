@@ -111,7 +111,7 @@ func main() {
 
 		// create the initial index
 		if err := createStaticIndex(r, staticDir, c.GlobalString("clair")); err != nil {
-			return err
+			return cli.NewExitError(fmt.Sprintf("Error creating index: %s", err.Error()), 1)
 		}
 
 		// parse the duration
