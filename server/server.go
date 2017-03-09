@@ -130,6 +130,9 @@ func main() {
 						wg.Wait()
 						updating = false
 					}
+					if c.GlobalString("clair") != "" {
+						wg.Wait()
+					}
 				}
 			}
 		}()
