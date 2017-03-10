@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -40,6 +41,30 @@ func preload(c *cli.Context) (err error) {
 	}
 
 	return nil
+}
+
+func moveFile(src, dst string) (err error) {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	tmp, err := ioutil.TempFile(filepath.Dir(dst), "")
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(tmp, in)
+	if err != nil {
+		tmp.Close()
+		os.Remove(tmp.Name())
+		return err
+	}
+	if err = tmp.Close(); err != nil {
+		os.Remove(tmp.Name())
+		return err
+	}
+	defer os.Remove(src)
+	return os.Rename(tmp.Name(), dst)
 }
 
 func main() {
@@ -278,7 +303,7 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 
 	index := filepath.Join(staticDir, "index.html")
 	logrus.Infof("renaming the temporary file %s to %s", f.Name(), index)
-	if err := os.Rename(f.Name(), index); err != nil {
+	if err := moveFile(f.Name(), index); err != nil {
 		return fmt.Errorf("renaming result from %s to %s failed: %v", f.Name(), index, err)
 	}
 	updating = false
