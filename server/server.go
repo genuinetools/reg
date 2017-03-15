@@ -43,28 +43,30 @@ func preload(c *cli.Context) (err error) {
 	return nil
 }
 
-func moveFile(src, dst string) (err error) {
-	in, err := os.Open(src)
+func moveFile(src, dest string) (err error) {
+	srcfile, err := os.Open(src)
 	if err != nil {
 		return err
 	}
-	defer in.Close()
-	tmp, err := ioutil.TempFile(filepath.Dir(dst), "")
-	if err != nil {
-		return err
-	}
-	_, err = io.Copy(tmp, in)
-	if err != nil {
-		tmp.Close()
-		os.Remove(tmp.Name())
-		return err
-	}
-	if err = tmp.Close(); err != nil {
-		os.Remove(tmp.Name())
-		return err
-	}
+	defer srcfile.Close()
 	defer os.Remove(src)
-	return os.Rename(tmp.Name(), dst)
+
+	destfile, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer destfile.Close()
+
+	if _, err := io.Copy(destfile, srcfile); err != nil {
+		return err
+	}
+
+	srcinfo, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	return os.Chmod(dest, srcinfo.Mode())
 }
 
 func main() {
