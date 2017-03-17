@@ -42,7 +42,7 @@ GLOBAL OPTIONS:
    --insecure, -k              do not verify tls certificates
    --username value, -u value  username for the registry
    --password value, -p value  password for the registry
-   --registry value, -r value  URL to the provate registry (ex. r.j3ss.co)
+   --registry value, -r value  URL to the private registry (ex. r.j3ss.co)
    --help, -h                  show help
    --version, -v               print the version
 ```
