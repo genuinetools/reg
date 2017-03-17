@@ -92,7 +92,7 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:  "registry, r",
-			Usage: "URL to the provate registry (ex. r.j3ss.co)",
+			Usage: "URL to the private registry (ex. r.j3ss.co)",
 		},
 		cli.StringFlag{
 			Name:  "port",

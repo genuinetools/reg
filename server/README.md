@@ -28,7 +28,7 @@ GLOBAL OPTIONS:
    --debug, -d                 run in debug mode
    --username value, -u value  username for the registry
    --password value, -p value  password for the registry
-   --registry value, -r value  URL to the provate registry (ex. r.j3ss.co)
+   --registry value, -r value  URL to the private registry (ex. r.j3ss.co)
    --port value                port for server to run on (default: "8080")
    --cert value                path to ssl cert
    --key value                 path to ssl key
