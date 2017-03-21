@@ -230,7 +230,7 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 
 			m1, err := r.ManifestV1(repo, tag)
 			if err != nil {
-				return fmt.Errorf("getting tags for %s:%s failed: %v", repo, tag, err)
+				logrus.Warnf("getting v1 manifest for %s:%s failed: %v", repo, tag, err)
 			}
 
 			var createdDate string
