@@ -16,6 +16,7 @@ import (
 	"github.com/jessfraz/reg/clair"
 	"github.com/jessfraz/reg/registry"
 	"github.com/jessfraz/reg/utils"
+	wordwrap "github.com/mitchellh/go-wordwrap"
 	"github.com/urfave/cli"
 )
 
@@ -113,16 +114,7 @@ func main() {
 		templateDir := filepath.Join(staticDir, "../templates")
 		funcMap := template.FuncMap{
 			"trim": func(s string) string {
-				a := []rune(s)
-				var b []rune
-				for i, r := range a {
-					// add new line every 80 chars
-					b = append(b, r)
-					if i > 0 && (i+1)%80 == 0 {
-						b = append(b, '\n')
-					}
-				}
-				return string(b)
+				return wordwrap.WrapString(s, 80)
 			},
 		}
 		tmpl = template.Must(template.New("").Funcs(funcMap).ParseFiles(filepath.Join(templateDir, "vulns.txt"), filepath.Join(templateDir, "layout.html")))
@@ -278,6 +270,7 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 		LastUpdated: time.Now().Local().Format(time.RFC1123),
 	}
 
+	logrus.Info("rendering index template")
 	if err := renderTemplate(staticDir, "index", "index.html", d); err != nil {
 		return err
 	}
@@ -370,7 +363,7 @@ func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag s
 
 func renderTemplate(staticDir, templateName, dest string, data interface{}) error {
 	// parse & execute the template
-	logrus.Infof("executing the template %s", templateName)
+	logrus.Debugf("executing the template %s", templateName)
 
 	path := filepath.Join(staticDir, dest)
 	if err := os.MkdirAll(filepath.Dir(path), 0644); err != nil {

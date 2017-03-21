@@ -444,6 +444,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/mitchellh/go-wordwrap",
+			"repository": "https://github.com/mitchellh/go-wordwrap",
+			"vcs": "git",
+			"revision": "ad45545899c7b13c020ea92b2072220eefad42b8",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/opencontainers/go-digest",
 			"repository": "https://github.com/opencontainers/go-digest",
 			"vcs": "git",
