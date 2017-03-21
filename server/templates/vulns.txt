@@ -1,0 +1,20 @@
+CVE Report for {{.Repo}}:{{.Tag}}
+Generated on: {{.Date}}
+
+Vulnerabilities Found: {{len .Vulns}}
+
+{{range $key, $value := .VulnsBySeverity}}
+{{$key}}: {{len $value}}
+{{end}}
+
+{{if gt .BadVulns 10}}
+----------------- ALERT -----------------
+{{.BadVulns}} High, Critical, and/or Defcon1 vulnerabilities found
+{{end}}
+
+{{range $key, $value := .VulnsBySeverity}}
+{{$value.Name}}: [{{$value.Severity}}]
+{{$value.Description}}
+{{$value.Link}}
+-----------------------------------------
+{{end}}

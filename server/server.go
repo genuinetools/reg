@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -41,32 +39,6 @@ func preload(c *cli.Context) (err error) {
 	}
 
 	return nil
-}
-
-func moveFile(src, dest string) (err error) {
-	srcfile, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer srcfile.Close()
-	defer os.Remove(src)
-
-	destfile, err := os.Create(dest)
-	if err != nil {
-		return err
-	}
-	defer destfile.Close()
-
-	if _, err := io.Copy(destfile, srcfile); err != nil {
-		return err
-	}
-
-	srcinfo, err := os.Stat(src)
-	if err != nil {
-		return err
-	}
-
-	return os.Chmod(dest, srcinfo.Mode())
 }
 
 func main() {
@@ -158,6 +130,7 @@ func main() {
 						updating = false
 					}
 					wg.Wait()
+					logrus.Info("finished waiting for vulns wait group")
 				}
 			}
 		}()
@@ -259,7 +232,7 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 				go func(repo, tag string, i, j int) {
 					defer wg.Done()
 
-					throttle := time.Tick(time.Duration(time.Duration((i+1)*(j+1)*3) * time.Second))
+					throttle := time.Tick(time.Duration(time.Duration((i+1)*(j+1)*4) * time.Second))
 					<-throttle
 
 					logrus.Infof("creating vulns.txt for %s:%s", repo, tag)
@@ -276,41 +249,34 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 		}
 	}
 
-	// create temporoary file to save template to
-	logrus.Info("creating temporary file for template")
-	f, err := ioutil.TempFile("", "reg-server")
-	if err != nil {
-		return fmt.Errorf("creating temp file failed: %v", err)
-	}
-	defer f.Close()
-	defer os.Remove(f.Name())
-
-	// parse & execute the template
-	logrus.Info("parsing and executing the template")
-	templateDir := filepath.Join(staticDir, "../templates")
-	lp := filepath.Join(templateDir, "layout.html")
-
 	d := data{
 		RegistryURL: r.Domain,
 		Repos:       repos,
 		LastUpdated: time.Now().Local().Format(time.RFC1123),
 	}
-	tmpl := template.Must(template.New("").ParseFiles(lp))
-	if err := tmpl.ExecuteTemplate(f, "layout", d); err != nil {
-		return fmt.Errorf("execute template failed: %v", err)
-	}
-	f.Close()
 
-	index := filepath.Join(staticDir, "index.html")
-	logrus.Infof("renaming the temporary file %s to %s", f.Name(), index)
-	if err := moveFile(f.Name(), index); err != nil {
-		return fmt.Errorf("renaming result from %s to %s failed: %v", f.Name(), index, err)
+	if err := renderTemplate(staticDir, "layout.html", "index.html", d); err != nil {
+		return err
 	}
 	updating = false
 	return nil
 }
 
+type vulnsReport struct {
+	Repo            string
+	Tag             string
+	Date            string
+	Vulns           []clair.Vulnerability
+	VulnsBySeverity map[string][]clair.Vulnerability
+	BadVulns        int
+}
+
 func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag string, m schema1.SignedManifest) error {
+	report := vulnsReport{
+		Repo: repo,
+		Tag:  tag,
+	}
+
 	// filter out the empty layers
 	var filteredLayers []schema1.FSLayer
 	for _, layer := range m.FSLayers {
@@ -349,25 +315,11 @@ func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag s
 	}
 
 	// get the vulns
-	var vulns []clair.Vulnerability
 	for _, f := range vl.Features {
 		for _, v := range f.Vulnerabilities {
-			vulns = append(vulns, v)
+			report.Vulns = append(report.Vulns, v)
 		}
 	}
-
-	path := filepath.Join(staticDir, repo, tag, "vulns.txt")
-	if err := os.MkdirAll(filepath.Dir(path), 0644); err != nil {
-		return err
-	}
-	file, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	fmt.Fprintf(file, "Found %d vulnerabilities \n", len(vulns))
-	fmt.Fprintln(file, "")
 
 	vulnsBy := func(sev string, store map[string][]clair.Vulnerability) []clair.Vulnerability {
 		items, found := store[sev]
@@ -379,40 +331,40 @@ func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag s
 	}
 
 	// group by severity
-	store := make(map[string][]clair.Vulnerability)
-	for _, v := range vulns {
-		sevRow := vulnsBy(v.Severity, store)
-		store[v.Severity] = append(sevRow, v)
+	for _, v := range report.Vulns {
+		sevRow := vulnsBy(v.Severity, report.VulnsBySeverity)
+		report.VulnsBySeverity[v.Severity] = append(sevRow, v)
 	}
 
-	// iterate over the priorities list
-	iteratePriorities := func(f func(sev string)) {
-		for _, sev := range clair.Priorities {
-			if len(store[sev]) != 0 {
-				f(sev)
-			}
-		}
+	path := filepath.Join(repo, tag, "vulns.txt")
+	if err := renderTemplate(staticDir, "vulns.txt", path, report); err != nil {
+		return err
 	}
+	return nil
+}
 
-	iteratePriorities(func(sev string) {
-		fmt.Fprintf(file, "%s: %d\n", sev, len(store[sev]))
-	})
-	fmt.Fprintln(file, "")
+func renderTemplate(staticDir, src, dest string, data interface{}) error {
+	// parse & execute the template
+	logrus.Info("parsing and executing the template %s", src)
+	templateDir := filepath.Join(staticDir, "../templates")
+	lp := filepath.Join(templateDir, src)
 
-	// return an error if there are more than 10 bad vulns
-	lenBadVulns := len(store["High"]) + len(store["Critical"]) + len(store["Defcon1"])
-	if lenBadVulns > 10 {
-		fmt.Fprintln(file, "--------------- ALERT ---------------")
-		fmt.Fprintf(file, "%d bad vunerabilities found", lenBadVulns)
+	path := filepath.Join(staticDir, dest)
+	if err := os.MkdirAll(filepath.Dir(path), 0644); err != nil {
+		return err
 	}
-	fmt.Fprintln(file, "")
+	logrus.Info("creating/opening file %s", path)
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
 
-	iteratePriorities(func(sev string) {
-		for _, v := range store[sev] {
-			fmt.Fprintf(file, "%s: [%s] \n%s\n%s\n", v.Name, v.Severity, v.Description, v.Link)
-			fmt.Fprintln(file, "-----------------------------------------")
-		}
-	})
+	tmpl := template.Must(template.New("").ParseFiles(lp))
+	if err := tmpl.ExecuteTemplate(f, "layout", data); err != nil {
+		f.Close()
+		return fmt.Errorf("execute template %s failed: %v", src, err)
+	}
 
 	return nil
 }
