@@ -29,6 +29,7 @@ const (
 var (
 	updating = false
 	wg       sync.WaitGroup
+	tmpl     *template.Template
 )
 
 // preload initializes any global options and configuration
@@ -92,25 +93,44 @@ func main() {
 	app.Action = func(c *cli.Context) error {
 		auth, err := utils.GetAuthConfig(c)
 		if err != nil {
-			return err
+			logrus.Fatal(err)
 		}
 
 		// create the registry client
 		r, err := registry.New(auth, c.GlobalBool("debug"))
 		if err != nil {
-			return err
+			logrus.Fatal(err)
 		}
 
 		// get the path to the static directory
 		wd, err := os.Getwd()
 		if err != nil {
-			return err
+			logrus.Fatal(err)
 		}
 		staticDir := filepath.Join(wd, "static")
 
+		// create the template
+		templateDir := filepath.Join(staticDir, "../templates")
+		funcMap := template.FuncMap{
+			"trim": func(s string) string {
+				a := []rune(s)
+				var b []rune
+				for i, r := range a {
+					// add new line every 80 chars
+					b = append(b, r)
+					if i > 0 && (i+1)%80 == 0 {
+						b = append(b, '\n')
+					}
+				}
+				return string(b)
+			},
+		}
+		tmpl = template.Must(template.New("").Funcs(funcMap).ParseFiles(filepath.Join(templateDir, "vulns.txt"), filepath.Join(templateDir, "layout.html")))
+
 		// create the initial index
+		logrus.Info("creating initial static index")
 		if err := createStaticIndex(r, staticDir, c.GlobalString("clair")); err != nil {
-			return cli.NewExitError(fmt.Sprintf("Error creating index: %s", err.Error()), 1)
+			logrus.Fatalf("Error creating index: %v", err)
 		}
 
 		// parse the duration
@@ -124,6 +144,7 @@ func main() {
 			// create more indexes every X minutes based off interval
 			for range ticker.C {
 				if !updating {
+					logrus.Info("creating timer based static index")
 					if err := createStaticIndex(r, staticDir, c.GlobalString("clair")); err != nil {
 						logrus.Warnf("creating static index failed: %v", err)
 						wg.Wait()
@@ -131,6 +152,8 @@ func main() {
 					}
 					wg.Wait()
 					logrus.Info("finished waiting for vulns wait group")
+				} else {
+					logrus.Warnf("skipping timer based static index update for %s", c.String("interval"))
 				}
 			}
 		}()
@@ -255,7 +278,7 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 		LastUpdated: time.Now().Local().Format(time.RFC1123),
 	}
 
-	if err := renderTemplate(staticDir, "layout.html", "index.html", d); err != nil {
+	if err := renderTemplate(staticDir, "index", "index.html", d); err != nil {
 		return err
 	}
 	updating = false
@@ -273,8 +296,10 @@ type vulnsReport struct {
 
 func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag string, m schema1.SignedManifest) error {
 	report := vulnsReport{
-		Repo: repo,
-		Tag:  tag,
+		Repo:            repo,
+		Tag:             tag,
+		Date:            time.Now().Local().Format(time.RFC1123),
+		VulnsBySeverity: make(map[string][]clair.Vulnerability),
 	}
 
 	// filter out the empty layers
@@ -337,33 +362,30 @@ func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag s
 	}
 
 	path := filepath.Join(repo, tag, "vulns.txt")
-	if err := renderTemplate(staticDir, "vulns.txt", path, report); err != nil {
+	if err := renderTemplate(staticDir, "vulns", path, report); err != nil {
 		return err
 	}
 	return nil
 }
 
-func renderTemplate(staticDir, src, dest string, data interface{}) error {
+func renderTemplate(staticDir, templateName, dest string, data interface{}) error {
 	// parse & execute the template
-	logrus.Info("parsing and executing the template %s", src)
-	templateDir := filepath.Join(staticDir, "../templates")
-	lp := filepath.Join(templateDir, src)
+	logrus.Infof("executing the template %s", templateName)
 
 	path := filepath.Join(staticDir, dest)
 	if err := os.MkdirAll(filepath.Dir(path), 0644); err != nil {
 		return err
 	}
-	logrus.Info("creating/opening file %s", path)
+	logrus.Debugf("creating/opening file %s", path)
 	f, err := os.Create(path)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	tmpl := template.Must(template.New("").ParseFiles(lp))
-	if err := tmpl.ExecuteTemplate(f, "layout", data); err != nil {
+	if err := tmpl.ExecuteTemplate(f, templateName, data); err != nil {
 		f.Close()
-		return fmt.Errorf("execute template %s failed: %v", src, err)
+		return fmt.Errorf("execute template %s failed: %v", templateName, err)
 	}
 
 	return nil

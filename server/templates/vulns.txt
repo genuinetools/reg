@@ -1,4 +1,4 @@
-CVE Report for {{.Repo}}:{{.Tag}}
+{{define "vulns"}}CVE Report for {{.Repo}}:{{.Tag}}
 Generated on: {{.Date}}
 
 Vulnerabilities Found: {{len .Vulns}}
@@ -8,13 +8,12 @@ Vulnerabilities Found: {{len .Vulns}}
 {{end}}
 
 {{if gt .BadVulns 10}}
------------------ ALERT -----------------
+------------------------------------ ALERT ------------------------------------
 {{.BadVulns}} High, Critical, and/or Defcon1 vulnerabilities found
 {{end}}
 
-{{range $key, $value := .VulnsBySeverity}}
-{{$value.Name}}: [{{$value.Severity}}]
-{{$value.Description}}
+{{range $vulns := .VulnsBySeverity}}{{range $value := $vulns}}{{$value.Name}}: [{{$value.Severity}}]
+{{trim $value.Description}}
 {{$value.Link}}
------------------------------------------
-{{end}}
+-------------------------------------------------------------------------------
+{{end}}{{end}}{{end}}
