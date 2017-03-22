@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -116,8 +117,28 @@ func main() {
 			"trim": func(s string) string {
 				return wordwrap.WrapString(s, 80)
 			},
+			"color": func(s string) string {
+				switch s = strings.ToLower(s); s {
+				case "high":
+					return "danger"
+				case "critical":
+					return "danger"
+				case "defcon1":
+					return "danger"
+				case "medium":
+					return "warning"
+				case "low":
+					return "info"
+				case "negligible":
+					return "info"
+				case "unknown":
+					return "default"
+				default:
+					return "default"
+				}
+			},
 		}
-		tmpl = template.Must(template.New("").Funcs(funcMap).ParseFiles(filepath.Join(templateDir, "vulns.txt"), filepath.Join(templateDir, "layout.html")))
+		tmpl = template.Must(template.New("").Funcs(funcMap).ParseFiles(filepath.Join(templateDir, "vulns.html"), filepath.Join(templateDir, "layout.html")))
 
 		// create the initial index
 		logrus.Info("creating initial static index")
@@ -258,7 +279,7 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 					}
 				}(repo, tag, i, j)
 
-				newrepo.VulnURI = filepath.Join(repo, tag, "vulns.txt")
+				newrepo.VulnURI = filepath.Join(repo, tag)
 			}
 			repos = append(repos, newrepo)
 		}
@@ -279,6 +300,7 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 }
 
 type vulnsReport struct {
+	RegistryURL     string
 	Repo            string
 	Tag             string
 	Date            string
@@ -289,6 +311,7 @@ type vulnsReport struct {
 
 func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag string, m schema1.SignedManifest) error {
 	report := vulnsReport{
+		RegistryURL:     r.Domain,
 		Repo:            repo,
 		Tag:             tag,
 		Date:            time.Now().Local().Format(time.RFC1123),
@@ -354,7 +377,10 @@ func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag s
 		report.VulnsBySeverity[v.Severity] = append(sevRow, v)
 	}
 
-	path := filepath.Join(repo, tag, "vulns.txt")
+	// calculate number of bad vulns
+	report.BadVulns = len(report.VulnsBySeverity["High"]) + len(report.VulnsBySeverity["Critical"]) + len(report.VulnsBySeverity["Defcon1"])
+
+	path := filepath.Join(repo, tag, "index.html")
 	if err := renderTemplate(staticDir, "vulns", path, report); err != nil {
 		return err
 	}
