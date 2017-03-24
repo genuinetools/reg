@@ -138,7 +138,15 @@ func main() {
 				}
 			},
 		}
-		tmpl = template.Must(template.New("").Funcs(funcMap).ParseFiles(filepath.Join(templateDir, "vulns.html"), filepath.Join(templateDir, "layout.html")))
+		vulns := filepath.Join(templateDir, "vulns.html")
+		if _, err := os.Stat(vulns); os.IsNotExist(err) {
+			logrus.Fatalf("Template %s not found", vulns)
+		}
+		layout := filepath.Join(templateDir, "layout.html")
+		if _, err := os.Stat(layout); os.IsNotExist(err) {
+			logrus.Fatalf("Template %s not found", layout)
+		}
+		tmpl = template.Must(template.New("").Funcs(funcMap).ParseFiles(vulns, layout))
 
 		// create the initial index
 		logrus.Info("creating initial static index")
