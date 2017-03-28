@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -20,6 +21,8 @@ type Registry struct {
 	Client   *http.Client
 	Logf     LogfCallback
 }
+
+var reProtocol = regexp.MustCompile("^https?://")
 
 // LogfCallback is the callback for formatting logs.
 type LogfCallback func(format string, args ...interface{})
@@ -52,7 +55,12 @@ func NewInsecure(auth types.AuthConfig, debug bool) (*Registry, error) {
 }
 
 func newFromTransport(auth types.AuthConfig, transport http.RoundTripper, debug bool) (*Registry, error) {
-	url := "https://" + strings.TrimPrefix(strings.TrimSuffix(auth.ServerAddress, "/"), "https://")
+	url := strings.TrimSuffix(auth.ServerAddress, "/")
+
+	if !reProtocol.MatchString(url) {
+		url = "https://" + url
+	}
+
 	tokenTransport := &TokenTransport{
 		Transport: transport,
 		Username:  auth.Username,
@@ -76,7 +84,7 @@ func newFromTransport(auth types.AuthConfig, transport http.RoundTripper, debug 
 
 	registry := &Registry{
 		URL:    url,
-		Domain: strings.TrimPrefix(url, "https://"),
+		Domain: reProtocol.ReplaceAllString(url, ""),
 		Client: &http.Client{
 			Transport: errorTransport,
 		},
