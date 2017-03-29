@@ -29,6 +29,7 @@ GLOBAL OPTIONS:
    --username value, -u value  username for the registry
    --password value, -p value  password for the registry
    --registry value, -r value  URL to the private registry (ex. r.j3ss.co)
+   --insecure, -k              do not verify tls certificates of registry
    --port value                port for server to run on (default: "8080")
    --cert value                path to ssl cert
    --key value                 path to ssl key
