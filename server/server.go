@@ -32,6 +32,7 @@ var (
 	updating = false
 	wg       sync.WaitGroup
 	tmpl     *template.Template
+	r        *registry.Registry
 )
 
 // preload initializes any global options and configuration
@@ -69,6 +70,10 @@ func main() {
 			Name:  "registry, r",
 			Usage: "URL to the private registry (ex. r.j3ss.co)",
 		},
+		cli.BoolFlag{
+			Name:  "insecure, k",
+			Usage: "do not verify tls certificates of registry",
+		},
 		cli.StringFlag{
 			Name:  "port",
 			Value: "8080",
@@ -99,9 +104,16 @@ func main() {
 		}
 
 		// create the registry client
-		r, err := registry.New(auth, c.GlobalBool("debug"))
-		if err != nil {
-			logrus.Fatal(err)
+		if c.GlobalBool("insecure") {
+			r, err = registry.NewInsecure(auth, c.GlobalBool("debug"))
+			if err != nil {
+				logrus.Fatal(err)
+			}
+		} else {
+			r, err = registry.New(auth, c.GlobalBool("debug"))
+			if err != nil {
+				logrus.Fatal(err)
+			}
 		}
 
 		// get the path to the static directory
