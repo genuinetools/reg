@@ -52,6 +52,9 @@ func preload(c *cli.Context) (err error) {
 					return err
 				}
 			} else {
+				if strings.HasPrefix(auth.ServerAddress, "http:") {
+					return errors.New("ERROR: Attempt to use insecure protocol! Use insecure option to force.")
+				}
 				r, err = registry.New(auth, c.GlobalBool("debug"))
 				if err != nil {
 					return err
@@ -78,7 +81,7 @@ func main() {
 		},
 		cli.BoolFlag{
 			Name:  "insecure, k",
-			Usage: "do not verify tls certificates",
+			Usage: "do not verify tls certificates / allow use of http",
 		},
 		cli.StringFlag{
 			Name:  "username, u",
