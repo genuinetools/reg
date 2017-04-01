@@ -53,7 +53,7 @@ func preload(c *cli.Context) (err error) {
 				}
 			} else {
 				if strings.HasPrefix(auth.ServerAddress, "http:") {
-					return errors.New("ERROR: Attempt to use insecure protocol! Use insecure option to force.")
+					return errors.New("Attempt to use insecure protocol! Use insecure option to force")
 				}
 				r, err = registry.New(auth, c.GlobalBool("debug"))
 				if err != nil {
