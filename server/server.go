@@ -96,6 +96,11 @@ func main() {
 			Name:  "clair",
 			Usage: "url to clair instance",
 		},
+		cli.IntFlag{
+			Name:  "workers, w",
+			Value: 20,
+			Usage: "number of workers to analyse for vulnerabilities",
+		},
 	}
 	app.Action = func(c *cli.Context) error {
 		auth, err := utils.GetAuthConfig(c)
@@ -162,7 +167,7 @@ func main() {
 
 		// create the initial index
 		logrus.Info("creating initial static index")
-		if err := createStaticIndex(r, staticDir, c.GlobalString("clair"), c.GlobalBool("debug")); err != nil {
+		if err := createStaticIndex(r, staticDir, c.GlobalString("clair"), c.GlobalBool("debug"), c.GlobalInt("workers")); err != nil {
 			logrus.Fatalf("Error creating index: %v", err)
 		}
 
@@ -178,7 +183,7 @@ func main() {
 			for range ticker.C {
 				if !updating {
 					logrus.Info("creating timer based static index")
-					if err := createStaticIndex(r, staticDir, c.GlobalString("clair"), c.GlobalBool("debug")); err != nil {
+					if err := createStaticIndex(r, staticDir, c.GlobalString("clair"), c.GlobalBool("debug"), c.GlobalInt("workers")); err != nil {
 						logrus.Warnf("creating static index failed: %v", err)
 						wg.Wait()
 						updating = false
@@ -236,7 +241,7 @@ type v1Compatibility struct {
 	Created time.Time `json:"created"`
 }
 
-func createStaticIndex(r *registry.Registry, staticDir, clairURI string, debug bool) error {
+func createStaticIndex(r *registry.Registry, staticDir, clairURI string, debug bool, workers int) error {
 	updating = true
 	logrus.Info("fetching catalog")
 	repoList, err := r.Catalog("")
@@ -246,7 +251,7 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string, debug b
 
 	logrus.Info("fetching tags")
 	var repos []repository
-	sem := make(chan int, 20)
+	sem := make(chan int, workers)
 	for i, repo := range repoList {
 		// get the tags
 		tags, err := r.Tags(repo)
