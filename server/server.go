@@ -246,6 +246,7 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string, debug b
 
 	logrus.Info("fetching tags")
 	var repos []repository
+	sem := make(chan int, 20)
 	for i, repo := range repoList {
 		// get the tags
 		tags, err := r.Tags(repo)
@@ -284,17 +285,18 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string, debug b
 
 			if clairURI != "" {
 				wg.Add(1)
-
+				sem <- 1
 				go func(repo, tag string, i, j int) {
-					defer wg.Done()
-
+					defer func() {
+						wg.Done()
+						<-sem
+					}()
 					throttle := time.Tick(time.Duration(time.Duration((i+1)*(j+1)*4) * time.Second))
 					<-throttle
 
-					logrus.Infof("creating vulns.txt for %s:%s", repo, tag)
+					logrus.Infof("creating vuln static page for %s:%s", repo, tag)
 
 					if err := createVulnStaticPage(r, staticDir, clairURI, repo, tag, m1, debug); err != nil {
-						// return fmt.Errorf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
 						logrus.Warnf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
 					}
 				}(repo, tag, i, j)
