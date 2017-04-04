@@ -45,6 +45,11 @@ func preload(c *cli.Context) (err error) {
 				return err
 			}
 
+			// Prevent non-ssl unless explicitly forced
+			if !c.GlobalBool("force-non-ssl") && strings.HasPrefix(auth.ServerAddress, "http:") {
+				return fmt.Errorf("Attempt to use insecure protocol! Use non-ssl option to force")
+			}
+
 			// create the registry client
 			if c.GlobalBool("insecure") {
 				r, err = registry.NewInsecure(auth, c.GlobalBool("debug"))
@@ -79,6 +84,10 @@ func main() {
 		cli.BoolFlag{
 			Name:  "insecure, k",
 			Usage: "do not verify tls certificates",
+		},
+		cli.BoolFlag{
+			Name:  "force-non-ssl, f",
+			Usage: "force allow use of non-ssl",
 		},
 		cli.StringFlag{
 			Name:  "username, u",
