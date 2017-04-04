@@ -95,13 +95,18 @@ func NewClairLayer(r *registry.Registry, image string, fsLayers []schema1.FSLaye
 		return nil, err
 	}
 
+	h := make(map[string]string)
+	if token != "" {
+		h = map[string]string{
+			"Authorization": fmt.Sprintf("Bearer %s", token),
+		}
+	}
+
 	return &clair.Layer{
 		Name:       fsLayers[index].BlobSum.String(),
 		Path:       p,
 		ParentName: parentName,
 		Format:     "Docker",
-		Headers: map[string]string{
-			"Authorization": fmt.Sprintf("Bearer %s", token),
-		},
+		Headers:    h,
 	}, nil
 }

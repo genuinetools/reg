@@ -123,8 +123,8 @@ func (r *Registry) Token(url string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	a, err := parseAuthHeader(resp.Header)
-	if err != nil {
+	a, err := isTokenDemand(resp)
+	if err != nil || a == nil {
 		return "", err
 	}
 
