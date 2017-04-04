@@ -40,7 +40,7 @@ COMMANDS:
 GLOBAL OPTIONS:
    --debug, -d                 run in debug mode
    --insecure, -k              do not verify tls certificates
-   --force-non-ssl, -F         force allow use of non-ssl
+   --force-non-ssl, -f         force allow use of non-ssl
    --username value, -u value  username for the registry
    --password value, -p value  password for the registry
    --registry value, -r value  URL to the private registry (ex. r.j3ss.co)
