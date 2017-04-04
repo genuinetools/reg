@@ -162,7 +162,7 @@ func main() {
 
 		// create the initial index
 		logrus.Info("creating initial static index")
-		if err := createStaticIndex(r, staticDir, c.GlobalString("clair")); err != nil {
+		if err := createStaticIndex(r, staticDir, c.GlobalString("clair"), c.GlobalBool("debug")); err != nil {
 			logrus.Fatalf("Error creating index: %v", err)
 		}
 
@@ -178,7 +178,7 @@ func main() {
 			for range ticker.C {
 				if !updating {
 					logrus.Info("creating timer based static index")
-					if err := createStaticIndex(r, staticDir, c.GlobalString("clair")); err != nil {
+					if err := createStaticIndex(r, staticDir, c.GlobalString("clair"), c.GlobalBool("debug")); err != nil {
 						logrus.Warnf("creating static index failed: %v", err)
 						wg.Wait()
 						updating = false
@@ -236,7 +236,7 @@ type v1Compatibility struct {
 	Created time.Time `json:"created"`
 }
 
-func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
+func createStaticIndex(r *registry.Registry, staticDir, clairURI string, debug bool) error {
 	updating = true
 	logrus.Info("fetching catalog")
 	repoList, err := r.Catalog("")
@@ -293,7 +293,7 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 
 					logrus.Infof("creating vulns.txt for %s:%s", repo, tag)
 
-					if err := createVulnStaticPage(r, staticDir, clairURI, repo, tag, m1); err != nil {
+					if err := createVulnStaticPage(r, staticDir, clairURI, repo, tag, m1, debug); err != nil {
 						// return fmt.Errorf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
 						logrus.Warnf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
 					}
@@ -329,7 +329,7 @@ type vulnsReport struct {
 	BadVulns        int
 }
 
-func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag string, m schema1.SignedManifest) error {
+func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag string, m schema1.SignedManifest, debug bool) error {
 	report := vulnsReport{
 		RegistryURL:     r.Domain,
 		Repo:            repo,
@@ -352,7 +352,7 @@ func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag s
 	}
 
 	// initialize clair
-	cr, err := clair.New(clairURI, false)
+	cr, err := clair.New(clairURI, debug)
 	if err != nil {
 		return err
 	}
