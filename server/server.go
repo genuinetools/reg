@@ -167,7 +167,7 @@ func main() {
 
 		// create the initial index
 		logrus.Info("creating initial static index")
-		if err := createStaticIndex(r, staticDir, c.GlobalString("clair"), c.GlobalBool("debug"), c.GlobalInt("workers")); err != nil {
+		if err := createStaticIndex(r, staticDir, "", c.GlobalBool("debug"), c.GlobalInt("workers")); err != nil {
 			logrus.Fatalf("Error creating index: %v", err)
 		}
 
