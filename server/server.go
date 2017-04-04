@@ -96,6 +96,11 @@ func main() {
 			Name:  "clair",
 			Usage: "url to clair instance",
 		},
+		cli.IntFlag{
+			Name:  "workers, w",
+			Value: 20,
+			Usage: "number of workers to analyse for vulnerabilities",
+		},
 	}
 	app.Action = func(c *cli.Context) error {
 		auth, err := utils.GetAuthConfig(c)
@@ -162,7 +167,7 @@ func main() {
 
 		// create the initial index
 		logrus.Info("creating initial static index")
-		if err := createStaticIndex(r, staticDir, c.GlobalString("clair")); err != nil {
+		if err := createStaticIndex(r, staticDir, "", c.GlobalBool("debug"), c.GlobalInt("workers")); err != nil {
 			logrus.Fatalf("Error creating index: %v", err)
 		}
 
@@ -178,7 +183,7 @@ func main() {
 			for range ticker.C {
 				if !updating {
 					logrus.Info("creating timer based static index")
-					if err := createStaticIndex(r, staticDir, c.GlobalString("clair")); err != nil {
+					if err := createStaticIndex(r, staticDir, c.GlobalString("clair"), c.GlobalBool("debug"), c.GlobalInt("workers")); err != nil {
 						logrus.Warnf("creating static index failed: %v", err)
 						wg.Wait()
 						updating = false
@@ -236,7 +241,7 @@ type v1Compatibility struct {
 	Created time.Time `json:"created"`
 }
 
-func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
+func createStaticIndex(r *registry.Registry, staticDir, clairURI string, debug bool, workers int) error {
 	updating = true
 	logrus.Info("fetching catalog")
 	repoList, err := r.Catalog("")
@@ -246,6 +251,7 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 
 	logrus.Info("fetching tags")
 	var repos []repository
+	sem := make(chan int, workers)
 	for i, repo := range repoList {
 		// get the tags
 		tags, err := r.Tags(repo)
@@ -284,17 +290,16 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string) error {
 
 			if clairURI != "" {
 				wg.Add(1)
-
+				sem <- 1
 				go func(repo, tag string, i, j int) {
-					defer wg.Done()
+					defer func() {
+						wg.Done()
+						<-sem
+					}()
 
-					throttle := time.Tick(time.Duration(time.Duration((i+1)*(j+1)*4) * time.Second))
-					<-throttle
+					logrus.Infof("creating vuln static page for %s:%s", repo, tag)
 
-					logrus.Infof("creating vulns.txt for %s:%s", repo, tag)
-
-					if err := createVulnStaticPage(r, staticDir, clairURI, repo, tag, m1); err != nil {
-						// return fmt.Errorf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
+					if err := createVulnStaticPage(r, staticDir, clairURI, repo, tag, m1, debug); err != nil {
 						logrus.Warnf("creating vuln static page for %s:%s failed: %v", repo, tag, err)
 					}
 				}(repo, tag, i, j)
@@ -329,7 +334,7 @@ type vulnsReport struct {
 	BadVulns        int
 }
 
-func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag string, m schema1.SignedManifest) error {
+func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag string, m schema1.SignedManifest, debug bool) error {
 	report := vulnsReport{
 		RegistryURL:     r.Domain,
 		Repo:            repo,
@@ -352,7 +357,7 @@ func createVulnStaticPage(r *registry.Registry, staticDir, clairURI, repo, tag s
 	}
 
 	// initialize clair
-	cr, err := clair.New(clairURI, false)
+	cr, err := clair.New(clairURI, debug)
 	if err != nil {
 		return err
 	}
