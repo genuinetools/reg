@@ -291,8 +291,6 @@ func createStaticIndex(r *registry.Registry, staticDir, clairURI string, debug b
 						wg.Done()
 						<-sem
 					}()
-					throttle := time.Tick(time.Duration(time.Duration((i+1)*(j+1)*4) * time.Second))
-					<-throttle
 
 					logrus.Infof("creating vuln static page for %s:%s", repo, tag)
 
