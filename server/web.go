@@ -274,5 +274,47 @@ func (rc *registryController) vulnerabilities(c echo.Context) error {
 	if tag == "" {
 		return c.String(http.StatusNotFound, "No tag given")
 	}
-	return nil
+
+	m1, err := r.ManifestV1(repo, tag)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"repo":  repo,
+			"tag":   tag,
+		}).Warn("getting v1 manifest failed")
+	}
+
+	for _, h := range m1.History {
+		var comp v1Compatibility
+		if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"repo":  repo,
+				"tag":   tag,
+			}).Warn("unmarshal v1compatibility failed")
+			return c.String(http.StatusInternalServerError, "unmarshal v1compatibility failed")
+		}
+		break
+	}
+
+	result := clair.VulnerabilityReport{}
+
+	if rc.cl != nil {
+		result, err = rc.cl.Vulnerabilities(rc.reg, repo, tag, m1)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+				"repo":  repo,
+				"tag":   tag,
+			}).Error("error during vulnerability scanning.")
+		}
+	}
+
+	err = c.Render(http.StatusOK, "vulns", result)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("error during template rendering")
+	}
+	return err
 }
