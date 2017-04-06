@@ -88,16 +88,10 @@ func listenAndServe(port, keyfile, certfile string, r *registry.Registry, c *cla
 	}
 	e.Renderer = t
 
-	// e.Use(middleware.Logger())
 	rc := registryController{
 		reg: r,
 		cl:  c,
 	}
-
-	// e.GET("/repo", nil)
-	// e.GET("/repo/:repo", nil)
-	// e.GET("/repo/:repo/:tag", nil)
-	// e.GET("/repo/:repo/:tag/vulns", nil)
 
 	e.GET("/", func(c echo.Context) error {
 		return c.Redirect(http.StatusMovedPermanently, "/repo")
@@ -216,12 +210,13 @@ func (rc *registryController) tags(c echo.Context) error {
 		for _, h := range m1.History {
 			var comp v1Compatibility
 			if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
+				msg := "unmarshal v1compatibility failed"
 				log.WithFields(log.Fields{
 					"error": err,
 					"repo":  repo,
 					"tag":   tag,
-				}).Warn("unmarshal v1compatibility failed")
-				return c.String(http.StatusInternalServerError, "unmarshal v1compatibility failed")
+				}).Warn(msg)
+				return c.String(http.StatusInternalServerError, msg)
 			}
 			createdDate = comp.Created
 			break
@@ -240,13 +235,14 @@ func (rc *registryController) tags(c echo.Context) error {
 
 		if rc.cl != nil {
 			vuln, err := rc.cl.Vulnerabilities(rc.reg, repo, tag, m1)
-			// vuln, err := getVulnerabilities(rc.reg, rc.clairUrl, repo, tag, m1, true) // FIXME debug must be configurable
 			if err != nil {
+				msg := "error during vulnerability scanning."
 				log.WithFields(log.Fields{
 					"error": err,
 					"repo":  repo,
 					"tag":   tag,
-				}).Error("error during vulnerability scanning.")
+				}).Error(msg)
+				return c.String(http.StatusInternalServerError, msg)
 			}
 			r.VulnerabilityReport = vuln
 		}
@@ -287,12 +283,13 @@ func (rc *registryController) vulnerabilities(c echo.Context) error {
 	for _, h := range m1.History {
 		var comp v1Compatibility
 		if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
+			msg := "unmarshal v1compatibility failed"
 			log.WithFields(log.Fields{
 				"error": err,
 				"repo":  repo,
 				"tag":   tag,
-			}).Warn("unmarshal v1compatibility failed")
-			return c.String(http.StatusInternalServerError, "unmarshal v1compatibility failed")
+			}).Warn(msg)
+			return c.String(http.StatusInternalServerError, msg)
 		}
 		break
 	}
