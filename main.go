@@ -295,7 +295,7 @@ func main() {
 
 				for i := len(m.FSLayers) - 1; i >= 0; i-- {
 					// form the clair layer
-					l, err := utils.NewClairLayer(r, repo, m.FSLayers, i)
+					l, err := cr.NewClairLayer(r, repo, m.FSLayers, i)
 					if err != nil {
 						return err
 					}

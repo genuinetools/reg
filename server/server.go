@@ -16,7 +16,7 @@ import (
 
 const (
 	// VERSION is the binary version.
-	VERSION = "v0.1.0"
+	VERSION = "v0.2.0"
 
 	dockerConfigPath = ".docker/config.json"
 )
@@ -25,6 +25,7 @@ var (
 	updating = false
 	wg       sync.WaitGroup
 	r        *registry.Registry
+	cl       *clair.Clair
 )
 
 // preload initializes any global options and configuration
@@ -118,6 +119,14 @@ func main() {
 		if err != nil {
 			logrus.Fatalf("parsing %s as duration failed: %v", c.String("interval"), err)
 		}
+
+		// create a clair instance if needed
+		if c.GlobalString("clair") != "" {
+			cl, err = clair.New(c.GlobalString("clair"), c.GlobalBool("debug"))
+			if err != nil {
+				logrus.Warnf("creation of clair failed: %v", err)
+			}
+		}
 		ticker := time.NewTicker(dur)
 
 		go func() {
@@ -125,13 +134,15 @@ func main() {
 			for range ticker.C {
 				if !updating {
 					logrus.Info("start repository analysis")
-					if err := analyseRepositories(r, c.GlobalString("clair"), c.GlobalBool("debug"), c.GlobalInt("workers")); err != nil {
+					start := time.Now()
+					if err := analyseRepositories(r, cl, c.GlobalBool("debug"), c.GlobalInt("workers")); err != nil {
 						logrus.Warnf("repository analysis failed: %v", err)
 						wg.Wait()
 						updating = false
 					}
 					wg.Wait()
-					logrus.Info("finished waiting for vulns wait group")
+					elapsed := time.Since(start)
+					logrus.Infof("finished repository analysis in %s", elapsed)
 				} else {
 					logrus.Warnf("skipping timer based repository analysis for %s", c.String("interval"))
 				}
@@ -141,10 +152,7 @@ func main() {
 		port := c.String("port")
 		keyfile := c.String("key")
 		certfile := c.String("cert")
-		cl, err := clair.New(c.GlobalString("clair"), c.GlobalBool("debug"))
-		if err != nil {
-			logrus.Warnf("creation of clair failed: %v", err)
-		}
+
 		logrus.Fatal(listenAndServe(port, keyfile, certfile, r, cl))
 		return nil
 	}
@@ -157,7 +165,7 @@ type v1Compatibility struct {
 	Created time.Time `json:"created"`
 }
 
-func analyseRepositories(r *registry.Registry, clairURI string, debug bool, workers int) error {
+func analyseRepositories(r *registry.Registry, cl *clair.Clair, debug bool, workers int) error {
 	updating = true
 	logrus.Info("fetching catalog")
 	repoList, err := r.Catalog("")
@@ -175,13 +183,12 @@ func analyseRepositories(r *registry.Registry, clairURI string, debug bool, work
 		}
 		for j, tag := range tags {
 			// get the manifest
-
 			m1, err := r.ManifestV1(repo, tag)
 			if err != nil {
 				logrus.Warnf("getting v1 manifest for %s:%s failed: %v", repo, tag, err)
 			}
 
-			if clairURI != "" {
+			if cl != nil {
 				wg.Add(1)
 				sem <- 1
 				go func(repo, tag string, i, j int) {
@@ -192,7 +199,7 @@ func analyseRepositories(r *registry.Registry, clairURI string, debug bool, work
 
 					logrus.Infof("search vulnerabilities for %s:%s", repo, tag)
 
-					if err := searchVulnerabilities(r, clairURI, repo, tag, m1, debug); err != nil {
+					if err := searchVulnerabilities(r, cl, repo, tag, m1, debug); err != nil {
 						logrus.Warnf("searching vulnerabilities for %s:%s failed: %v", repo, tag, err)
 					}
 				}(repo, tag, i, j)
@@ -204,7 +211,7 @@ func analyseRepositories(r *registry.Registry, clairURI string, debug bool, work
 	return nil
 }
 
-func searchVulnerabilities(r *registry.Registry, clairURI, repo, tag string, m schema1.SignedManifest, debug bool) error {
+func searchVulnerabilities(r *registry.Registry, cl *clair.Clair, repo, tag string, m schema1.SignedManifest, debug bool) error {
 	// filter out the empty layers
 	var filteredLayers []schema1.FSLayer
 	for _, layer := range m.FSLayers {
@@ -218,21 +225,15 @@ func searchVulnerabilities(r *registry.Registry, clairURI, repo, tag string, m s
 		return nil
 	}
 
-	// initialize clair
-	cr, err := clair.New(clairURI, debug)
-	if err != nil {
-		return err
-	}
-
 	for i := len(m.FSLayers) - 1; i >= 0; i-- {
 		// form the clair layer
-		l, err := utils.NewClairLayer(r, repo, m.FSLayers, i)
+		l, err := cl.NewClairLayer(r, repo, m.FSLayers, i)
 		if err != nil {
 			return err
 		}
 
 		// post the layer
-		if _, err := cr.PostLayer(l); err != nil {
+		if _, err := cl.PostLayer(l); err != nil {
 			return err
 		}
 	}
