@@ -266,6 +266,8 @@ func main() {
 					return err
 				}
 
+				// FIXME use clair.Vulnerabilities
+
 				// get the manifest
 				m, err := r.ManifestV1(repo, ref)
 				if err != nil {
