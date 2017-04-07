@@ -25,12 +25,12 @@
             {{ range $key, $value := .Repositories }}
             <tr>
                 <td valign="left" nowrap>
-                    <a href="/repo/{{ $value.Name | urlquery }}/{{ $value.Tag }}">
+                    <a href="/repo/{{ $value.Name | urlquery }}/{{ $value.Tag }}/vulns">
                     {{ $value.Name }}
                     </a>
                 </td>
                 <td align="right" nowrap>
-                    <a href="/repo/{{ $value.Name | urlquery }}/{{ $value.Tag }}">
+                    <a href="/repo/{{ $value.Name | urlquery }}/{{ $value.Tag }}/vulns">
                     {{ $value.Tag }}
                     </a>
                 </td>
