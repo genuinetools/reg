@@ -9,6 +9,7 @@ import (
 	"github.com/jessfraz/reg/registry"
 )
 
+// Vulnerabilities scans the given repo and tag
 func (c *Clair) Vulnerabilities(r *registry.Registry, repo, tag string, m schema1.SignedManifest) (VulnerabilityReport, error) {
 	report := VulnerabilityReport{
 		RegistryURL:     r.Domain,
@@ -77,6 +78,7 @@ func (c *Clair) Vulnerabilities(r *registry.Registry, repo, tag string, m schema
 	return report, nil
 }
 
+// NewClairLayer will form a layer struct required for a clar scan
 func (c *Clair) NewClairLayer(r *registry.Registry, image string, fsLayers []schema1.FSLayer, index int) (*Layer, error) {
 	var parentName string
 	if index < len(fsLayers)-1 {

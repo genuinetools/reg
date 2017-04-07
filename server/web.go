@@ -32,6 +32,7 @@ type Template struct {
 	templates *template.Template
 }
 
+// A Repository holds data after a vulnerability scan of a single repo
 type Repository struct {
 	Name                string                    `json:"name"`
 	Tag                 string                    `json:"tag"`
@@ -40,6 +41,7 @@ type Repository struct {
 	VulnerabilityReport clair.VulnerabilityReport `json:"vulnerability"`
 }
 
+// A AnalysisResult holds all vulnerabilities of a scan
 type AnalysisResult struct {
 	Repositories   []Repository `json:"repositories"`
 	RegistryDomain string       `json:"registrydomain"`
