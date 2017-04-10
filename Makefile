@@ -58,15 +58,14 @@ DIND_DOCKER_IMAGE=r.j3ss.co/docker:userns
 dind:
 	docker build --rm --force-rm -f Dockerfile.dind -t $(DIND_DOCKER_IMAGE) .
 	docker run -d  \
-		--tmpfs /var/lib/docker \
+		-v /var/lib/docker2:/var/lib/docker \
 		--name $(DIND_CONTAINER) \
 		--privileged \
 		-v $(CURDIR)/.certs:/etc/docker/ssl \
 		-v $(CURDIR):/go/src/github.com/jessfraz/reg \
-		-v /tmp \
-		--tmpfs /tmp \
+		-v /tmp:/tmp \
 		$(DIND_DOCKER_IMAGE) \
-		dockerd -D --storage-driver $(DOCKER_GRAPHDRIVER) \
+		docker daemon -D --storage-driver $(DOCKER_GRAPHDRIVER) \
 		-H tcp://127.0.0.1:2375 \
 		--host=unix:///var/run/docker.sock \
 		--disable-legacy-registry=true \
@@ -85,10 +84,11 @@ dtest:
 		-v $(CURDIR):/go/src/github.com/jessfraz/reg \
 		--workdir /go/src/github.com/jessfraz/reg \
 		-v $(CURDIR)/.certs:/etc/docker/ssl:ro \
-		--volumes-from $(DIND_CONTAINER) \
+		-v /tmp:/tmp \
 		--net container:$(DIND_CONTAINER) \
 		-e DOCKER_HOST=tcp://127.0.0.1:2375 \
 		-e DOCKER_TLS_VERIFY=true \
 		-e DOCKER_CERT_PATH=/etc/docker/ssl \
+		-e DOCKER_API_VERSION=1.23 \
 		$(DOCKER_IMAGE) \
 		make test
