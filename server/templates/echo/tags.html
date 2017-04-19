@@ -37,9 +37,9 @@
                 <td align="right" nowrap>
                     {{ $value.Created.Format "02 Jan, 2006 15:04:05 UTC" }}
                 </td>
-                <td >
-                    <a href="/repo/{{ $value.Name | urlquery }}/{{ $value.Tag }}/vulns">
-                    {{ $value.VulnerabilityReport.BadVulns }}
+                <td align="right" nowrap>
+                    <a href="/repo/{{ $value.Name | urlquery }}/{{ $value.Tag }}/vulns" id="{{ $value.Name }}:{{ $value.Tag }}">
+                      <div class="signal"></div>
                     </a>
                 </td>
             </tr>
@@ -51,6 +51,18 @@
         <a href="https://twitter.com/jessfraz">@jessfraz</a>
     </div><!--/.footer-->
     <script src="/js/scripts.js"></script>
+    <script type="text/javascript">
+      var ajaxCalls = [
+        {{ range $key, $value := .Repositories }}
+          '/repo/{{ $value.Name | urlquery }}/{{ $value.Tag }}/report',
+        {{ end }}
+      ];
+      window.onload = function() {
+        Array.prototype.forEach.call(ajaxCalls, function(url, index){
+          loadVulnerabilityCount(url);
+        });
+      };
+    </script>
     <script>
 (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),

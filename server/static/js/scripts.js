@@ -35,6 +35,24 @@ function search(search_val){
     }
 }
 
+function loadVulnerabilityCount(url){
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url);
+  xhr.onload = function() {
+      if (xhr.status === 200) {
+          var report = JSON.parse(xhr.responseText);
+          var id = report.Repo + ':' + report.Tag;
+          var element = document.getElementById(id);
+
+          if (element) {
+            element.innerHTML = report.BadVulns;
+          } else {
+            console.log("element not found for given id ", id);
+          }
+      }
+  };
+  xhr.send();
+}
 
 var el = document.querySelectorAll('tr:nth-child(2)')[0].querySelectorAll('td:nth-child(2)')[0];
 if (el.textContent == 'Parent Directory'){
@@ -72,22 +90,26 @@ our_table.setAttribute('id', 'directory');
 var search_input = document.querySelectorAll('input[name="filter"]')[0];
 var clear_button = document.querySelectorAll('a.clear')[0];
 
-if (search_input.value !== ''){
-    search(search_input.value);
+if (search_input) {
+  if (search_input.value !== ''){
+      search(search_input.value);
+  }
+
+  search_input.addEventListener('keyup', function(e){
+      e.preventDefault();
+      search(search_input.value);
+  });
+
+  search_input.addEventListener('keypress', function(e){
+      if ( e.which == 13 ) {
+          e.preventDefault();
+      }
+  });
 }
 
-search_input.addEventListener('keyup', function(e){
-    e.preventDefault();
-    search(search_input.value);
-});
-
-search_input.addEventListener('keypress', function(e){
-    if ( e.which == 13 ) {
-        e.preventDefault();
-    }
-});
-
-clear_button.addEventListener('click', function(e){
-    search_input.value = '';
-    search('');
-});
+if (clear_button) {
+  clear_button.addEventListener('click', function(e){
+      search_input.value = '';
+      search('');
+  });
+}
