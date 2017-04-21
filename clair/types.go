@@ -1,9 +1,21 @@
 package clair
 
+import "github.com/opencontainers/go-digest"
+
 const (
 	// EmptyLayerBlobSum is the blob sum of empty layers.
 	EmptyLayerBlobSum = "sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4"
+
+	// LegacyEmptyLayerBlobSum is the blob sum of empty layers used by docker
+	// before it could support a truly empty layer.
+	LegacyEmptyLayerBlobSum = "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
 )
+
+// IsEmptyLayer determines whether the blob sum is one of the known empty
+// layers.
+func IsEmptyLayer(blobSum digest.Digest) bool {
+	return blobSum == EmptyLayerBlobSum || blobSum == LegacyEmptyLayerBlobSum
+}
 
 var (
 	// Priorities are the vulnerability priority labels.

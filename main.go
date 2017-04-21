@@ -275,7 +275,7 @@ func main() {
 				// filter out the empty layers
 				var filteredLayers []schema1.FSLayer
 				for _, layer := range m.FSLayers {
-					if layer.BlobSum != clair.EmptyLayerBlobSum {
+					if !clair.IsEmptyLayer(layer.BlobSum) {
 						filteredLayers = append(filteredLayers, layer)
 					}
 				}
