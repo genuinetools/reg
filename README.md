@@ -11,6 +11,7 @@ Docker registry v2 command line client.
 - [Download a Layer](#download-a-layer)
 - [Delete an Image](#delete-an-image)
 - [Vulnerability Reports](#vulnerability-reports)
+- [Testing](#testing)
 
 ## Usage
 
@@ -155,3 +156,17 @@ Low: 3
 Medium: 3
 High: 1
 ```
+
+## Testing
+
+If you plan on contributing you should be able to run the tests locally. The
+tests run for CI via docker-in-docker. But running locally with `go test`, you
+need to make one modification to your docker daemon config so that you can talk
+to the local registry for the tests.
+
+Add the flag `--insecure-registry localhost:5000` to your docker daemon,
+documented [here](https://docs.docker.com/registry/insecure/) for testing
+against an insecure registry.
+
+OR run `make dind dtest` to avoid having to change your local docker config and
+to run the tests as docker-in-docker.

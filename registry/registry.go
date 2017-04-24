@@ -68,7 +68,7 @@ func newFromTransport(auth types.AuthConfig, transport http.RoundTripper, debug 
 	}
 	basicAuthTransport := &BasicTransport{
 		Transport: tokenTransport,
-		URL:       auth.ServerAddress,
+		URL:       url,
 		Username:  auth.Username,
 		Password:  auth.Password,
 	}

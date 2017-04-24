@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"io"
 	"net"
-	"os"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -258,18 +257,6 @@ type ResizeOptions struct {
 	Width  uint
 }
 
-// VersionResponse holds version information for the client and the server
-type VersionResponse struct {
-	Client *Version
-	Server *Version
-}
-
-// ServerOK returns true when the client could connect to the docker server
-// and parse the information received. It returns false otherwise.
-func (v VersionResponse) ServerOK() bool {
-	return v.Server != nil
-}
-
 // NodeListOptions holds parameters to list nodes with.
 type NodeListOptions struct {
 	Filters filters.Args
@@ -362,15 +349,6 @@ type PluginInstallOptions struct {
 	PrivilegeFunc         RequestPrivilegeFunc
 	AcceptPermissionsFunc func(PluginPrivileges) (bool, error)
 	Args                  []string
-}
-
-// SecretRequestOption is a type for requesting secrets
-type SecretRequestOption struct {
-	Source string
-	Target string
-	UID    string
-	GID    string
-	Mode   os.FileMode
 }
 
 // SwarmUnlockKeyResponse contains the response for Engine API:
