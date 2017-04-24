@@ -175,7 +175,7 @@ func main() {
 
 		// static files handler
 		staticHandler := http.FileServer(http.Dir(staticDir))
-		mux.Handle("/static", staticHandler)
+		mux.Handle("/static/", http.StripPrefix("/static/", staticHandler))
 		mux.HandleFunc("/repo/{repo}", rc.tagsHandler)
 		mux.HandleFunc("/repo/{repo}/{tag}", rc.tagHandler)
 		mux.HandleFunc("/repo/{repo}/{tag}/vulns", rc.vulnerabilitiesHandler)
