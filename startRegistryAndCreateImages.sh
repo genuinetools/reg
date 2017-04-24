@@ -5,7 +5,7 @@ set -e
 docker rm -f registry.test || true
 docker run -it -d --name registry.test -p 5000:5000 registry:2.6.0
 
-docker pull alpine:3.5
+docker pull alpine:3.5 || true
 
 for repo in `seq 1 20`;
 do
