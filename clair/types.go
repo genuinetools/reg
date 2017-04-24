@@ -56,6 +56,16 @@ type Vulnerability struct {
 	FixedIn       []feature              `json:"FixedIn,omitempty"`
 }
 
+// VulnerabilityReport represents the result of a vulnerability scan of a repo.
+type VulnerabilityReport struct {
+	RegistryURL     string
+	Repo            string
+	Tag             string
+	Date            string
+	Vulns           []Vulnerability
+	VulnsBySeverity map[string][]Vulnerability
+	BadVulns        int
+}
 type feature struct {
 	Name            string          `json:"Name,omitempty"`
 	NamespaceName   string          `json:"NamespaceName,omitempty"`

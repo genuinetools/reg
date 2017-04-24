@@ -1,4 +1,4 @@
-{{define "index"}}
+{{define "tags"}}
 <!DOCTYPE html>
 <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
@@ -8,45 +8,39 @@
     <meta charset="utf-8">
     <base href="/" >
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>{{ .RegistryURL }}</title>
+    <title>{{ .RegistryDomain }}/{{ .Name }}</title>
     <link rel="icon" type="image/ico" href="/favicon.ico">
     <link rel="stylesheet" href="/css/styles.css" />
 </head>
 <body>
-    <h1>{{ .RegistryURL }}</h1>
-    <form>
-        <input name="filter" type="search"><a class="clear">clear</a>
-    </form>
-
+    <h1>{{ .RegistryDomain }}/{{ .Name }}</h1>
     <div class="wrapper">
         <table>
             <tr>
                 <th>Name</th>
                 <th>Tag</th>
                 <th>Created</th>
-                <th>Pull Command</th>
+                <th>Vulnerabilities</th>
             </tr>
-            {{ range $key, $value := .Repos }}
+            {{ range $key, $value := .Repositories }}
             <tr>
-                <td valign="top">
-                    {{ if $value.VulnURI }}<a href="{{ $value.VulnURI }}">{{ end }}
-                        {{ $value.Name }}
-                    {{ if $value.VulnURI }}</a>{{ end }}
-                </td>
-                <td>
-                    {{ if $value.VulnURI }}<a href="{{ $value.VulnURI }}">{{ end }}
-                        {{ $value.Tag }}
-                    {{ if $value.VulnURI }}</a>{{ end }}
-                </td>
-                <td>
-                    {{ if $value.VulnURI }}<a href="{{ $value.VulnURI }}">{{ end }}
-                        {{ $value.CreatedDate }}
-                    {{ if $value.VulnURI }}</a>{{ end }}
+                <td valign="left" nowrap>
+                    <a href="/repo/{{ $value.Name | urlquery }}/{{ $value.Tag }}/vulns">
+                    {{ $value.Name }}
+                    </a>
                 </td>
                 <td align="right" nowrap>
-                    {{ if $value.VulnURI }}<a href="{{ $value.VulnURI }}">{{ end }}
-                        <code>docker pull {{ $value.RepoURI }}</code>
-                    {{ if $value.VulnURI }}</a>{{ end }}
+                    <a href="/repo/{{ $value.Name | urlquery }}/{{ $value.Tag }}/vulns">
+                    {{ $value.Tag }}
+                    </a>
+                </td>
+                <td align="right" nowrap>
+                    {{ $value.Created.Format "02 Jan, 2006 15:04:05 UTC" }}
+                </td>
+                <td align="right" nowrap>
+                    <a href="/repo/{{ $value.Name | urlquery }}/{{ $value.Tag }}/vulns" id="{{ $value.Name }}:{{ $value.Tag }}">
+                      <div class="signal"></div>
+                    </a>
                 </td>
             </tr>
             {{ end }}
@@ -55,9 +49,20 @@
 
     <div class="footer">
         <a href="https://twitter.com/jessfraz">@jessfraz</a>
-        <p>Last Updated: {{ .LastUpdated }}</p>
     </div><!--/.footer-->
     <script src="/js/scripts.js"></script>
+    <script type="text/javascript">
+      var ajaxCalls = [
+        {{ range $key, $value := .Repositories }}
+          '/repo/{{ $value.Name | urlquery }}/{{ $value.Tag }}/vulns',
+        {{ end }}
+      ];
+      window.onload = function() {
+        Array.prototype.forEach.call(ajaxCalls, function(url, index){
+          loadVulnerabilityCount(url);
+        });
+      };
+    </script>
     <script>
 (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),

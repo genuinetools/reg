@@ -5,11 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/cli/config"
-	"github.com/jessfraz/reg/clair"
-	"github.com/jessfraz/reg/registry"
 	"github.com/urfave/cli"
 )
 
@@ -77,36 +74,4 @@ func GetRepoAndRef(c *cli.Context) (repo, ref string, err error) {
 	}
 
 	return
-}
-
-// NewClairLayer creates a clair layer from a docker registry image and fsLayers.
-func NewClairLayer(r *registry.Registry, image string, fsLayers []schema1.FSLayer, index int) (*clair.Layer, error) {
-	var parentName string
-	if index < len(fsLayers)-1 {
-		parentName = fsLayers[index+1].BlobSum.String()
-	}
-
-	// form the path
-	p := strings.Join([]string{r.URL, "v2", image, "blobs", fsLayers[index].BlobSum.String()}, "/")
-
-	// get the token
-	token, err := r.Token(p)
-	if err != nil {
-		return nil, err
-	}
-
-	h := make(map[string]string)
-	if token != "" {
-		h = map[string]string{
-			"Authorization": fmt.Sprintf("Bearer %s", token),
-		}
-	}
-
-	return &clair.Layer{
-		Name:       fsLayers[index].BlobSum.String(),
-		Path:       p,
-		ParentName: parentName,
-		Format:     "Docker",
-		Headers:    h,
-	}, nil
 }
