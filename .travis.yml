@@ -15,7 +15,6 @@
   install:
     - go get github.com/golang/lint/golint
   script:
-    - go get ./...
     - go build -v
     - go vet $(go list ./... | grep -v vendor)
     - test -z "$(golint ./... | grep -v vendor | tee /dev/stderr)"

@@ -25,8 +25,6 @@ lint:
 
 test:
 	@echo "+ $@"
-	@go get github.com/labstack/echo
-	@go get github.com/labstack/echo/middleware
 	@go test -v -tags "$(BUILDTAGS) cgo" $(shell go list ./... | grep -v vendor)
 
 vet:
