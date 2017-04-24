@@ -54,7 +54,7 @@
     <script type="text/javascript">
       var ajaxCalls = [
         {{ range $key, $value := .Repositories }}
-          '/repo/{{ $value.Name | urlquery }}/{{ $value.Tag }}/report',
+          '/repo/{{ $value.Name | urlquery }}/{{ $value.Tag }}/vulns',
         {{ end }}
       ];
       window.onload = function() {

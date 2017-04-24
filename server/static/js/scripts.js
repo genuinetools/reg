@@ -38,6 +38,7 @@ function search(search_val){
 function loadVulnerabilityCount(url){
   var xhr = new XMLHttpRequest();
   xhr.open('GET', url);
+  xhr.setRequestHeader("Accept-Encoding", "text/json")
   xhr.onload = function() {
       if (xhr.status === 200) {
           var report = JSON.parse(xhr.responseText);

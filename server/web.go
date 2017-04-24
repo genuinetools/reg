@@ -103,7 +103,6 @@ func listenAndServe(port, keyfile, certfile string, r *registry.Registry, c *cla
 	e.GET("/repo/:repo", rc.tags)
 	e.GET("/repo/:repo/:tag", rc.tag)
 	e.GET("/repo/:repo/:tag/vulns", rc.vulnerabilities)
-	e.GET("/repo/:repo/:tag/report", rc.report)
 
 	srv := &http.Server{
 		Addr: ":" + port,
@@ -261,58 +260,6 @@ func (rc *registryController) tags(c echo.Context) error {
 	return err
 }
 
-func (rc *registryController) report(c echo.Context) error {
-	repo, err := url.QueryUnescape(c.Param("repo"))
-	if err != nil {
-		return c.String(http.StatusNotFound, "Given repo can not be unescaped.")
-	}
-	if repo == "" {
-		return c.String(http.StatusNotFound, "No repo given")
-	}
-	tag := c.Param("tag")
-	if tag == "" {
-		return c.String(http.StatusNotFound, "No tag given")
-	}
-
-	m1, err := r.ManifestV1(repo, tag)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-			"repo":  repo,
-			"tag":   tag,
-		}).Warn("getting v1 manifest failed")
-	}
-
-	for _, h := range m1.History {
-		var comp v1Compatibility
-		if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
-			msg := "unmarshal v1compatibility failed"
-			log.WithFields(log.Fields{
-				"error": err,
-				"repo":  repo,
-				"tag":   tag,
-			}).Warn(msg)
-			return c.String(http.StatusInternalServerError, msg)
-		}
-		break
-	}
-
-	result := clair.VulnerabilityReport{}
-
-	if rc.cl != nil {
-		result, err = rc.cl.Vulnerabilities(rc.reg, repo, tag, m1)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-				"repo":  repo,
-				"tag":   tag,
-			}).Error("error during vulnerability scanning.")
-		}
-	}
-
-	return c.JSON(http.StatusOK, result)
-}
-
 func (rc *registryController) vulnerabilities(c echo.Context) error {
 	repo, err := url.QueryUnescape(c.Param("repo"))
 	if err != nil {
@@ -362,11 +309,29 @@ func (rc *registryController) vulnerabilities(c echo.Context) error {
 		}
 	}
 
-	err = c.Render(http.StatusOK, "vulns", result)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("error during template rendering")
+	outputType := outputType(c.Request())
+	if outputType == "json" {
+		err = c.JSON(http.StatusOK, result)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Error("error creating json response")
+		}
+	} else {
+		err = c.Render(http.StatusOK, "vulns", result)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Error("error during template rendering")
+		}
 	}
 	return err
+}
+
+func outputType(r *http.Request) string {
+	outputtype := "json"
+	if r.Header.Get("Accept-Encoding") == "text/html" {
+		outputtype = "html"
+	}
+	return outputtype
 }
