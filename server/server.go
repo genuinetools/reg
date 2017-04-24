@@ -85,7 +85,7 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:  "interval",
-			Value: "5m",
+			Value: "1h",
 			Usage: "interval to generate new index.html's at",
 		},
 		cli.StringFlag{

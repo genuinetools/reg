@@ -33,7 +33,7 @@ GLOBAL OPTIONS:
    --port value                port for server to run on (default: "8080")
    --cert value                path to ssl cert
    --key value                 path to ssl key
-   --interval value            interval to generate new index.html's at (default: "5m")
+   --interval value            interval to generate new index.html's at (default: "1h")
    --clair value               url to clair instance
    --help, -h                  show help
    --version, -v               print the version
