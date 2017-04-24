@@ -19,6 +19,11 @@ type registryController struct {
 	cl  *clair.Clair
 }
 
+type v1Compatibility struct {
+	ID      string    `json:"id"`
+	Created time.Time `json:"created"`
+}
+
 // A Repository holds data after a vulnerability scan of a single repo
 type Repository struct {
 	Name                string                    `json:"name"`
@@ -40,7 +45,7 @@ func (rc *registryController) repositoriesHandler(w http.ResponseWriter, r *http
 		"func":   "repositories",
 		"URL":    r.URL,
 		"method": r.Method,
-	}).Debug("fetching repositories")
+	}).Info("fetching repositories")
 
 	result := AnalysisResult{}
 	result.RegistryDomain = rc.reg.Domain
@@ -82,7 +87,7 @@ func (rc *registryController) tagHandler(w http.ResponseWriter, r *http.Request)
 		"func":   "tag",
 		"URL":    r.URL,
 		"method": r.Method,
-	}).Debug("fetching tag")
+	}).Info("fetching tag")
 
 	vars := mux.Vars(r)
 	repo := vars["repo"]
@@ -109,7 +114,7 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 		"func":   "tags",
 		"URL":    r.URL,
 		"method": r.Method,
-	}).Debug("fetching tags")
+	}).Info("fetching tags")
 
 	vars := mux.Vars(r)
 	repo := vars["repo"]
@@ -212,7 +217,7 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 		"func":   "vulnerabilities",
 		"URL":    r.URL,
 		"method": r.Method,
-	}).Debug("fetching vulnerabilities")
+	}).Info("fetching vulnerabilities")
 
 	vars := mux.Vars(r)
 	repo := vars["repo"]
