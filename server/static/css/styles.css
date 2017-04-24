@@ -194,7 +194,7 @@ td {
 td:last-child,
 th:last-child {
   text-align: right;
-  padding-right: 0px;
+  padding-right: 5px;
 }
 td a {
   display: block;
@@ -205,6 +205,38 @@ tr.parent a {
 .parent a:hover {
   color: #2a2a2a;
 }
+
+/*------------------------------------*\
+    Loading Indicator
+\*------------------------------------*/
+.signal {
+  border: 2px solid #333;
+  border-radius: 15px;
+  height: 15px;
+  left: 50%;
+  margin: -8px 0 0 -8px;
+  opacity: 0;
+  top: 50%;
+  width: 15px;
+  float: right;
+  animation: pulsate 1s ease-out;
+  animation-iteration-count: infinite;
+}
+
+@keyframes pulsate {
+  0% {
+    transform: scale(.1);
+    opacity: 0.0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
 /*------------------------------------*\
     Footer
 \*------------------------------------*/
