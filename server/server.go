@@ -210,13 +210,14 @@ func main() {
 
 		// static files handler
 		staticHandler := http.FileServer(http.Dir(staticDir))
-		mux.Handle("/", staticHandler)
 		mux.HandleFunc("/repo/{repo}", rc.tagsHandler)
 		mux.HandleFunc("/repo/{repo}/", rc.tagsHandler)
 		mux.HandleFunc("/repo/{repo}/{tag}", rc.vulnerabilitiesHandler)
 		mux.HandleFunc("/repo/{repo}/{tag}/", rc.vulnerabilitiesHandler)
 		mux.HandleFunc("/repo/{repo}/{tag}/vulns", rc.vulnerabilitiesHandler)
 		mux.HandleFunc("/repo/{repo}/{tag}/vulns/", rc.vulnerabilitiesHandler)
+		mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", staticHandler))
+		mux.Handle("/", staticHandler)
 
 		// set up the server
 		port := c.String("port")
