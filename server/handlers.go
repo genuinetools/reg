@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -255,7 +256,7 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 		}
 	}
 
-	if r.Header.Get("Accept-Encoding") == "application/json" {
+	if strings.HasSuffix(r.URL.String(), ".json") {
 		js, err := json.Marshal(result)
 		if err != nil {
 			logrus.WithFields(logrus.Fields{

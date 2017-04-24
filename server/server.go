@@ -216,6 +216,7 @@ func main() {
 		mux.HandleFunc("/repo/{repo}/{tag}/", rc.vulnerabilitiesHandler)
 		mux.HandleFunc("/repo/{repo}/{tag}/vulns", rc.vulnerabilitiesHandler)
 		mux.HandleFunc("/repo/{repo}/{tag}/vulns/", rc.vulnerabilitiesHandler)
+		mux.HandleFunc("/repo/{repo}/{tag}/vulns.json", rc.vulnerabilitiesHandler)
 		mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", staticHandler))
 		mux.Handle("/", staticHandler)
 

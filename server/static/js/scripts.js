@@ -38,7 +38,6 @@ function search(search_val){
 function loadVulnerabilityCount(url){
   var xhr = new XMLHttpRequest();
   xhr.open('GET', url);
-  xhr.setRequestHeader("Accept-Encoding", "text/json")
   xhr.onload = function() {
       if (xhr.status === 200) {
           var report = JSON.parse(xhr.responseText);
@@ -64,18 +63,6 @@ if (el.textContent == 'Parent Directory'){
         parent_row.className += ' ' + 'parent';
     }
 }
-
-/*
-   var rows = document.querySelectorAll('tr:not(.parent)');
-   Array.prototype.forEach.call(rows, function(item, index){
-   if (index !== 0) {
-   var date_holder = item.querySelectorAll('td:nth-child(3)')[0];
-   var date = date_holder.textContent;
-   date = prettyDate(date);
-   date_holder.innerHTML = date;
-   }
-   });
-   */
 
 var cells = document.querySelectorAll('td a');
 Array.prototype.forEach.call(cells, function(item, index){
