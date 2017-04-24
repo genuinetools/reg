@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
@@ -25,11 +24,9 @@ const (
 )
 
 var (
-	updating = false
-	wg       sync.WaitGroup
-	r        *registry.Registry
-	cl       *clair.Clair
-	tmpl     *template.Template
+	r    *registry.Registry
+	cl   *clair.Clair
+	tmpl *template.Template
 )
 
 // preload initializes any global options and configuration
@@ -85,18 +82,8 @@ func main() {
 			Usage: "path to ssl key",
 		},
 		cli.StringFlag{
-			Name:  "interval",
-			Value: "5m",
-			Usage: "interval to generate new index.html's at",
-		},
-		cli.StringFlag{
 			Name:  "clair",
 			Usage: "url to clair instance",
-		},
-		cli.IntFlag{
-			Name:  "workers, w",
-			Value: 20,
-			Usage: "number of workers to analyse for vulnerabilities",
 		},
 	}
 	app.Action = func(c *cli.Context) error {
