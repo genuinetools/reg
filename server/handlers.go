@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	log "github.com/Sirupsen/logrus"
-	"github.com/gorilla/mux"
-
+	"os"
+	"path/filepath"
 	"time"
 
+	"github.com/Sirupsen/logrus"
+	"github.com/gorilla/mux"
 	"github.com/jessfraz/reg/clair"
 	"github.com/jessfraz/reg/registry"
 )
@@ -40,25 +40,17 @@ type AnalysisResult struct {
 	Name           string       `json:"name"`
 }
 
-func (rc *registryController) repositoriesHandler(w http.ResponseWriter, r *http.Request) {
-	log.WithFields(log.Fields{
-		"func":   "repositories",
-		"URL":    r.URL,
-		"method": r.Method,
-	}).Info("fetching repositories")
+func (rc *registryController) repositories(staticDir string) error {
+	updating = true
+	logrus.Info("fetching catalog")
 
-	result := AnalysisResult{}
-	result.RegistryDomain = rc.reg.Domain
+	result := AnalysisResult{
+		RegistryDomain: rc.reg.Domain,
+	}
 
-	repoList, err := rc.reg.Catalog("")
+	repoList, err := r.Catalog("")
 	if err != nil {
-		log.WithFields(log.Fields{
-			"func":   "repositories",
-			"URL":    r.URL,
-			"method": r.Method,
-		}).Errorf("getting catalog failed: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return fmt.Errorf("getting catalog failed: %v", err)
 	}
 
 	for _, repo := range repoList {
@@ -71,19 +63,31 @@ func (rc *registryController) repositoriesHandler(w http.ResponseWriter, r *http
 		result.Repositories = append(result.Repositories, r)
 	}
 
-	if err := tmpl.ExecuteTemplate(w, "repositories", result); err != nil {
-		log.WithFields(log.Fields{
-			"func":   "repositories",
-			"URL":    r.URL,
-			"method": r.Method,
-		}).Errorf("template rendering failed: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+	// parse & execute the template
+	logrus.Info("executing the template repositories")
+
+	path := filepath.Join(staticDir, "index.html")
+	if err := os.MkdirAll(filepath.Dir(path), 0644); err != nil {
+		return err
 	}
+	logrus.Debugf("creating/opening file %s", path)
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if err := tmpl.ExecuteTemplate(f, "repositories", result); err != nil {
+		f.Close()
+		return fmt.Errorf("execute template repositories failed: %v", err)
+	}
+
+	updating = false
+	return nil
 }
 
 func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request) {
-	log.WithFields(log.Fields{
+	logrus.WithFields(logrus.Fields{
 		"func":   "tags",
 		"URL":    r.URL,
 		"method": r.Method,
@@ -99,7 +103,7 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 
 	tags, err := rc.reg.Tags(repo)
 	if err != nil {
-		log.WithFields(log.Fields{
+		logrus.WithFields(logrus.Fields{
 			"func":   "tags",
 			"URL":    r.URL,
 			"method": r.Method,
@@ -117,7 +121,7 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 		// get the manifest
 		m1, err := rc.reg.ManifestV1(repo, tag)
 		if err != nil {
-			log.WithFields(log.Fields{
+			logrus.WithFields(logrus.Fields{
 				"func":   "tags",
 				"URL":    r.URL,
 				"method": r.Method,
@@ -132,7 +136,7 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 			var comp v1Compatibility
 
 			if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
-				log.WithFields(log.Fields{
+				logrus.WithFields(logrus.Fields{
 					"func":   "tags",
 					"URL":    r.URL,
 					"method": r.Method,
@@ -159,7 +163,7 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 		if rc.cl != nil {
 			vuln, err := rc.cl.Vulnerabilities(rc.reg, repo, tag, m1)
 			if err != nil {
-				log.WithFields(log.Fields{
+				logrus.WithFields(logrus.Fields{
 					"func":   "tags",
 					"URL":    r.URL,
 					"method": r.Method,
@@ -174,7 +178,7 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := tmpl.ExecuteTemplate(w, "tags", result); err != nil {
-		log.WithFields(log.Fields{
+		logrus.WithFields(logrus.Fields{
 			"func":   "tags",
 			"URL":    r.URL,
 			"method": r.Method,
@@ -186,7 +190,7 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *http.Request) {
-	log.WithFields(log.Fields{
+	logrus.WithFields(logrus.Fields{
 		"func":   "vulnerabilities",
 		"URL":    r.URL,
 		"method": r.Method,
@@ -210,7 +214,7 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 
 	m1, err := rc.reg.ManifestV1(repo, tag)
 	if err != nil {
-		log.WithFields(log.Fields{
+		logrus.WithFields(logrus.Fields{
 			"func":   "vulnerabilities",
 			"URL":    r.URL,
 			"method": r.Method,
@@ -224,7 +228,7 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 		var comp v1Compatibility
 
 		if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
-			log.WithFields(log.Fields{
+			logrus.WithFields(logrus.Fields{
 				"func":   "vulnerabilities",
 				"URL":    r.URL,
 				"method": r.Method,
@@ -241,7 +245,7 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 	if rc.cl != nil {
 		result, err = rc.cl.Vulnerabilities(rc.reg, repo, tag, m1)
 		if err != nil {
-			log.WithFields(log.Fields{
+			logrus.WithFields(logrus.Fields{
 				"func":   "vulnerabilities",
 				"URL":    r.URL,
 				"method": r.Method,
@@ -254,7 +258,7 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 	if r.Header.Get("Accept-Encoding") == "application/json" {
 		js, err := json.Marshal(result)
 		if err != nil {
-			log.WithFields(log.Fields{
+			logrus.WithFields(logrus.Fields{
 				"func":   "vulnerabilities",
 				"URL":    r.URL,
 				"method": r.Method,
@@ -269,7 +273,7 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 	}
 
 	if err := tmpl.ExecuteTemplate(w, "vulns", result); err != nil {
-		log.WithFields(log.Fields{
+		logrus.WithFields(logrus.Fields{
 			"func":   "vulnerabilities",
 			"URL":    r.URL,
 			"method": r.Method,

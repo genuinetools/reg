@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
@@ -24,9 +25,10 @@ const (
 )
 
 var (
-	r    *registry.Registry
-	cl   *clair.Clair
-	tmpl *template.Template
+	updating = false
+	r        *registry.Registry
+	cl       *clair.Clair
+	tmpl     *template.Template
 )
 
 // preload initializes any global options and configuration
@@ -80,6 +82,11 @@ func main() {
 		cli.StringFlag{
 			Name:  "key",
 			Usage: "path to ssl key",
+		},
+		cli.StringFlag{
+			Name:  "interval",
+			Value: "5m",
+			Usage: "interval to generate new index.html's at",
 		},
 		cli.StringFlag{
 			Name:  "clair",
@@ -170,17 +177,46 @@ func main() {
 			cl:  cl,
 		}
 
+		// create the initial index
+		logrus.Info("creating initial static index")
+		if err := rc.repositories(staticDir); err != nil {
+			logrus.Fatalf("Error creating index: %v", err)
+		}
+
+		// parse the duration
+		dur, err := time.ParseDuration(c.String("interval"))
+		if err != nil {
+			logrus.Fatalf("parsing %s as duration failed: %v", c.String("interval"), err)
+		}
+		ticker := time.NewTicker(dur)
+
+		go func() {
+			// create more indexes every X minutes based off interval
+			for range ticker.C {
+				if !updating {
+					logrus.Info("creating timer based static index")
+					if err := rc.repositories(staticDir); err != nil {
+						logrus.Warnf("creating static index failed: %v", err)
+						updating = false
+					}
+				} else {
+					logrus.Warnf("skipping timer based static index update for %s", c.String("interval"))
+				}
+			}
+		}()
+
 		// create mux server
 		mux := mux.NewRouter()
 
 		// static files handler
 		staticHandler := http.FileServer(http.Dir(staticDir))
-		mux.Handle("/static/", http.StripPrefix("/static/", staticHandler))
+		mux.Handle("/", staticHandler)
 		mux.HandleFunc("/repo/{repo}", rc.tagsHandler)
+		mux.HandleFunc("/repo/{repo}/", rc.tagsHandler)
 		mux.HandleFunc("/repo/{repo}/{tag}", rc.vulnerabilitiesHandler)
 		mux.HandleFunc("/repo/{repo}/{tag}/", rc.vulnerabilitiesHandler)
 		mux.HandleFunc("/repo/{repo}/{tag}/vulns", rc.vulnerabilitiesHandler)
-		mux.HandleFunc("/", rc.repositoriesHandler)
+		mux.HandleFunc("/repo/{repo}/{tag}/vulns/", rc.vulnerabilitiesHandler)
 
 		// set up the server
 		port := c.String("port")
