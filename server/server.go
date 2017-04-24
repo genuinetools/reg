@@ -2,15 +2,21 @@ package main
 
 import (
 	"fmt"
+	"html/template"
+	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/distribution/manifest/schema1"
+	"github.com/gorilla/mux"
 	"github.com/jessfraz/reg/clair"
 	"github.com/jessfraz/reg/registry"
 	"github.com/jessfraz/reg/utils"
+	wordwrap "github.com/mitchellh/go-wordwrap"
 	"github.com/urfave/cli"
 )
 
@@ -26,6 +32,7 @@ var (
 	wg       sync.WaitGroup
 	r        *registry.Registry
 	cl       *clair.Clair
+	tmpl     *template.Template
 )
 
 // preload initializes any global options and configuration
@@ -114,12 +121,6 @@ func main() {
 			}
 		}
 
-		// parse the duration
-		dur, err := time.ParseDuration(c.String("interval"))
-		if err != nil {
-			logrus.Fatalf("parsing %s as duration failed: %v", c.String("interval"), err)
-		}
-
 		// create a clair instance if needed
 		if c.GlobalString("clair") != "" {
 			cl, err = clair.New(c.GlobalString("clair"), c.GlobalBool("debug"))
@@ -127,6 +128,19 @@ func main() {
 				logrus.Warnf("creation of clair failed: %v", err)
 			}
 		}
+
+		// create the initial index
+		logrus.Info("creating initial static index")
+		if err := analyseRepositories(r, cl, c.GlobalBool("debug"), c.GlobalInt("workers")); err != nil {
+			logrus.Fatalf("Error creating index: %v", err)
+		}
+
+		// parse the duration
+		dur, err := time.ParseDuration(c.String("interval"))
+		if err != nil {
+			logrus.Fatalf("parsing %s as duration failed: %v", c.String("interval"), err)
+		}
+
 		ticker := time.NewTicker(dur)
 
 		go func() {
@@ -149,11 +163,87 @@ func main() {
 			}
 		}()
 
-		port := c.String("port")
-		keyfile := c.String("key")
-		certfile := c.String("cert")
+		// get the path to the static directory
+		wd, err := os.Getwd()
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		staticDir := filepath.Join(wd, "static")
 
-		logrus.Fatal(listenAndServe(port, keyfile, certfile, r, cl))
+		// create the template
+		templateDir := filepath.Join(staticDir, "../templates")
+
+		// make sure all the templates exist
+		vulns := filepath.Join(templateDir, "vulns.html")
+		if _, err := os.Stat(vulns); os.IsNotExist(err) {
+			logrus.Fatalf("Template %s not found", vulns)
+		}
+		layout := filepath.Join(templateDir, "repositories.html")
+		if _, err := os.Stat(layout); os.IsNotExist(err) {
+			logrus.Fatalf("Template %s not found", layout)
+		}
+		tags := filepath.Join(templateDir, "tags.html")
+		if _, err := os.Stat(tags); os.IsNotExist(err) {
+			logrus.Fatalf("Template %s not found", tags)
+		}
+
+		funcMap := template.FuncMap{
+			"trim": func(s string) string {
+				return wordwrap.WrapString(s, 80)
+			},
+			"color": func(s string) string {
+				switch s = strings.ToLower(s); s {
+				case "high":
+					return "danger"
+				case "critical":
+					return "danger"
+				case "defcon1":
+					return "danger"
+				case "medium":
+					return "warning"
+				case "low":
+					return "info"
+				case "negligible":
+					return "info"
+				case "unknown":
+					return "default"
+				default:
+					return "default"
+				}
+			},
+		}
+
+		tmpl = template.Must(template.New("").Funcs(funcMap).ParseGlob(templateDir + "/*.html"))
+
+		rc := registryController{
+			reg: r,
+			cl:  cl,
+		}
+
+		// create mux server
+		mux := mux.NewRouter()
+
+		// static files handler
+		staticHandler := http.FileServer(http.Dir(staticDir))
+		mux.HandleFunc("/", rc.tagsHandler)
+		mux.Handle("/static", staticHandler)
+		mux.HandleFunc("/repo/{repo}", rc.tagsHandler)
+		mux.HandleFunc("/repo/{repo}/{tag}", rc.tagHandler)
+		mux.HandleFunc("/repo/{repo}/{tag}/vulns", rc.vulnerabilitiesHandler)
+
+		// set up the server
+		port := c.String("port")
+		server := &http.Server{
+			Addr:    ":" + port,
+			Handler: mux,
+		}
+		logrus.Infof("Starting server on port %q", port)
+		if c.String("cert") != "" && c.String("key") != "" {
+			logrus.Fatal(server.ListenAndServeTLS(c.String("cert"), c.String("key")))
+		} else {
+			logrus.Fatal(server.ListenAndServe())
+		}
+
 		return nil
 	}
 
