@@ -82,33 +82,6 @@ func (rc *registryController) repositoriesHandler(w http.ResponseWriter, r *http
 	}
 }
 
-func (rc *registryController) tagHandler(w http.ResponseWriter, r *http.Request) {
-	log.WithFields(log.Fields{
-		"func":   "tag",
-		"URL":    r.URL,
-		"method": r.Method,
-	}).Info("fetching tag")
-
-	vars := mux.Vars(r)
-	repo := vars["repo"]
-	tag := vars["tag"]
-
-	if repo == "" {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, "Empty repo")
-		return
-	}
-
-	if tag == "" {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, "Empty tag")
-		return
-	}
-
-	fmt.Fprintf(w, "Repo: %s Tag: %s ", repo, tag)
-	return
-}
-
 func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{
 		"func":   "tags",
