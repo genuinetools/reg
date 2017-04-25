@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -95,8 +96,8 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 	}).Info("fetching tags")
 
 	vars := mux.Vars(r)
-	repo := vars["repo"]
-	if repo == "" {
+	repo, err := url.QueryUnescape(vars["repo"])
+	if err != nil || repo == "" {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Empty repo")
 		return
@@ -198,10 +199,10 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 	}).Info("fetching vulnerabilities")
 
 	vars := mux.Vars(r)
-	repo := vars["repo"]
+	repo, err := url.QueryUnescape(vars["repo"])
 	tag := vars["tag"]
 
-	if repo == "" {
+	if err != nil || repo == "" {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Empty repo")
 		return
