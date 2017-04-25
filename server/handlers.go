@@ -127,6 +127,8 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 				"func":   "tags",
 				"URL":    r.URL,
 				"method": r.Method,
+				"repo":   repo,
+				"tag":    tag,
 			}).Errorf("getting v1 manifest for %s:%s failed: %v", repo, tag, err)
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(w, "Manifest not found")
@@ -220,6 +222,8 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 			"func":   "vulnerabilities",
 			"URL":    r.URL,
 			"method": r.Method,
+			"repo":   repo,
+			"tag":    tag,
 		}).Errorf("getting v1 manifest for %s:%s failed: %v", repo, tag, err)
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Manifest not found")

@@ -207,16 +207,17 @@ func main() {
 
 		// create mux server
 		mux := mux.NewRouter()
+		mux.UseEncodedPath()
 
 		// static files handler
 		staticHandler := http.FileServer(http.Dir(staticDir))
-		mux.HandleFunc("/repo/{repo}", rc.tagsHandler)
-		mux.HandleFunc("/repo/{repo}/", rc.tagsHandler)
-		mux.HandleFunc("/repo/{repo}/{tag}", rc.vulnerabilitiesHandler)
-		mux.HandleFunc("/repo/{repo}/{tag}/", rc.vulnerabilitiesHandler)
-		mux.HandleFunc("/repo/{repo}/{tag}/vulns", rc.vulnerabilitiesHandler)
-		mux.HandleFunc("/repo/{repo}/{tag}/vulns/", rc.vulnerabilitiesHandler)
-		mux.HandleFunc("/repo/{repo}/{tag}/vulns.json", rc.vulnerabilitiesHandler)
+		mux.HandleFunc("/repo/{repo}/tags", rc.tagsHandler)
+		mux.HandleFunc("/repo/{repo}/tags/", rc.tagsHandler)
+		mux.HandleFunc("/repo/{repo}/tag/{tag}", rc.vulnerabilitiesHandler)
+		mux.HandleFunc("/repo/{repo}/tag/{tag}/", rc.vulnerabilitiesHandler)
+		mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns", rc.vulnerabilitiesHandler)
+		mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns/", rc.vulnerabilitiesHandler)
+		mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns.json", rc.vulnerabilitiesHandler)
 		mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", staticHandler))
 		mux.Handle("/", staticHandler)
 

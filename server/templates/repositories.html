@@ -27,13 +27,13 @@
             {{ range $key, $value := .Repositories }}
             <tr>
                 <td valign="top">
-                    <a href="/repo/{{ $value.Name | urlquery }}">
+                    <a href="/repo/{{ $value.Name | urlquery }}/tags">
                     {{ $value.Name }}
                     </a>
                 </td>
 
                 <td align="right" nowrap>
-                    <a href="/repo/{{ $value.Name | urlquery }}">
+                    <a href="/repo/{{ $value.Name | urlquery }}/tags">
                     <code>docker pull {{ $value.URI }}</code>
                     </a>
                 </td>
