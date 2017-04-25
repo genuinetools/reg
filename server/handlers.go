@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -95,8 +96,8 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 	}).Info("fetching tags")
 
 	vars := mux.Vars(r)
-	repo := vars["repo"]
-	if repo == "" {
+	repo, err := url.QueryUnescape(vars["repo"])
+	if err != nil || repo == "" {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Empty repo")
 		return
@@ -126,6 +127,8 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 				"func":   "tags",
 				"URL":    r.URL,
 				"method": r.Method,
+				"repo":   repo,
+				"tag":    tag,
 			}).Errorf("getting v1 manifest for %s:%s failed: %v", repo, tag, err)
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(w, "Manifest not found")
@@ -161,20 +164,6 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 			Created: createdDate,
 		}
 
-		if rc.cl != nil {
-			vuln, err := rc.cl.Vulnerabilities(rc.reg, repo, tag, m1)
-			if err != nil {
-				logrus.WithFields(logrus.Fields{
-					"func":   "tags",
-					"URL":    r.URL,
-					"method": r.Method,
-				}).Errorf("vulnerability scanning for %s:%s failed: %v", repo, tag, err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			rp.VulnerabilityReport = vuln
-		}
-
 		result.Repositories = append(result.Repositories, rp)
 	}
 
@@ -198,10 +187,10 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 	}).Info("fetching vulnerabilities")
 
 	vars := mux.Vars(r)
-	repo := vars["repo"]
+	repo, err := url.QueryUnescape(vars["repo"])
 	tag := vars["tag"]
 
-	if repo == "" {
+	if err != nil || repo == "" {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Empty repo")
 		return
@@ -219,6 +208,8 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 			"func":   "vulnerabilities",
 			"URL":    r.URL,
 			"method": r.Method,
+			"repo":   repo,
+			"tag":    tag,
 		}).Errorf("getting v1 manifest for %s:%s failed: %v", repo, tag, err)
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Manifest not found")
