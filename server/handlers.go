@@ -164,20 +164,6 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 			Created: createdDate,
 		}
 
-		if rc.cl != nil {
-			vuln, err := rc.cl.Vulnerabilities(rc.reg, repo, tag, m1)
-			if err != nil {
-				logrus.WithFields(logrus.Fields{
-					"func":   "tags",
-					"URL":    r.URL,
-					"method": r.Method,
-				}).Errorf("vulnerability scanning for %s:%s failed: %v", repo, tag, err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			rp.VulnerabilityReport = vuln
-		}
-
 		result.Repositories = append(result.Repositories, rp)
 	}
 
