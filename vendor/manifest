@@ -2556,7 +2556,7 @@
 			"importpath": "golang.org/x/sys/unix",
 			"repository": "https://go.googlesource.com/sys",
 			"vcs": "git",
-			"revision": "e48874b42435b4347fc52bdee0424a52abc974d7",
+			"revision": "b90f89a1e7a9c1f6b918820b3daa7f08488c8594",
 			"branch": "master",
 			"path": "/unix",
 			"notests": true
