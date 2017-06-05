@@ -2,6 +2,7 @@ package registry
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -117,15 +118,20 @@ func isTokenDemand(resp *http.Response) (*authService, error) {
 func (r *Registry) Token(url string) (string, error) {
 	r.Logf("registry.token url=%s", url)
 
-	resp, err := r.Client.Get(url)
+	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
 
 	a, err := isTokenDemand(resp)
-	if err != nil || a == nil {
+	if err != nil {
 		return "", err
+	}
+
+	if a == nil {
+		r.Logf("registry.token authService=nil")
+		return "", nil
 	}
 
 	authReq, err := a.Request(r.Username, r.Password)
@@ -136,12 +142,16 @@ func (r *Registry) Token(url string) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", err
+		return "", fmt.Errorf("Getting token failed with StatusCode != StatusOK but %d", resp.StatusCode)
 	}
 
 	var authToken authToken
 	if err := json.NewDecoder(resp.Body).Decode(&authToken); err != nil {
 		return "", err
+	}
+
+	if authToken.Token == "" {
+		return "", errors.New("Auth token cannot be empty.")
 	}
 
 	return authToken.Token, nil
