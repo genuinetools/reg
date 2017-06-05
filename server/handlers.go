@@ -40,7 +40,7 @@ type AnalysisResult struct {
 	Repositories   []Repository `json:"repositories"`
 	RegistryDomain string       `json:"registryDomain"`
 	Name           string       `json:"name"`
-	LastUpdated    string       `json:lastUpdated`
+	LastUpdated    string       `json:"lastUpdated"`
 }
 
 func (rc *registryController) repositories(staticDir string) error {
