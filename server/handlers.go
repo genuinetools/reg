@@ -38,8 +38,9 @@ type Repository struct {
 // A AnalysisResult holds all vulnerabilities of a scan
 type AnalysisResult struct {
 	Repositories   []Repository `json:"repositories"`
-	RegistryDomain string       `json:"registrydomain"`
+	RegistryDomain string       `json:"registryDomain"`
 	Name           string       `json:"name"`
+	LastUpdated    string       `json:lastUpdated`
 }
 
 func (rc *registryController) repositories(staticDir string) error {
@@ -48,6 +49,7 @@ func (rc *registryController) repositories(staticDir string) error {
 
 	result := AnalysisResult{
 		RegistryDomain: rc.reg.Domain,
+		LastUpdated:    time.Now().Local().Format(time.RFC1123),
 	}
 
 	repoList, err := r.Catalog("")
