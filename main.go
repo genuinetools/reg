@@ -15,14 +15,12 @@ import (
 	"github.com/jessfraz/reg/clair"
 	"github.com/jessfraz/reg/registry"
 	"github.com/jessfraz/reg/utils"
+	"github.com/jessfraz/reg/version"
 	digest "github.com/opencontainers/go-digest"
 	"github.com/urfave/cli"
 )
 
 const (
-	// VERSION is the binary version.
-	VERSION = "v0.2.0"
-
 	dockerConfigPath = ".docker/config.json"
 )
 
@@ -71,7 +69,7 @@ func preload(c *cli.Context) (err error) {
 func main() {
 	app := cli.NewApp()
 	app.Name = "reg"
-	app.Version = VERSION
+	app.Version = fmt.Sprintf("version %s, build %s", version.VERSION, version.GITCOMMIT)
 	app.Author = "@jessfraz"
 	app.Email = "no-reply@butts.com"
 	app.Usage = "Docker registry v2 client."

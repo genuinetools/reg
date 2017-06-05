@@ -1,44 +1,108 @@
 # Set an output prefix, which is the local directory if not specified
 PREFIX?=$(shell pwd)
-BUILDTAGS=
 
-.PHONY: clean all fmt vet lint build test install static
-.DEFAULT: default
+# Setup name variables for the package/tool
+NAME := reg
+PKG := github.com/jessfraz/$(NAME)
 
-all: clean build fmt lint test vet install
+# Set any default go build tags
+BUILDTAGS :=
 
-build:
+# Set the build dir, where built cross-compiled binaries will be output
+BUILDDIR := ${PREFIX}/cross
+
+# Populate version variables
+# Add to compile time flags
+VERSION := $(shell cat VERSION)
+GITCOMMIT := $(shell git rev-parse --short HEAD)
+GITUNTRACKEDCHANGES := $(shell git status --porcelain --untracked-files=no)
+ifneq ($(GITUNTRACKEDCHANGES),)
+	GITCOMMIT := $(GITCOMMIT)-dirty
+endif
+CTIMEVAR=-X $(PKG)/version.GITCOMMIT=$(GITCOMMIT) -X $(PKG)/version.VERSION=$(VERSION)
+GO_LDFLAGS=-ldflags "-w $(CTIMEVAR)"
+GO_LDFLAGS_STATIC=-ldflags "-w $(CTIMEVAR) -extldflags -static"
+
+# List the GOOS and GOARCH to build
+GOOSARCHES = darwin/amd64 darwin/386 freebsd/amd64 freebsd/386 linux/arm linux/arm64 linux/amd64 linux/386 solaris/amd64 windows/amd64 windows/386
+
+all: clean build fmt lint test vet install ## Runs a clean, build, fmt, lint, test, vet and install
+
+.PHONY: build
+build: $(NAME) ## Builds a dynamic executable or package
+
+$(NAME): *.go VERSION
 	@echo "+ $@"
-	@go build -tags "$(BUILDTAGS) cgo" .
+	go build -tags "$(BUILDTAGS)" ${GO_LDFLAGS} -o $(NAME) .
 
-static:
+.PHONY: static
+static: ## Builds a static executable
 	@echo "+ $@"
-	CGO_ENABLED=1 go build -tags "$(BUILDTAGS) cgo static_build" -ldflags "-w -extldflags -static" -o reg .
+	CGO_ENABLED=0 go build \
+				-tags "$(BUILDTAGS) static_build" \
+				${GO_LDFLAGS_STATIC} -o $(NAME) .
 
-fmt:
+.PHONY: fmt
+fmt: ## Verifies all files have men `gofmt`ed
 	@echo "+ $@"
-	@gofmt -s -l . | grep -v vendor | tee /dev/stderr
+	@gofmt -s -l . | grep -v '.pb.go:' | grep -v vendor | tee /dev/stderr
 
-lint:
+.PHONY: lint
+lint: ## Verifies `golint` passes
 	@echo "+ $@"
-	@golint ./... | grep -v vendor | tee /dev/stderr
+	@golint ./... | grep -v '.pb.go:' | grep -v vendor | tee /dev/stderr
 
-test:
+.PHONY: test
+test: ## Runs the go tests
 	@echo "+ $@"
 	@go test -v -tags "$(BUILDTAGS) cgo" $(shell go list ./... | grep -v vendor)
 
-vet:
+.PHONY: vet
+vet: ## Verifies `go vet` passes
 	@echo "+ $@"
-	@go vet $(shell go list ./... | grep -v vendor)
+	@go vet $(shell go list ./... | grep -v vendor) | grep -v '.pb.go:' | tee /dev/stderr
 
-clean:
-	@echo "+ $@"
-	@rm -rf reg
-	@rm -rf $(CURDIR)/.certs
-
-install:
+.PHONY: install
+install: ## Installs the executable or package
 	@echo "+ $@"
 	@go install .
+
+define buildpretty
+mkdir -p $(BUILDDIR)/$(1)/$(2);
+GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build \
+	 -o $(BUILDDIR)/$(1)/$(2)/$(NAME) \
+	 -a -tags "$(BUILDTAGS) static_build netgo" \
+	 -installsuffix netgo ${GO_LDFLAGS_STATIC} .;
+endef
+
+.PHONY: cross
+cross: *.go VERSION ## Builds the cross-compiled binaries, creating a clean directory structure (eg. GOOS/GOARCH/binary)
+	@echo "+ $@"
+	$(foreach GOOSARCH,$(GOOSARCHES), $(call buildpretty,$(subst /,,$(dir $(GOOSARCH))),$(notdir $(GOOSARCH))))
+
+define buildrelease
+GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build \
+	 -o $(BUILDDIR)/$(NAME)-$(1)-$(2) \
+	 -a -tags "$(BUILDTAGS) static_build netgo" \
+	 -installsuffix netgo ${GO_LDFLAGS_STATIC} .;
+endef
+
+.PHONY: release
+release: *.go VERSION ## Builds the cross-compiled binaries, naming them in such a way for release (eg. binary-GOOS-GOARCH)
+	@echo "+ $@"
+	$(foreach GOOSARCH,$(GOOSARCHES), $(call buildrelease,$(subst /,,$(dir $(GOOSARCH))),$(notdir $(GOOSARCH))))
+
+.PHONY: tag
+tag: ## Create a new git tag to prepare to build a release
+	git tag -sa $(VERSION) -m "$(VERSION)"
+	@echo "Run git push origin $(VERSION) to push your new tag to GitHub and trigger a travis build."
+
+.PHONY: clean
+clean: ## Cleanup any build binaries or packages
+	@echo "+ $@"
+	$(RM) $(NAME)
+	$(RM) -r $(BUILDDIR)
+	$(RM) -r $(CURDIR)/.certs
 
 # set the graph driver as the current graphdriver if not set
 DOCKER_GRAPHDRIVER := $(if $(DOCKER_GRAPHDRIVER),$(DOCKER_GRAPHDRIVER),$(shell docker info 2>&1 | grep "Storage Driver" | sed 's/.*: //'))
@@ -55,7 +119,7 @@ endif
 .PHONY: dind
 DIND_CONTAINER=reg-dind
 DIND_DOCKER_IMAGE=r.j3ss.co/docker:userns
-dind:
+dind: ## Starts a docker-in-docker container for running the tests with
 	docker build --rm --force-rm -f Dockerfile.dind -t $(DIND_DOCKER_IMAGE) .
 	docker run -d  \
 		-v /var/lib/docker2:/var/lib/docker \
@@ -78,7 +142,7 @@ dind:
 
 .PHONY: dtest
 DOCKER_IMAGE := reg-dev
-dtest:
+dtest: ## Run the tests in a docker container
 	docker build --rm --force-rm -f Dockerfile.dev -t $(DOCKER_IMAGE) .
 	docker run --rm -i $(DOCKER_FLAGS) \
 		-v $(CURDIR):/go/src/github.com/jessfraz/reg \
@@ -92,3 +156,7 @@ dtest:
 		-e DOCKER_API_VERSION=1.23 \
 		$(DOCKER_IMAGE) \
 		make test
+
+.PHONY: help
+help:
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

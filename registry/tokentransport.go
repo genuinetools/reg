@@ -151,7 +151,7 @@ func (r *Registry) Token(url string) (string, error) {
 	}
 
 	if authToken.Token == "" {
-		return "", errors.New("Auth token cannot be empty.")
+		return "", errors.New("Auth token cannot be empty")
 	}
 
 	return authToken.Token, nil
