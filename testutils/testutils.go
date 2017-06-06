@@ -221,7 +221,7 @@ func waitForConn(addr, cert, key string) error {
 				fmt.Println("sleeping for 1 second then will try again...")
 				time.Sleep(time.Second)
 			} else {
-				return fmt.Errorf("[WHOOPS]: maximum retries for %s exceeded\n", addr)
+				return fmt.Errorf("[WHOOPS]: maximum retries for %s exceeded", addr)
 			}
 			continue
 		} else {
