@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -93,10 +94,10 @@ func RemoveContainer(dcli *client.Client, ctrID string) error {
 
 // dockerLogin logins via the command line to a docker registry
 func dockerLogin(addr, username, password string) error {
-	cmd := exec.Command("docker", "login", addr, "--username", username, "--password", password)
+	cmd := exec.Command("docker", "login", "--username", username, "--password", password, addr)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("docker login failed with output %q and error: %v", string(out), err)
+		return fmt.Errorf("docker login [%s] failed with output %q and error: %v", strings.Join(cmd.Args, " "), string(out), err)
 	}
 	return nil
 }

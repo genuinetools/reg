@@ -14,8 +14,24 @@ import (
 )
 
 var (
-	exeSuffix    string // ".exe" on Windows
-	registryAddr string
+	exeSuffix string // ".exe" on Windows
+
+	registryConfigs = []struct {
+		config   string
+		username string
+		password string
+	}{
+		{
+			config:   "noauth.yml",
+			username: "blah",
+			password: "blah",
+		},
+		{
+			config:   "basicauth.yml",
+			username: "admin",
+			password: "testing",
+		},
+	}
 )
 
 func init() {
@@ -37,6 +53,8 @@ func TestMain(m *testing.M) {
 		fmt.Fprintf(os.Stderr, "building testreg failed: %v\n%s", err, out)
 		os.Exit(2)
 	}
+	// remove test binary
+	defer os.Remove("testreg" + exeSuffix)
 
 	// create the docker client
 	dcli, err := client.NewEnvClient()
@@ -44,26 +62,29 @@ func TestMain(m *testing.M) {
 		panic(fmt.Errorf("could not connect to docker: %v", err))
 	}
 
-	// start registry
-	regID, addr, err := testutils.StartRegistry(dcli, "basicauth.yml", "admin", "testing")
-	if err != nil {
-		testutils.RemoveContainer(dcli, regID)
-		panic(fmt.Errorf("starting registry container failed: %v", err))
+	for _, regConfig := range registryConfigs {
+		// start each registry
+		regID, _, err := testutils.StartRegistry(dcli, regConfig.config, regConfig.username, regConfig.password)
+		if err != nil {
+			testutils.RemoveContainer(dcli, regID)
+			panic(fmt.Errorf("starting registry container %s failed: %v", regConfig.config, err))
+		}
+
+		flag.Parse()
+		merr := m.Run()
+
+		// remove registry
+		if err := testutils.RemoveContainer(dcli, regID); err != nil {
+			log.Printf("couldn't remove registry container %s: %v", regConfig.config, err)
+		}
+
+		if merr != 0 {
+			fmt.Printf("testing config %s failed\n", regConfig.config)
+			os.Exit(merr)
+		}
 	}
-	registryAddr = addr
 
-	flag.Parse()
-	merr := m.Run()
-
-	// remove registry
-	if err := testutils.RemoveContainer(dcli, regID); err != nil {
-		log.Printf("couldn't remove registry container: %v", err)
-	}
-
-	// remove test binary
-	os.Remove("testreg" + exeSuffix)
-
-	os.Exit(merr)
+	os.Exit(0)
 }
 
 func run(args ...string) (string, error) {
