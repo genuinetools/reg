@@ -2,13 +2,17 @@ package testutils
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
+	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"time"
@@ -20,73 +24,29 @@ import (
 	"github.com/docker/docker/pkg/term"
 )
 
-const (
-	registryConfig = `version: 0.1
-log:
-  level: debug
-  formatter: text
-  fields:
-    service: registry
-storage:
-  filesystem:
-    rootdirectory: /var/lib/registry
-http:
-  addr: 0.0.0.0:5000
-  headers:
-    X-Content-Type-Options: [nosniff]
-  host: https://localhost:5000
-  tls:
-    certificate: /etc/docker/registry/ssl/cert.pem
-    key: /etc/docker/registry/ssl/key.pem`
-
-	// admin:testing
-	htpasswd = "admin:$apr1$2a7OBK4C$pZEqDfaxN3Qaywsi5hMKt1\n"
-)
-
 // StartRegistry starts a new registry container.
-func StartRegistry(dcli *client.Client) (string, string, error) {
-	image := "registry:2"
-
-	hostConfig, err := createRegistryConfig()
-	if err != nil {
-		return "", "", err
-	}
-
-	hostHtpasswd, err := createRegistryHtpasswd()
-	if err != nil {
-		return "", "", err
-	}
-
-	if err := pullDockerImage(dcli, image); err != nil {
-		return "", "", err
-	}
-
+func StartRegistry(dcli *client.Client, config, username, password string) (string, string, error) {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return "", "", errors.New("No caller information")
 	}
 
-	fmt.Println(filename)
+	image := "registry:2"
+
+	if err := pullDockerImage(dcli, image); err != nil {
+		return "", "", err
+	}
 
 	r, err := dcli.ContainerCreate(
 		context.Background(),
 		&container.Config{
 			Image: image,
-			/*ExposedPorts: map[nat.Port]struct{}{
-				"5000": {},
-			},*/
 		},
 		&container.HostConfig{
-			/*	PortBindings: map[nat.Port][]nat.PortBinding{
-				"5000": []nat.PortBinding{{
-					HostIP:   "0.0.0.0",
-					HostPort: "5000",
-				}},
-			},*/
 			NetworkMode: "host",
 			Binds: []string{
-				hostConfig + ":" + "/etc/docker/registry/config.yml" + ":ro",
-				hostHtpasswd + ":" + "/etc/docker/registry/htpasswd" + ":ro",
+				filepath.Join(filepath.Dir(filename), "configs", config) + ":" + "/etc/docker/registry/config.yml" + ":ro",
+				filepath.Join(filepath.Dir(filename), "configs", "htpasswd") + ":" + "/etc/docker/registry/htpasswd" + ":ro",
 				filepath.Join(filepath.Dir(filename), "snakeoil") + ":" + "/etc/docker/registry/ssl" + ":ro",
 			},
 		},
@@ -100,19 +60,18 @@ func StartRegistry(dcli *client.Client) (string, string, error) {
 		return r.ID, "", err
 	}
 
-	// get the container's IP
-	/*info, err := dcli.ContainerInspect(context.Background(), r.ID)
-	if err != nil {
-		return r.ID, "", err
-	}*/
 	port := ":5000"
-	// addr := "http://" + info.NetworkSettings.IPAddress + port
 	addr := "https://localhost" + port
 
-	// waitForConn(info.NetworkSettings.IPAddress + port)
-	waitForConn("localhost" + port)
+	if err := waitForConn(addr, filepath.Join(filepath.Dir(filename), "snakeoil", "cert.pem"), filepath.Join(filepath.Dir(filename), "snakeoil", "key.pem")); err != nil {
+		return r.ID, addr, err
+	}
 
-	if err := prefillRegistry(dcli, "localhost"+port); err != nil {
+	if err := dockerLogin("localhost"+port, username, password); err != nil {
+		return r.ID, addr, err
+	}
+
+	if err := prefillRegistry(dcli, "localhost"+port, username, password); err != nil {
 		return r.ID, addr, err
 	}
 
@@ -132,8 +91,18 @@ func RemoveContainer(dcli *client.Client, ctrID string) error {
 	return nil
 }
 
+// dockerLogin logins via the command line to a docker registry
+func dockerLogin(addr, username, password string) error {
+	cmd := exec.Command("docker", "login", addr, "--username", username, "--password", password)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("docker login failed with output %q and error: %v", string(out), err)
+	}
+	return nil
+}
+
 // prefillRegistry adds images to a registry.
-func prefillRegistry(dcli *client.Client, addr string) error {
+func prefillRegistry(dcli *client.Client, addr, username, password string) error {
 	image := "alpine:latest"
 
 	if err := pullDockerImage(dcli, image); err != nil {
@@ -144,7 +113,7 @@ func prefillRegistry(dcli *client.Client, addr string) error {
 		return err
 	}
 
-	auth, err := constructRegistryAuth("admin", "testing")
+	auth, err := constructRegistryAuth(username, password)
 	if err != nil {
 		return err
 	}
@@ -196,57 +165,70 @@ func imageExists(dcli *client.Client, image string) (bool, error) {
 	return false, err
 }
 
-func createRegistryConfig() (string, error) {
-	tmpfile, err := ioutil.TempFile("", "registry")
-	if err != nil {
-		return "", err
-	}
-
-	if _, err := tmpfile.WriteString(registryConfig); err != nil {
-		return "", err
-	}
-	if err := tmpfile.Close(); err != nil {
-		return "", err
-	}
-
-	return tmpfile.Name(), nil
-}
-
-func createRegistryHtpasswd() (string, error) {
-	tmpfile, err := ioutil.TempFile("", "registry-htpasswd")
-	if err != nil {
-		return "", err
-	}
-
-	if _, err := tmpfile.WriteString(htpasswd); err != nil {
-		return "", err
-	}
-	if err := tmpfile.Close(); err != nil {
-		return "", err
-	}
-
-	return tmpfile.Name(), nil
-}
-
 // waitForConn takes a tcp addr and waits until it is reachable
-func waitForConn(addr string) {
+func waitForConn(addr, cert, key string) error {
+	tlsCert, err := tls.LoadX509KeyPair(cert, key)
+	if err != nil {
+		return fmt.Errorf("Could not load X509 key pair: %v. Make sure the key is not encrypted", err)
+	}
+
+	certPool, err := x509.SystemCertPool()
+	if err != nil {
+		return fmt.Errorf("failed to read system certificates: %v", err)
+	}
+	pem, err := ioutil.ReadFile(cert)
+	if err != nil {
+		return fmt.Errorf("could not read CA certificate %s: %v", cert, err)
+	}
+	if !certPool.AppendCertsFromPEM(pem) {
+		return fmt.Errorf("failed to append certificates from PEM file: %s", cert)
+	}
+
+	c := http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+				DualStack: true,
+			}).DialContext,
+			MaxIdleConns:          100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			TLSClientConfig: &tls.Config{
+				Certificates: []tls.Certificate{tlsCert},
+				MinVersion:   tls.VersionTLS12,
+				CipherSuites: []uint16{
+					tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+					tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+					tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+					tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+				},
+				RootCAs: certPool,
+			},
+		},
+	}
+
 	n := 0
 	max := 10
 	for n < max {
-		if _, err := net.Dial("tcp", addr); err != nil {
-			fmt.Printf("try number %d to dial %s: %v\n", n, addr, err)
+		if _, err := c.Get(addr + "/v2/"); err != nil {
+			fmt.Printf("try number %d to %s: %v\n", n, addr, err)
 			n++
 			if n != max {
 				fmt.Println("sleeping for 1 second then will try again...")
 				time.Sleep(time.Second)
 			} else {
-				fmt.Printf("[WHOOPS]: maximum retries for %s exceeded\n", addr)
+				return fmt.Errorf("[WHOOPS]: maximum retries for %s exceeded\n", addr)
 			}
 			continue
 		} else {
 			break
 		}
 	}
+
+	return nil
 }
 
 // constructRegistryAuth serializes the auth configuration as JSON base64 payload.

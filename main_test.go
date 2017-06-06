@@ -45,7 +45,7 @@ func TestMain(m *testing.M) {
 	}
 
 	// start registry
-	regID, addr, err := testutils.StartRegistry(dcli)
+	regID, addr, err := testutils.StartRegistry(dcli, "basicauth.yml", "admin", "testing")
 	if err != nil {
 		testutils.RemoveContainer(dcli, regID)
 		panic(fmt.Errorf("starting registry container failed: %v", err))
@@ -78,7 +78,7 @@ func run(args ...string) (string, error) {
 func TestList(t *testing.T) {
 	out, err := run("ls")
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("output: %s, error: %v", string(out), err)
 	}
 	expected := `Repositories for localhost:5000
 REPO                TAGS
