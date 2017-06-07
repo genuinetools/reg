@@ -73,6 +73,8 @@ GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build \
 	 -o $(BUILDDIR)/$(1)/$(2)/$(NAME) \
 	 -a -tags "$(BUILDTAGS) static_build netgo" \
 	 -installsuffix netgo ${GO_LDFLAGS_STATIC} .;
+md5sum $(BUILDDIR)/$(1)/$(2)/$(NAME) > $(BUILDDIR)/$(1)/$(2)/$(NAME).md5;
+sha256sum $(BUILDDIR)/$(1)/$(2)/$(NAME) > $(BUILDDIR)/$(1)/$(2)/$(NAME).sha256;
 endef
 
 .PHONY: cross
@@ -85,12 +87,27 @@ GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build \
 	 -o $(BUILDDIR)/$(NAME)-$(1)-$(2) \
 	 -a -tags "$(BUILDTAGS) static_build netgo" \
 	 -installsuffix netgo ${GO_LDFLAGS_STATIC} .;
+md5sum $(BUILDDIR)/$(NAME)-$(1)-$(2) > $(BUILDDIR)/$(NAME)-$(1)-$(2).md5;
+sha256sum $(BUILDDIR)/$(NAME)-$(1)-$(2) > $(BUILDDIR)/$(NAME)-$(1)-$(2).sha256;
 endef
 
 .PHONY: release
 release: *.go VERSION ## Builds the cross-compiled binaries, naming them in such a way for release (eg. binary-GOOS-GOARCH)
 	@echo "+ $@"
 	$(foreach GOOSARCH,$(GOOSARCHES), $(call buildrelease,$(subst /,,$(dir $(GOOSARCH))),$(notdir $(GOOSARCH))))
+
+.PHONY: bump-version
+BUMP := patch
+bump-version: ## Bump the version in the version file. Set KIND to [ patch | major | minor ]
+	@go get -u github.com/jessfraz/junk/sembump # update sembump tool
+	$(eval NEW_VERSION = $(shell sembump --kind $(BUMP) $(VERSION)))
+	@echo "Bumping VERSION from $(VERSION) to $(NEW_VERSION)"
+	echo $(NEW_VERSION) > VERSION
+	@echo "Updating links to download binaries in README.md"
+	sed -i s/$(VERSION)/$(NEW_VERSION)/g README.md
+	git add VERSION README.md
+	git commit -vsam "Bump version to $(NEW_VERSION)"
+	@echo "Run make tag to create and push the tag for new version $(NEW_VERSION)"
 
 .PHONY: tag
 tag: ## Create a new git tag to prepare to build a release
