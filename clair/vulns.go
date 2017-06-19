@@ -1,6 +1,7 @@
 package clair
 
 import (
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
@@ -88,16 +89,29 @@ func (c *Clair) NewClairLayer(r *registry.Registry, image string, fsLayers []sch
 	// form the path
 	p := strings.Join([]string{r.URL, "v2", image, "blobs", fsLayers[index].BlobSum.String()}, "/")
 
+	useBasicAuth := false
+
 	// get the token
 	token, err := r.Token(p)
 	if err != nil {
-		return nil, err
+		// if we get an error here of type: malformed auth challenge header: 'Basic realm="Registry Realm"'
+		// we need to use basic auth for the registry
+		if !strings.Contains(err.Error(), `malformed auth challenge header: 'Basic realm="Registry Realm"'`) {
+			return nil, err
+		}
+		useBasicAuth = true
 	}
 
 	h := make(map[string]string)
-	if token != "" {
+	if token != "" && !useBasicAuth {
 		h = map[string]string{
 			"Authorization": fmt.Sprintf("Bearer %s", token),
+		}
+	}
+
+	if useBasicAuth {
+		h = map[string]string{
+			"Authorization": fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(r.Username+":"+r.Password))),
 		}
 	}
 
