@@ -70,6 +70,10 @@ func main() {
 			Name:  "insecure, k",
 			Usage: "do not verify tls certificates of registry",
 		},
+		cli.BoolFlag{
+			Name:  "once, o",
+			Usage: "generate an output once and then exit",
+		},
 		cli.StringFlag{
 			Name:  "port",
 			Value: "8080",
@@ -181,6 +185,11 @@ func main() {
 		logrus.Info("creating initial static index")
 		if err := rc.repositories(staticDir); err != nil {
 			logrus.Fatalf("Error creating index: %v", err)
+		}
+
+		if c.GlobalBool("once") {
+			logrus.Info("Output generated")
+			return nil
 		}
 
 		// parse the duration
