@@ -37,8 +37,16 @@ func GetAuthConfig(c *cli.Context) (types.AuthConfig, error) {
 
 	// if they passed a specific registry, return those creds _if_ they exist
 	if c.GlobalString("registry") != "" {
+		// try with the user input
 		if creds, ok := dcfg.AuthConfigs[c.GlobalString("registry")]; ok {
 			return creds, nil
+		}
+		// add https:// to user input and try again
+		// see https://github.com/jessfraz/reg/issues/32
+		if !strings.HasPrefix(c.GlobalString("registry"), "https://") && !strings.HasPrefix(c.GlobalString("registry"), "http://") {
+			if creds, ok := dcfg.AuthConfigs["https://"+c.GlobalString("registry")]; ok {
+				return creds, nil
+			}
 		}
 		return types.AuthConfig{}, fmt.Errorf("No authentication credentials exist for %s", c.GlobalString("registry"))
 	}
