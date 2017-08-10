@@ -48,7 +48,9 @@ func GetAuthConfig(c *cli.Context) (types.AuthConfig, error) {
 				return creds, nil
 			}
 		}
-		return types.AuthConfig{}, fmt.Errorf("No authentication credentials exist for %s", c.GlobalString("registry"))
+		return types.AuthConfig{
+			ServerAddress: c.GlobalString("registry"),
+		}, nil
 	}
 
 	// set the auth config as the registryURL, username and Password
