@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/schema1"
 	"github.com/jessfraz/reg/registry"
 )
@@ -79,7 +80,7 @@ func (c *Clair) Vulnerabilities(r *registry.Registry, repo, tag string, m schema
 	return report, nil
 }
 
-// NewClairLayer will form a layer struct required for a clar scan
+// NewClairLayer will form a layer struct required for a clair scan
 func (c *Clair) NewClairLayer(r *registry.Registry, image string, fsLayers []schema1.FSLayer, index int) (*Layer, error) {
 	var parentName string
 	if index < len(fsLayers)-1 {
@@ -117,6 +118,51 @@ func (c *Clair) NewClairLayer(r *registry.Registry, image string, fsLayers []sch
 
 	return &Layer{
 		Name:       fsLayers[index].BlobSum.String(),
+		Path:       p,
+		ParentName: parentName,
+		Format:     "Docker",
+		Headers:    h,
+	}, nil
+}
+
+// NewClairLayerV2 will form a layer struct required for a clair scan
+func (c *Clair) NewClairLayerV2(r *registry.Registry, image string, fsLayers []distribution.Descriptor, index int) (*Layer, error) {
+	var parentName string
+	if index < len(fsLayers)-1 {
+		parentName = fsLayers[index+1].Digest.String()
+	}
+
+	// form the path
+	p := strings.Join([]string{r.URL, "v2", image, "blobs", fsLayers[index].Digest.String()}, "/")
+
+	useBasicAuth := false
+
+	// get the token
+	token, err := r.Token(p)
+	if err != nil {
+		// if we get an error here of type: malformed auth challenge header: 'Basic realm="Registry Realm"'
+		// we need to use basic auth for the registry
+		if !strings.Contains(err.Error(), `malformed auth challenge header: 'Basic realm="Registry Realm"'`) {
+			return nil, err
+		}
+		useBasicAuth = true
+	}
+
+	h := make(map[string]string)
+	if token != "" && !useBasicAuth {
+		h = map[string]string{
+			"Authorization": fmt.Sprintf("Bearer %s", token),
+		}
+	}
+
+	if useBasicAuth {
+		h = map[string]string{
+			"Authorization": fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(r.Username+":"+r.Password))),
+		}
+	}
+
+	return &Layer{
+		Name:       fsLayers[index].Digest.String(),
 		Path:       p,
 		ParentName: parentName,
 		Format:     "Docker",

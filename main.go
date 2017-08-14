@@ -10,7 +10,8 @@ import (
 	"text/tabwriter"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/docker/distribution/manifest/schema1"
+	"github.com/docker/distribution"
+	"github.com/docker/distribution/manifest/schema2"
 	"github.com/docker/docker/api/types"
 	"github.com/jessfraz/reg/clair"
 	"github.com/jessfraz/reg/registry"
@@ -267,20 +268,46 @@ func main() {
 				// FIXME use clair.Vulnerabilities
 
 				// get the manifest
-				m, err := r.ManifestV1(repo, ref)
+				m2, err := r.Manifest(repo, ref)
+
 				if err != nil {
 					return err
 				}
 
-				// filter out the empty layers
-				var filteredLayers []schema1.FSLayer
-				for _, layer := range m.FSLayers {
-					if !clair.IsEmptyLayer(layer.BlobSum) {
-						filteredLayers = append(filteredLayers, layer)
+				mf, ok := m2.(schema2.Manifest)
+
+				var filteredLayers []distribution.Descriptor
+
+				if ok {
+
+					for _, layer := range mf.Layers {
+						if !clair.IsEmptyLayer(layer.Digest) {
+							filteredLayers = append(filteredLayers, layer)
+						}
 					}
+
+				} else {
+
+					fmt.Println("Couldn't retrieve manifest V2, fallback to v1")
+					m, err := r.ManifestV1(repo, ref)
+					if err != nil {
+						return err
+					}
+
+					for _, layer := range m.FSLayers {
+						if !clair.IsEmptyLayer(layer.BlobSum) {
+
+							newLayer := distribution.Descriptor{
+								Digest: layer.BlobSum,
+							}
+
+							filteredLayers = append(filteredLayers, newLayer)
+						}
+					}
+
 				}
-				m.FSLayers = filteredLayers
-				if len(m.FSLayers) == 0 {
+
+				if len(filteredLayers) == 0 {
 					fmt.Printf("No need to analyse image %s:%s as there is no non-emtpy layer", repo, ref)
 					return nil
 				}
@@ -291,9 +318,9 @@ func main() {
 					return err
 				}
 
-				for i := len(m.FSLayers) - 1; i >= 0; i-- {
+				for i := len(filteredLayers) - 1; i >= 0; i-- {
 					// form the clair layer
-					l, err := cr.NewClairLayer(r, repo, m.FSLayers, i)
+					l, err := cr.NewClairLayerV2(r, repo, filteredLayers, i)
 					if err != nil {
 						return err
 					}
@@ -304,7 +331,7 @@ func main() {
 					}
 				}
 
-				vl, err := cr.GetLayer(m.FSLayers[0].BlobSum.String(), false, true)
+				vl, err := cr.GetLayer(filteredLayers[0].Digest.String(), false, true)
 				if err != nil {
 					return err
 				}
