@@ -210,6 +210,36 @@ func main() {
 			},
 		},
 		{
+			Name:    "circuit-breaker",
+			Aliases: []string{"cb"},
+			Usage:   "prevent that an existing tag will be overwritten",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "tag",
+					Usage: "tag that one would like to use",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				if c.String("tag") == "" {
+					return errors.New("tag cannot be empty, pass --tag")
+				}
+
+				if len(c.Args()) < 1 {
+					return fmt.Errorf("pass the name of the repository")
+				}
+
+				tags, err := r.Tags(c.Args()[0])
+				if err != nil {
+					return err
+				}
+
+				// check whether tag already exists and exit 1 if true
+				tagExists(c.String("tag"), tags)
+
+				return nil
+			},
+		},
+		{
 			Name:    "download",
 			Aliases: []string{"layer"},
 			Usage:   "download a layer for the specific reference of a repository",
@@ -366,4 +396,15 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		logrus.Fatal(err)
 	}
+}
+
+//based on https://stackoverflow.com/a/15323988/2777965
+func tagExists(a string, list []string) {
+	for _, b := range list {
+		if b == a {
+			fmt.Println("Tag", a, "already exists")
+			os.Exit(1)
+		}
+	}
+	fmt.Println("Tag", a, "is available")
 }
