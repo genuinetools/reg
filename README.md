@@ -47,13 +47,14 @@ AUTHOR(S):
    @jessfraz <no-reply@butts.com>
 
 COMMANDS:
-     delete, rm       delete a specific reference of a repository
-     list, ls         list all repositories
-     manifest         get the json manifest for the specific reference of a repository
-     tags             get the tags for a repository
-     download, layer  download a layer for the specific reference of a repository
-     vulns            get a vulnerability report for the image from CoreOS Clair
-     help, h          Shows a list of commands or help for one command
+     delete, rm           delete a specific reference of a repository
+     list, ls             list all repositories
+     manifest             get the json manifest for the specific reference of a repository
+     tags                 get the tags for a repository
+     circuit-breaker, cb  prevent that an existing tag will be overwritten
+     download, layer      download a layer for the specific reference of a repository
+     vulns                get a vulnerability report for the image from CoreOS Clair
+     help, h              Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
    --debug, -d                 run in debug mode
@@ -95,6 +96,13 @@ alpha
 hardened
 latest
 stable
+```
+
+## Check whether a tag is available
+
+```console
+$ reg -r r.j3ss.co cb chrome --tag 1.0.0
+Tag 1.0.0 is available
 ```
 
 ## Get a Manifest
