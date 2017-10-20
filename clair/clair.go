@@ -27,7 +27,7 @@ func Log(format string, args ...interface{}) {
 }
 
 // New creates a new Clair struct with the given URL and credentials.
-func New(url string, debug bool) (*Clair, error) {
+func New(url string, debug bool, timeout time.Duration) (*Clair, error) {
 	transport := http.DefaultTransport
 
 	errorTransport := &ErrorTransport{
@@ -43,7 +43,7 @@ func New(url string, debug bool) (*Clair, error) {
 	registry := &Clair{
 		URL: url,
 		Client: &http.Client{
-			Timeout:   time.Minute,
+			Timeout:   timeout,
 			Transport: errorTransport,
 		},
 		Logf: logf,

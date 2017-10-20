@@ -18,6 +18,7 @@ import (
 	"github.com/jessfraz/reg/version"
 	digest "github.com/opencontainers/go-digest"
 	"github.com/urfave/cli"
+	"time"
 )
 
 const (
@@ -98,6 +99,11 @@ func main() {
 		cli.StringFlag{
 			Name:  "registry, r",
 			Usage: "URL to the private registry (ex. r.j3ss.co)",
+		},
+		cli.StringFlag{
+			Name: "timeout",
+			Value: "1m",
+			Usage: "timeout for HTTP requests",
 		},
 	}
 	app.Commands = []cli.Command{
@@ -285,8 +291,14 @@ func main() {
 					return nil
 				}
 
+				// parse the timeout
+				timeout, err := time.ParseDuration(c.GlobalString("timeout"))
+				if err != nil {
+					logrus.Fatalf("parsing %s as duration failed: %v", c.GlobalString("timeout"), err)
+				}
+
 				// initialize clair
-				cr, err := clair.New(c.String("clair"), c.GlobalBool("debug"))
+				cr, err := clair.New(c.String("clair"), c.GlobalBool("debug"), timeout)
 				if err != nil {
 					return err
 				}
