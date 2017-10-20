@@ -96,7 +96,7 @@ func (c *Clair) NewClairLayer(r *registry.Registry, image string, fsLayers []sch
 	if err != nil {
 		// if we get an error here of type: malformed auth challenge header: 'Basic realm="Registry Realm"'
 		// we need to use basic auth for the registry
-		if !strings.Contains(err.Error(), `malformed auth challenge header: 'Basic realm="Registry Realm"'`) {
+		if !strings.Contains(err.Error(), `malformed auth challenge header: 'Basic realm="Registry`) {
 			return nil, err
 		}
 		useBasicAuth = true
