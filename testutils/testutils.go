@@ -81,15 +81,11 @@ func StartRegistry(dcli *client.Client, config, username, password string) (stri
 
 // RemoveContainer removes with force a container by it's container ID.
 func RemoveContainer(dcli *client.Client, ctrID string) error {
-	if err := dcli.ContainerRemove(context.Background(), ctrID,
+	return dcli.ContainerRemove(context.Background(), ctrID,
 		types.ContainerRemoveOptions{
 			RemoveVolumes: true,
 			Force:         true,
-		}); err != nil {
-		return err
-	}
-
-	return nil
+		})
 }
 
 // dockerLogin logins via the command line to a docker registry
