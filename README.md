@@ -18,11 +18,11 @@ Docker registry v2 command line client.
 
 #### Binaries
 
-- **darwin** [386](https://github.com/jessfraz/reg/releases/download/v0.4.4/reg-darwin-386) / [amd64](https://github.com/jessfraz/reg/releases/download/v0.4.4/reg-darwin-amd64)
-- **freebsd** [386](https://github.com/jessfraz/reg/releases/download/v0.4.4/reg-freebsd-386) / [amd64](https://github.com/jessfraz/reg/releases/download/v0.4.4/reg-freebsd-amd64)
-- **linux** [386](https://github.com/jessfraz/reg/releases/download/v0.4.4/reg-linux-386) / [amd64](https://github.com/jessfraz/reg/releases/download/v0.4.4/reg-linux-amd64) / [arm](https://github.com/jessfraz/reg/releases/download/v0.4.4/reg-linux-arm) / [arm64](https://github.com/jessfraz/reg/releases/download/v0.4.4/reg-linux-arm64)
-- **solaris** [amd64](https://github.com/jessfraz/reg/releases/download/v0.4.4/reg-solaris-amd64)
-- **windows** [386](https://github.com/jessfraz/reg/releases/download/v0.4.4/reg-windows-386) / [amd64](https://github.com/jessfraz/reg/releases/download/v0.4.4/reg-windows-amd64)
+- **darwin** [386](https://github.com/jessfraz/reg/releases/download/v0.4.5/reg-darwin-386) / [amd64](https://github.com/jessfraz/reg/releases/download/v0.4.5/reg-darwin-amd64)
+- **freebsd** [386](https://github.com/jessfraz/reg/releases/download/v0.4.5/reg-freebsd-386) / [amd64](https://github.com/jessfraz/reg/releases/download/v0.4.5/reg-freebsd-amd64)
+- **linux** [386](https://github.com/jessfraz/reg/releases/download/v0.4.5/reg-linux-386) / [amd64](https://github.com/jessfraz/reg/releases/download/v0.4.5/reg-linux-amd64) / [arm](https://github.com/jessfraz/reg/releases/download/v0.4.5/reg-linux-arm) / [arm64](https://github.com/jessfraz/reg/releases/download/v0.4.5/reg-linux-arm64)
+- **solaris** [amd64](https://github.com/jessfraz/reg/releases/download/v0.4.5/reg-solaris-amd64)
+- **windows** [386](https://github.com/jessfraz/reg/releases/download/v0.4.5/reg-windows-386) / [amd64](https://github.com/jessfraz/reg/releases/download/v0.4.5/reg-windows-amd64)
 
 #### Via Go
 
