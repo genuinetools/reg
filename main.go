@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"sync"
 	"text/tabwriter"
 
 	"github.com/Sirupsen/logrus"
@@ -138,15 +139,20 @@ func main() {
 				// print header
 				fmt.Fprintln(w, "REPO\tTAGS")
 
+				var wg sync.WaitGroup
+				wg.Add(len(repos))
 				for _, repo := range repos {
-					// get the tags and print to stdout
-					tags, err := r.Tags(repo)
-					if err != nil {
-						return err
-					}
-
-					fmt.Fprintf(w, "%s\t%s\n", repo, strings.Join(tags, ", "))
+					go func(repo string) {
+						// get the tags and print to stdout
+						tags, err := r.Tags(repo)
+						if err != nil {
+							fmt.Printf("Get tags of [%s] error: %s", repo, err)
+						}
+						fmt.Fprintf(w, "%s\t%s\n", repo, strings.Join(tags, ", "))
+						wg.Done()
+					}(repo)
 				}
+				wg.Wait()
 
 				w.Flush()
 				return nil
