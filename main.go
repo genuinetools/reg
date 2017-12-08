@@ -148,7 +148,8 @@ func main() {
 						if err != nil {
 							fmt.Printf("Get tags of [%s] error: %s", repo, err)
 						}
-						fmt.Fprintf(w, "%s\t%s\n", repo, strings.Join(tags, ", "))
+						out := fmt.Sprintf("%s\t%s\n", repo, strings.Join(tags, ", "))
+						w.Write([]byte(out))
 						wg.Done()
 					}(repo)
 				}
