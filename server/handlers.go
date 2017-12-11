@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"github.com/jessfraz/reg/clair"
 	"github.com/jessfraz/reg/registry"
+	"github.com/sirupsen/logrus"
 )
 
 type registryController struct {

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/docker/docker-ce/components/cli/cli/config"
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/cli/config"
 )
 
 // GetAuthConfig returns the docker registry AuthConfig.

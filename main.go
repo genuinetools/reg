@@ -10,7 +10,6 @@ import (
 	"sync"
 	"text/tabwriter"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/docker/api/types"
 	"github.com/jessfraz/reg/clair"
@@ -18,6 +17,7 @@ import (
 	"github.com/jessfraz/reg/utils"
 	"github.com/jessfraz/reg/version"
 	digest "github.com/opencontainers/go-digest"
+	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
