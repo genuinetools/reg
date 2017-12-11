@@ -10,6 +10,7 @@ import (
 var (
 	authChallengeRegex = regexp.MustCompile(
 		`^\s*Bearer\s+realm="([^"]+)",service="([^"]+)"\s*$`)
+	basicRegex = regexp.MustCompile(`^\s*Basic\s+.*$`)
 	challengeRegex = regexp.MustCompile(
 		`^\s*Bearer\s+realm="([^"]+)",service="([^"]+)",scope="([^"]+)"\s*$`)
 
@@ -26,6 +27,10 @@ func parseAuthHeader(header http.Header) (*authService, error) {
 }
 
 func parseChallenge(challengeHeader string) (*authService, error) {
+	if basicRegex.MatchString(challengeHeader) {
+		return nil, nil
+	}
+
 	match := challengeRegex.FindAllStringSubmatch(challengeHeader, -1)
 
 	if len(match) != 1 {
