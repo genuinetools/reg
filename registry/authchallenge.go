@@ -10,7 +10,7 @@ import (
 var (
 	authChallengeRegex = regexp.MustCompile(
 		`^\s*Bearer\s+realm="([^"]+)",service="([^"]+)"\s*$`)
-	basicRegex = regexp.MustCompile(`^\s*Basic\s+.*$`)
+	basicRegex     = regexp.MustCompile(`^\s*Basic\s+.*$`)
 	challengeRegex = regexp.MustCompile(
 		`^\s*Bearer\s+realm="([^"]+)",service="([^"]+)",scope="([^"]+)"\s*$`)
 
