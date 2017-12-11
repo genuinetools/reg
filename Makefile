@@ -64,8 +64,8 @@ vet: ## Verifies `go vet` passes
 
 .PHONY: staticcheck
 staticcheck: ## Verifies `staticcheck` passes
-        @echo "+ $@"
-        @staticcheck $(shell go list ./... | grep -v vendor) | grep -v '.pb.go:' | tee /dev/stderr
+	@echo "+ $@"
+	@staticcheck $(shell go list ./... | grep -v vendor) | grep -v '.pb.go:' | tee /dev/stderr
 
 .PHONY: install
 install: ## Installs the executable or package
