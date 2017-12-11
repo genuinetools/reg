@@ -15,9 +15,11 @@
       - GO15VENDOREXPERIMENT=1
   install:
     - go get github.com/golang/lint/golint
+    - go get honnef.co/go/tools/cmd/staticcheck
   script:
     - go build -v
     - go vet $(go list ./... | grep -v vendor)
+    - staticcheck $(go list ./... | grep -v vendor)
     - test -z "$(golint ./... | grep -v vendor | tee /dev/stderr)"
     - test -z "$(gofmt -s -l . | grep -v vendor | tee /dev/stderr)"
     - make dind dtest

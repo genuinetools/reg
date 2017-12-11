@@ -26,7 +26,7 @@ GO_LDFLAGS_STATIC=-ldflags "-w $(CTIMEVAR) -extldflags -static"
 # List the GOOS and GOARCH to build
 GOOSARCHES = darwin/amd64 darwin/386 freebsd/amd64 freebsd/386 linux/arm linux/arm64 linux/amd64 linux/386 solaris/amd64 windows/amd64 windows/386
 
-all: clean build fmt lint test vet install ## Runs a clean, build, fmt, lint, test, vet and install
+all: clean build fmt lint test staticcheck vet install ## Runs a clean, build, fmt, lint, test, vet and install
 
 .PHONY: build
 build: $(NAME) ## Builds a dynamic executable or package
@@ -61,6 +61,11 @@ test: ## Runs the go tests
 vet: ## Verifies `go vet` passes
 	@echo "+ $@"
 	@go vet $(shell go list ./... | grep -v vendor) | grep -v '.pb.go:' | tee /dev/stderr
+
+.PHONY: staticcheck
+staticcheck: ## Verifies `staticcheck` passes
+        @echo "+ $@"
+        @staticcheck $(shell go list ./... | grep -v vendor) | grep -v '.pb.go:' | tee /dev/stderr
 
 .PHONY: install
 install: ## Installs the executable or package
@@ -98,7 +103,7 @@ release: *.go VERSION ## Builds the cross-compiled binaries, naming them in such
 
 .PHONY: bump-version
 BUMP := patch
-bump-version: ## Bump the version in the version file. Set KIND to [ patch | major | minor ]
+bump-version: ## Bump the version in the version file. Set BUMP to [ patch | major | minor ]
 	@go get -u github.com/jessfraz/junk/sembump # update sembump tool
 	$(eval NEW_VERSION = $(shell sembump --kind $(BUMP) $(VERSION)))
 	@echo "Bumping VERSION from $(VERSION) to $(NEW_VERSION)"
