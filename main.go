@@ -23,6 +23,8 @@ import (
 
 const (
 	dockerConfigPath = ".docker/config.json"
+
+	defaultDockerRegistry = "https://registry-1.docker.io"
 )
 
 var (
@@ -99,6 +101,7 @@ func main() {
 		cli.StringFlag{
 			Name:  "registry, r",
 			Usage: "URL to the private registry (ex. r.j3ss.co)",
+			Value: defaultDockerRegistry,
 		},
 	}
 	app.Commands = []cli.Command{

@@ -218,20 +218,6 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	for _, h := range m1.History {
-		var comp v1Compatibility
-
-		if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
-			logrus.WithFields(logrus.Fields{
-				"func":   "vulnerabilities",
-				"URL":    r.URL,
-				"method": r.Method,
-			}).Errorf("unmarshal v1 manifest for %s:%s failed: %v", repo, tag, err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	}
-
 	result := clair.VulnerabilityReport{}
 
 	if rc.cl != nil {
