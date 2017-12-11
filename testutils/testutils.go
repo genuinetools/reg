@@ -155,7 +155,7 @@ func imageExists(dcli *client.Client, image string) (bool, error) {
 		return true, nil
 	}
 
-	if client.IsErrImageNotFound(err) {
+	if client.IsErrNotFound(err) {
 		return false, nil
 	}
 
