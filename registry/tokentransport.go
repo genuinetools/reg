@@ -135,6 +135,9 @@ func (r *Registry) Token(url string) (string, error) {
 	}
 
 	authReq, err := a.Request(r.Username, r.Password)
+	if err != nil {
+		return "", err
+	}
 	resp, err = r.Client.Do(authReq)
 	if err != nil {
 		return "", err

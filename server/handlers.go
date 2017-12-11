@@ -230,8 +230,6 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
-		break
 	}
 
 	result := clair.VulnerabilityReport{}

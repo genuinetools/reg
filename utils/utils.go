@@ -68,7 +68,7 @@ func GetRepoAndRef(c *cli.Context) (repo, ref string, err error) {
 	}
 
 	arg := c.Args()[0]
-	parts := []string{}
+	var parts []string
 	if strings.Contains(arg, "@") {
 		parts = strings.Split(c.Args()[0], "@")
 	} else if strings.Contains(arg, ":") {
