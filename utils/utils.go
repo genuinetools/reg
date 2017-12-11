@@ -7,16 +7,17 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/cli/config"
-	"github.com/urfave/cli"
 )
 
 // GetAuthConfig returns the docker registry AuthConfig.
-func GetAuthConfig(c *cli.Context) (types.AuthConfig, error) {
-	if c.GlobalString("username") != "" && c.GlobalString("password") != "" && c.GlobalString("registry") != "" {
+// Optionally takes in the authentication values, otherwise pulls them from the
+// docker config file.
+func GetAuthConfig(username, password, registry string) (types.AuthConfig, error) {
+	if username != "" && password != "" && registry != "" {
 		return types.AuthConfig{
-			Username:      c.GlobalString("username"),
-			Password:      c.GlobalString("password"),
-			ServerAddress: c.GlobalString("registry"),
+			Username:      username,
+			Password:      password,
+			ServerAddress: registry,
 		}, nil
 	}
 
@@ -27,52 +28,58 @@ func GetAuthConfig(c *cli.Context) (types.AuthConfig, error) {
 
 	// return error early if there are no auths saved
 	if !dcfg.ContainsAuth() {
-		if c.GlobalString("registry") != "" {
+		// If we were passed a registry, just use that.
+		if registry != "" {
 			return types.AuthConfig{
-				ServerAddress: c.GlobalString("registry"),
+				ServerAddress: registry,
 			}, nil
 		}
-		return types.AuthConfig{}, fmt.Errorf("No auth was present in %s, please pass a registry, username, and password", config.Dir())
+
+		// Otherwise, just use an empty auth config.
+		return types.AuthConfig{}, nil
 	}
 
 	// if they passed a specific registry, return those creds _if_ they exist
-	if c.GlobalString("registry") != "" {
+	if registry != "" {
 		// try with the user input
-		if creds, ok := dcfg.AuthConfigs[c.GlobalString("registry")]; ok {
+		if creds, ok := dcfg.AuthConfigs[registry]; ok {
 			return creds, nil
 		}
 		// add https:// to user input and try again
 		// see https://github.com/jessfraz/reg/issues/32
-		if !strings.HasPrefix(c.GlobalString("registry"), "https://") && !strings.HasPrefix(c.GlobalString("registry"), "http://") {
-			if creds, ok := dcfg.AuthConfigs["https://"+c.GlobalString("registry")]; ok {
+		if !strings.HasPrefix(registry, "https://") && !strings.HasPrefix(registry, "http://") {
+			if creds, ok := dcfg.AuthConfigs["https://"+registry]; ok {
 				return creds, nil
 			}
 		}
+
+		// Otherwise just use the registry with no auth.
 		return types.AuthConfig{
-			ServerAddress: c.GlobalString("registry"),
+			ServerAddress: registry,
 		}, nil
 	}
 
-	// set the auth config as the registryURL, username and Password
+	// Just set the auth config as the first registryURL, username and password
+	// found in the auth config.
 	for _, creds := range dcfg.AuthConfigs {
 		return creds, nil
 	}
 
-	return types.AuthConfig{}, fmt.Errorf("Could not find any authentication credentials")
+	// Don't use any authentication.
+	return types.AuthConfig{}, nil
 }
 
 // GetRepoAndRef parses the repo name and reference.
-func GetRepoAndRef(c *cli.Context) (repo, ref string, err error) {
-	if len(c.Args()) < 1 {
+func GetRepoAndRef(arg string) (repo, ref string, err error) {
+	if arg == "" {
 		return "", "", errors.New("pass the name of the repository")
 	}
 
-	arg := c.Args()[0]
 	var parts []string
 	if strings.Contains(arg, "@") {
-		parts = strings.Split(c.Args()[0], "@")
+		parts = strings.Split(arg, "@")
 	} else if strings.Contains(arg, ":") {
-		parts = strings.Split(c.Args()[0], ":")
+		parts = strings.Split(arg, ":")
 	} else {
 		parts = []string{arg}
 	}

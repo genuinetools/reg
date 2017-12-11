@@ -98,7 +98,7 @@ func main() {
 		},
 	}
 	app.Action = func(c *cli.Context) error {
-		auth, err := utils.GetAuthConfig(c)
+		auth, err := utils.GetAuthConfig(c.GlobalString("username"), c.GlobalString("password"), c.GlobalString("registry"))
 		if err != nil {
 			logrus.Fatal(err)
 		}

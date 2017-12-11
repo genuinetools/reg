@@ -39,7 +39,7 @@ func preload(c *cli.Context) (err error) {
 
 	if len(c.Args()) > 0 {
 		if c.Args()[0] != "help" {
-			auth, err = utils.GetAuthConfig(c)
+			auth, err = utils.GetAuthConfig(c.GlobalString("username"), c.GlobalString("password"), c.GlobalString("registry"))
 			if err != nil {
 				return err
 			}
@@ -107,7 +107,7 @@ func main() {
 			Aliases: []string{"rm"},
 			Usage:   "delete a specific reference of a repository",
 			Action: func(c *cli.Context) error {
-				repo, ref, err := utils.GetRepoAndRef(c)
+				repo, ref, err := utils.GetRepoAndRef(c.Args()[0])
 				if err != nil {
 					return err
 				}
@@ -169,7 +169,7 @@ func main() {
 				},
 			},
 			Action: func(c *cli.Context) error {
-				repo, ref, err := utils.GetRepoAndRef(c)
+				repo, ref, err := utils.GetRepoAndRef(c.Args()[0])
 				if err != nil {
 					return err
 				}
@@ -227,7 +227,7 @@ func main() {
 				},
 			},
 			Action: func(c *cli.Context) error {
-				repo, ref, err := utils.GetRepoAndRef(c)
+				repo, ref, err := utils.GetRepoAndRef(c.Args()[0])
 				if err != nil {
 					return err
 				}
@@ -266,7 +266,7 @@ func main() {
 					return errors.New("clair url cannot be empty, pass --clair")
 				}
 
-				repo, ref, err := utils.GetRepoAndRef(c)
+				repo, ref, err := utils.GetRepoAndRef(c.Args()[0])
 				if err != nil {
 					return err
 				}
