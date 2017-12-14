@@ -142,25 +142,23 @@ endif
 DIND_CONTAINER=reg-dind
 DIND_DOCKER_IMAGE=r.j3ss.co/docker:userns
 dind: ## Starts a docker-in-docker container for running the tests with
-	docker build --rm --force-rm -f Dockerfile.dind -t $(DIND_DOCKER_IMAGE) .
 	docker run -d  \
-		-v /var/lib/docker2:/var/lib/docker \
 		--name $(DIND_CONTAINER) \
 		--privileged \
 		-v $(CURDIR)/.certs:/etc/docker/ssl \
 		-v $(CURDIR):/go/src/github.com/jessfraz/reg \
 		-v /tmp:/tmp \
 		$(DIND_DOCKER_IMAGE) \
-		docker daemon -D --storage-driver $(DOCKER_GRAPHDRIVER) \
+		dockerd -D --storage-driver $(DOCKER_GRAPHDRIVER) \
 		-H tcp://127.0.0.1:2375 \
 		--host=unix:///var/run/docker.sock \
 		--disable-legacy-registry=true \
 		--exec-opt=native.cgroupdriver=cgroupfs \
 		--insecure-registry localhost:5000 \
 		--tlsverify \
-		--tlscacert=/etc/docker/ssl/ca.pem \
-		--tlskey=/etc/docker/ssl/key.pem \
-		--tlscert=/etc/docker/ssl/cert.pem
+		--tlscacert=/etc/docker/ssl/cacert.pem \
+		--tlskey=/etc/docker/ssl/server.key \
+		--tlscert=/etc/docker/ssl/server.cert
 
 .PHONY: dtest
 DOCKER_IMAGE := reg-dev

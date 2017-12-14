@@ -4,12 +4,16 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"testing"
 
+	"github.com/docker/docker/api"
 	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/tlsconfig"
 	"github.com/jessfraz/reg/testutils"
 )
 
@@ -57,7 +61,7 @@ func TestMain(m *testing.M) {
 	defer os.Remove("testreg" + exeSuffix)
 
 	// create the docker client
-	dcli, err := client.NewEnvClient()
+	dcli, err := newEnvDockerClient()
 	if err != nil {
 		panic(fmt.Errorf("could not connect to docker: %v", err))
 	}
@@ -108,4 +112,43 @@ alpine              latest
 	if out != expected {
 		t.Fatalf("expected: %s\ngot: %s", expected, out)
 	}
+}
+
+func newEnvDockerClient() (*client.Client, error) {
+	var hc *http.Client
+
+	if dockerCertPath := os.Getenv("DOCKER_CERT_PATH"); dockerCertPath != "" {
+		options := tlsconfig.Options{
+			CAFile:             filepath.Join(dockerCertPath, "cacert.pem"),
+			CertFile:           filepath.Join(dockerCertPath, "server.cert"),
+			KeyFile:            filepath.Join(dockerCertPath, "server.key"),
+			InsecureSkipVerify: os.Getenv("DOCKER_TLS_VERIFY") == "",
+		}
+		tlsc, err := tlsconfig.Client(options)
+		if err != nil {
+			return nil, err
+		}
+
+		hc = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: tlsc,
+			},
+			CheckRedirect: client.CheckRedirect,
+		}
+	}
+
+	host := os.Getenv("DOCKER_HOST")
+	if host == "" {
+		host = client.DefaultDockerHost
+	}
+	version := os.Getenv("DOCKER_API_VERSION")
+	if version == "" {
+		version = api.DefaultVersion
+	}
+
+	cli, err := client.NewClient(host, version, hc, nil)
+	if err != nil {
+		return cli, err
+	}
+	return cli, nil
 }
