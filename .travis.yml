@@ -34,21 +34,15 @@
       - cross/reg-linux-arm
       - cross/reg-darwin-amd64.md5
       - cross/reg-darwin-amd64
-      - cross/reg-solaris-amd64.md5
       - cross/reg-linux-arm64.sha256
       - cross/reg-linux-arm.sha256
       - cross/reg-linux-386.sha256
       - cross/reg-darwin-386.md5
       - cross/reg-windows-386.md5
-      - cross/reg-freebsd-amd64.md5
       - cross/reg-linux-arm64.md5
       - cross/reg-linux-arm64
-      - cross/reg-freebsd-amd64.sha256
-      - cross/reg-freebsd-386.md5
       - cross/reg-linux-amd64.sha256
       - cross/reg-linux-386.md5
-      - cross/reg-freebsd-386
-      - cross/reg-solaris-amd64.sha256
       - cross/reg-windows-amd64
       - cross/reg-windows-amd64.md5
       - cross/reg-windows-amd64.sha256
@@ -56,11 +50,8 @@
       - cross/reg-darwin-386.sha256
       - cross/reg-darwin-amd64.sha256
       - cross/reg-windows-386
-      - cross/reg-solaris-amd64
       - cross/reg-darwin-386
       - cross/reg-linux-386
-      - cross/reg-freebsd-amd64
-      - cross/reg-freebsd-386.sha256
       - cross/reg-linux-amd64
     skip_cleanup: true
     on:

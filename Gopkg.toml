@@ -37,6 +37,14 @@
   branch = "master"
 
 [[constraint]]
+  name = "github.com/docker/cli"
+  branch = "master"
+
+[[constraint]]
+  name = "github.com/docker/docker-credentials-helpers"
+  branch = "master"
+
+[[constraint]]
   name = "github.com/docker/go-connections"
   branch = "master"
 
