@@ -16,6 +16,11 @@ func (r *Registry) Delete(repository, ref string) error {
 		return err
 	}
 
+	// If we couldn't get the digest because it was not found just try and delete the ref they passed.
+	if digest == "" {
+		digest = ref
+	}
+
 	// Delete the image.
 	url := r.url("/v2/%s/manifests/%s", repository, digest)
 	r.Logf("registry.manifests.delete url=%s repository=%s ref=%s",

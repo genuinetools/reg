@@ -25,7 +25,7 @@ func (r *Registry) Digest(repository, ref string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
 		return "", fmt.Errorf("Got status code: %d", resp.StatusCode)
 	}
 
