@@ -118,9 +118,12 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	result := AnalysisResult{}
-	result.RegistryDomain = rc.reg.Domain
-	result.Name = repo
+	result := AnalysisResult{
+		RegistryDomain: rc.reg.Domain,
+		LastUpdated:    time.Now().Local().Format(time.RFC1123),
+		Name:           repo,
+	}
+
 	for _, tag := range tags {
 		// get the manifest
 		m1, err := rc.reg.ManifestV1(repo, tag)
