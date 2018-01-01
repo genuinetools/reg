@@ -172,7 +172,7 @@ dtest: ## Run the tests in a docker container
 		-e DOCKER_HOST=tcp://127.0.0.1:2375 \
 		-e DOCKER_TLS_VERIFY=true \
 		-e DOCKER_CERT_PATH=/etc/docker/ssl \
-		-e DOCKER_API_VERSION=1.35 \
+		-e DOCKER_API_VERSION \
 		$(DOCKER_IMAGE) \
 		make test
 
