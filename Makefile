@@ -70,7 +70,7 @@ staticcheck: ## Verifies `staticcheck` passes
 .PHONY: install
 install: ## Installs the executable or package
 	@echo "+ $@"
-	@go install .
+	go install -a -tags "$(BUILDTAGS)" ${GO_LDFLAGS} .
 
 define buildpretty
 mkdir -p $(BUILDDIR)/$(1)/$(2);
