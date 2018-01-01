@@ -152,7 +152,6 @@ dind: ## Starts a docker-in-docker container for running the tests with
 		dockerd -D --storage-driver $(DOCKER_GRAPHDRIVER) \
 		-H tcp://127.0.0.1:2375 \
 		--host=unix:///var/run/docker.sock \
-		--disable-legacy-registry=true \
 		--exec-opt=native.cgroupdriver=cgroupfs \
 		--insecure-registry localhost:5000 \
 		--tlsverify \
