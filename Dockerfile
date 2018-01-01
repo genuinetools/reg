@@ -15,8 +15,10 @@ RUN set -x \
 		gcc \
 		libc-dev \
 		libgcc \
+		make \
 	&& cd /go/src/github.com/jessfraz/reg \
-	&& CGO_ENABLED=0 go build -a -tags netgo -ldflags '-extldflags "-static"' -o /usr/bin/reg . \
+	&& make static \
+	&& mv reg /usr/bin/reg \
 	&& apk del .build-deps \
 	&& rm -rf /go \
 	&& echo "Build complete."
