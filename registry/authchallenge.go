@@ -28,7 +28,7 @@ func parseAuthHeader(header http.Header) (*authService, error) {
 
 func parseChallenge(challengeHeader string) (*authService, error) {
 	if basicRegex.MatchString(challengeHeader) {
-		return nil, nil
+		return nil, fmt.Errorf("basic auth required")
 	}
 
 	match := challengeRegex.FindAllStringSubmatch(challengeHeader, -1)
