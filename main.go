@@ -140,6 +140,7 @@ func main() {
 				// print header
 				fmt.Fprintln(w, "REPO\tTAGS")
 
+				var l sync.Mutex
 				var wg sync.WaitGroup
 				wg.Add(len(repos))
 				for _, repo := range repos {
@@ -150,7 +151,9 @@ func main() {
 							fmt.Printf("Get tags of [%s] error: %s", repo, err)
 						}
 						out := fmt.Sprintf("%s\t%s\n", repo, strings.Join(tags, ", "))
+						l.Lock()
 						w.Write([]byte(out))
+						l.Unlock()
 						wg.Done()
 					}(repo)
 				}
