@@ -38,25 +38,25 @@ func Log(format string, args ...interface{}) {
 }
 
 // New creates a new Registry struct with the given URL and credentials.
-func New(auth types.AuthConfig, debug bool) (*Registry, error) {
+func New(auth types.AuthConfig, debug, ping bool) (*Registry, error) {
 	transport := http.DefaultTransport
 
-	return newFromTransport(auth, transport, debug)
+	return newFromTransport(auth, transport, debug, ping)
 }
 
 // NewInsecure creates a new Registry struct with the given URL and credentials,
 // using a http.Transport that will not verify an SSL certificate.
-func NewInsecure(auth types.AuthConfig, debug bool) (*Registry, error) {
+func NewInsecure(auth types.AuthConfig, debug, ping bool) (*Registry, error) {
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 		},
 	}
 
-	return newFromTransport(auth, transport, debug)
+	return newFromTransport(auth, transport, debug, ping)
 }
 
-func newFromTransport(auth types.AuthConfig, transport http.RoundTripper, debug bool) (*Registry, error) {
+func newFromTransport(auth types.AuthConfig, transport http.RoundTripper, debug, ping bool) (*Registry, error) {
 	url := strings.TrimSuffix(auth.ServerAddress, "/")
 
 	if !reProtocol.MatchString(url) {
@@ -95,8 +95,10 @@ func newFromTransport(auth types.AuthConfig, transport http.RoundTripper, debug 
 		Logf:     logf,
 	}
 
-	if err := registry.Ping(); err != nil {
-		return nil, err
+	if ping {
+		if err := registry.Ping(); err != nil {
+			return nil, err
+		}
 	}
 
 	return registry, nil

@@ -49,14 +49,16 @@ func preload(c *cli.Context) (err error) {
 				return fmt.Errorf("Attempt to use insecure protocol! Use non-ssl option to force")
 			}
 
+			skipPing := c.GlobalBool("no-ping")
+
 			// create the registry client
 			if c.GlobalBool("insecure") {
-				r, err = registry.NewInsecure(auth, c.GlobalBool("debug"))
+				r, err = registry.NewInsecure(auth, c.GlobalBool("debug"), !skipPing)
 				if err != nil {
 					return err
 				}
 			} else {
-				r, err = registry.New(auth, c.GlobalBool("debug"))
+				r, err = registry.New(auth, c.GlobalBool("debug"), !skipPing)
 				if err != nil {
 					return err
 				}
@@ -100,6 +102,10 @@ func main() {
 			Name:  "registry, r",
 			Usage: "URL to the private registry (ex. r.j3ss.co)",
 			Value: utils.DefaultDockerRegistry,
+		},
+		cli.BoolFlag{
+			Name:  "no-ping",
+			Usage: "don't ping the registry while establishing connection (usefull for registries where ping is buggy)",
 		},
 	}
 	app.Commands = []cli.Command{

@@ -105,12 +105,12 @@ func main() {
 
 		// create the registry client
 		if c.GlobalBool("insecure") {
-			r, err = registry.NewInsecure(auth, c.GlobalBool("debug"))
+			r, err = registry.NewInsecure(auth, c.GlobalBool("debug"), true)
 			if err != nil {
 				logrus.Fatal(err)
 			}
 		} else {
-			r, err = registry.New(auth, c.GlobalBool("debug"))
+			r, err = registry.New(auth, c.GlobalBool("debug"), true)
 			if err != nil {
 				logrus.Fatal(err)
 			}
