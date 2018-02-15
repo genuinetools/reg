@@ -65,8 +65,10 @@ func (c *Clair) getJSON(url string, response interface{}) (http.Header, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	c.Logf("clair.clair resp.Status=%s", resp.Status)
 
 	if err := json.NewDecoder(resp.Body).Decode(response); err != nil {
+		c.Logf("clair.clair resp.Status=%s, body=%s", resp.Status, response)
 		return nil, err
 	}
 

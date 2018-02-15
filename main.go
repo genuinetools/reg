@@ -285,9 +285,12 @@ func main() {
 
 				// filter out the empty layers
 				var filteredLayers []schema1.FSLayer
-				for _, layer := range m.FSLayers {
+				for i, layer := range m.FSLayers {
 					if !clair.IsEmptyLayer(layer.BlobSum) {
 						filteredLayers = append(filteredLayers, layer)
+						logrus.Debugf("%d: layer=%s <-- append", i, layer)
+					} else {
+						logrus.Debugf("%d: layer=%s", i, layer)
 					}
 				}
 				m.FSLayers = filteredLayers
@@ -295,6 +298,7 @@ func main() {
 					fmt.Printf("No need to analyse image %s:%s as there is no non-emtpy layer", repo, ref)
 					return nil
 				}
+				fmt.Printf("Analysing %d layers\n", len(m.FSLayers))
 
 				// initialize clair
 				cr, err := clair.New(c.String("clair"), c.GlobalBool("debug"))
