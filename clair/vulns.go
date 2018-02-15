@@ -109,7 +109,7 @@ func (c *Clair) NewClairLayer(r *registry.Registry, image string, fsLayers []sch
 		}
 	}
 
-	if useBasicAuth {
+	if token == "" || useBasicAuth {
 		h = map[string]string{
 			"Authorization": fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(r.Username+":"+r.Password))),
 		}
