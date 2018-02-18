@@ -118,6 +118,13 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Error out if there are no tags / images (the above err != nil does not error out when nothing has been found)
+	if len(tags) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "No tags found")
+		return
+	}
+
 	result := AnalysisResult{
 		RegistryDomain: rc.reg.Domain,
 		LastUpdated:    time.Now().Local().Format(time.RFC1123),
