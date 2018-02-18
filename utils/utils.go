@@ -44,16 +44,21 @@ func GetAuthConfig(username, password, registry string) (types.AuthConfig, error
 		return types.AuthConfig{}, nil
 	}
 
+	authConfigs, err := dcfg.GetAllCredentials()
+	if err != nil {
+		return types.AuthConfig{}, fmt.Errorf("Getting credentials failed: %v", err)
+	}
+
 	// if they passed a specific registry, return those creds _if_ they exist
 	if registry != "" {
 		// try with the user input
-		if creds, ok := dcfg.AuthConfigs[registry]; ok {
+		if creds, ok := authConfigs[registry]; ok {
 			return creds, nil
 		}
 		// add https:// to user input and try again
 		// see https://github.com/jessfraz/reg/issues/32
 		if !strings.HasPrefix(registry, "https://") && !strings.HasPrefix(registry, "http://") {
-			if creds, ok := dcfg.AuthConfigs["https://"+registry]; ok {
+			if creds, ok := authConfigs["https://"+registry]; ok {
 				return creds, nil
 			}
 		}
@@ -66,7 +71,7 @@ func GetAuthConfig(username, password, registry string) (types.AuthConfig, error
 
 	// Just set the auth config as the first registryURL, username and password
 	// found in the auth config.
-	for _, creds := range dcfg.AuthConfigs {
+	for _, creds := range authConfigs {
 		return creds, nil
 	}
 
