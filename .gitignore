@@ -47,3 +47,7 @@ server/server
 testreg
 .certs
 cross/
+
+# Go coverage results
+coverage.txt
+profile.out

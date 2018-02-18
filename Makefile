@@ -67,6 +67,17 @@ staticcheck: ## Verifies `staticcheck` passes
 	@echo "+ $@"
 	@staticcheck $(shell go list ./... | grep -v vendor) | grep -v '.pb.go:' | tee /dev/stderr
 
+.PHONY: cover
+cover: ## Runs go test with coverage
+	@echo "" > coverage.txt
+	@for d in $(shell go list ./... | grep -v vendor); do \
+		go test -coverprofile=profile.out -covermode=atomic "$d"; \
+		if [ -f profile.out ]; then \
+			cat profile.out >> coverage.txt; \
+			rm profile.out; \
+		fi; \
+	done;
+
 .PHONY: install
 install: ## Installs the executable or package
 	@echo "+ $@"
@@ -174,7 +185,7 @@ dtest: ## Run the tests in a docker container
 		-e DOCKER_CERT_PATH=/etc/docker/ssl \
 		-e DOCKER_API_VERSION \
 		$(DOCKER_IMAGE) \
-		make test
+		make test cover
 
 .PHONY: help
 help:

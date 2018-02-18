@@ -26,6 +26,8 @@
     - test -z "$(gofmt -s -l . | grep -v vendor | tee /dev/stderr)"
     - DOCKER_API_VERSION=1.35 make dind dtest
     - make release
+  after_success:
+    - bash <(curl -s https://codecov.io/bash)
   deploy:
     provider: releases
     api_key:
