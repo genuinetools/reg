@@ -108,6 +108,10 @@ func main() {
 			Aliases: []string{"rm"},
 			Usage:   "delete a specific reference of a repository",
 			Action: func(c *cli.Context) error {
+				if len(c.Args()) < 1 {
+					return fmt.Errorf("pass the name of the repository")
+				}
+
 				repo, ref, err := utils.GetRepoAndRef(c.Args()[0])
 				if err != nil {
 					return err
@@ -173,6 +177,10 @@ func main() {
 				},
 			},
 			Action: func(c *cli.Context) error {
+				if len(c.Args()) < 1 {
+					return fmt.Errorf("pass the name of the repository")
+				}
+
 				repo, ref, err := utils.GetRepoAndRef(c.Args()[0])
 				if err != nil {
 					return err
@@ -231,6 +239,10 @@ func main() {
 				},
 			},
 			Action: func(c *cli.Context) error {
+				if len(c.Args()) < 1 {
+					return fmt.Errorf("pass the name of the repository")
+				}
+
 				repo, ref, err := utils.GetRepoAndRef(c.Args()[0])
 				if err != nil {
 					return err
@@ -268,6 +280,9 @@ func main() {
 			Action: func(c *cli.Context) error {
 				if c.String("clair") == "" {
 					return errors.New("clair url cannot be empty, pass --clair")
+				}
+				if len(c.Args()) < 1 {
+					return fmt.Errorf("pass the name of the repository")
 				}
 
 				repo, ref, err := utils.GetRepoAndRef(c.Args()[0])
