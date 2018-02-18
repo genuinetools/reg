@@ -39,6 +39,7 @@ func (c *Clair) PostLayer(layer *Layer) (*Layer, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	c.Logf("clair.clair resp.Status=%s", resp.Status)
 
 	var respLayer layerEnvelope
 	if err := json.NewDecoder(resp.Body).Decode(&respLayer); err != nil {
@@ -67,6 +68,7 @@ func (c *Clair) DeleteLayer(name string) error {
 		return err
 	}
 	defer resp.Body.Close()
+	c.Logf("clair.clair resp.Status=%s", resp.Status)
 
 	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusAccepted || resp.StatusCode == http.StatusNotFound {
 		return nil

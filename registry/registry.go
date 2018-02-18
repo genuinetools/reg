@@ -123,6 +123,7 @@ func (r *Registry) getJSON(url string, response interface{}, addV2Header bool) (
 		return nil, err
 	}
 	defer resp.Body.Close()
+	r.Logf("registry.registry resp.Status=%s", resp.Status)
 
 	if err := json.NewDecoder(resp.Body).Decode(response); err != nil {
 		return nil, err
