@@ -4,14 +4,17 @@
   notifications:
     email: true
   go:
-    - 1.8.x
-    - 1.9.x
+    - stable
     - tip
   services:
     - docker
   env:
     global:
       - GO15VENDOREXPERIMENT=1
+  matrix:
+    allow_failures:
+      - go: tip
+    fast_finish: true
   install:
     - go get github.com/golang/lint/golint
     - go get honnef.co/go/tools/cmd/staticcheck
@@ -54,5 +57,5 @@
       - cross/reg-linux-amd64
     skip_cleanup: true
     on:
-      go: tip
+      go: stable
       tags: true
