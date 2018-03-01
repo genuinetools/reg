@@ -13,7 +13,7 @@ BUILDDIR := ${PREFIX}/cross
 
 # Populate version variables
 # Add to compile time flags
-VERSION := $(shell cat VERSION)
+VERSION := $(shell cat VERSION.txt)
 GITCOMMIT := $(shell git rev-parse --short HEAD)
 GITUNTRACKEDCHANGES := $(shell git status --porcelain --untracked-files=no)
 ifneq ($(GITUNTRACKEDCHANGES),)
@@ -31,7 +31,7 @@ all: clean build fmt lint test staticcheck vet install ## Runs a clean, build, f
 .PHONY: build
 build: $(NAME) ## Builds a dynamic executable or package
 
-$(NAME): *.go VERSION
+$(NAME): *.go VERSION.txt
 	@echo "+ $@"
 	go build -tags "$(BUILDTAGS)" ${GO_LDFLAGS} -o $(NAME) .
 
