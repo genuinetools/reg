@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestDelete(t *testing.T) {
 	// Make sure we have busybox in list.
@@ -8,12 +11,11 @@ func TestDelete(t *testing.T) {
 	if err != nil {
 		t.Fatalf("output: %s, error: %v", string(out), err)
 	}
-	expected := `Repositories for localhost:5000
-REPO                TAGS
-busybox             latest
+	expected := `REPO                TAGS
+busybox             glibc, musl, latest
 alpine              latest
 `
-	if out != expected {
+	if !strings.HasSuffix(out, expected) {
 		t.Fatalf("expected: %s\ngot: %s", expected, out)
 	}
 
@@ -27,11 +29,11 @@ alpine              latest
 	if err != nil {
 		t.Fatalf("output: %s, error: %v", string(out), err)
 	}
-	expected = `Repositories for localhost:5000
-REPO                TAGS
+	expected = `REPO                TAGS
+busybox             glibc, musl
 alpine              latest
 `
-	if out != expected {
+	if !strings.HasSuffix(out, expected) {
 		t.Fatalf("expected: %s\ngot: %s", expected, out)
 	}
 }

@@ -72,12 +72,12 @@ func StartRegistry(dcli *client.Client, config, username, password string) (stri
 		return r.ID, addr, err
 	}
 
-	if err := prefillRegistry("alpine:latest", dcli, "localhost"+port, username, password); err != nil {
-		return r.ID, addr, err
-	}
-
-	if err := prefillRegistry("busybox:latest", dcli, "localhost"+port, username, password); err != nil {
-		return r.ID, addr, err
+	// Prefill the images.
+	images := []string{"alpine:latest", "busybox:latest", "busybox:musl", "busybox:glibc"}
+	for _, image := range images {
+		if err := prefillRegistry(image, dcli, "localhost"+port, username, password); err != nil {
+			return r.ID, addr, err
+		}
 	}
 
 	return r.ID, addr, nil

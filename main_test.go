@@ -90,7 +90,7 @@ func TestMain(m *testing.M) {
 func run(args ...string) (string, error) {
 	prog := "./testreg" + exeSuffix
 	// always add trust insecure, and the registry
-	newargs := append([]string{"-k", "-r", "localhost:5000"}, args...)
+	newargs := append([]string{"-d", "-k", "-r", "localhost:5000"}, args...)
 	cmd := exec.Command(prog, newargs...)
 	out, err := cmd.CombinedOutput()
 	return string(out), err
