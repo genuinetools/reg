@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/docker/distribution/reference"
 	"github.com/opencontainers/go-digest"
 )
 
@@ -22,7 +23,7 @@ func (r *Registry) DownloadLayer(repository string, digest digest.Digest) (io.Re
 }
 
 // UploadLayer uploads a specific layer by digest for a repository.
-func (r *Registry) UploadLayer(repository string, digest digest.Digest, content io.Reader) error {
+func (r *Registry) UploadLayer(repository string, digest reference.Reference, content io.Reader) error {
 	uploadURL, err := r.initiateUpload(repository)
 	if err != nil {
 		return err

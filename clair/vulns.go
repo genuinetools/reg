@@ -60,9 +60,7 @@ func (c *Clair) Vulnerabilities(r *registry.Registry, repo, tag string) (Vulnera
 
 	// Get the vulns.
 	for _, f := range vl.Features {
-		for _, v := range f.Vulnerabilities {
-			report.Vulns = append(report.Vulns, v)
-		}
+		report.Vulns = append(report.Vulns, f.Vulnerabilities...)
 	}
 
 	vulnsBy := func(sev string, store map[string][]Vulnerability) []Vulnerability {

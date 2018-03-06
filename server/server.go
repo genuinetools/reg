@@ -20,8 +20,6 @@ import (
 const (
 	// VERSION is the binary version.
 	VERSION = "v0.2.0"
-
-	dockerConfigPath = ".docker/config.json"
 )
 
 var (

@@ -188,7 +188,6 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	return
 }
 
 func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *http.Request) {
@@ -255,5 +254,4 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	return
 }

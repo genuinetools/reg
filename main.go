@@ -13,10 +13,6 @@ import (
 	"github.com/urfave/cli"
 )
 
-const (
-	dockerConfigPath = ".docker/config.json"
-)
-
 var (
 	auth types.AuthConfig
 	r    *registry.Registry
@@ -74,31 +70,37 @@ func main() {
 			logrus.SetLevel(logrus.DebugLevel)
 		}
 
-		if len(c.Args()) > 0 {
-			if c.Args()[0] != "help" {
-				auth, err = repoutils.GetAuthConfig(c.GlobalString("username"), c.GlobalString("password"), c.GlobalString("registry"))
-				if err != nil {
-					return err
-				}
+		if len(c.Args()) == 0 {
+			return
+		}
 
-				// Prevent non-ssl unless explicitly forced
-				if !c.GlobalBool("force-non-ssl") && strings.HasPrefix(auth.ServerAddress, "http:") {
-					return fmt.Errorf("Attempt to use insecure protocol! Use non-ssl option to force")
-				}
+		if c.Args()[0] == "help" {
+			return
+		}
 
-				// create the registry client
-				if c.GlobalBool("insecure") {
-					r, err = registry.NewInsecure(auth, c.GlobalBool("debug"))
-					if err != nil {
-						return err
-					}
-				} else {
-					r, err = registry.New(auth, c.GlobalBool("debug"))
-					if err != nil {
-						return err
-					}
-				}
+		auth, err = repoutils.GetAuthConfig(c.GlobalString("username"), c.GlobalString("password"), c.GlobalString("registry"))
+		if err != nil {
+			return err
+		}
+
+		// Prevent non-ssl unless explicitly forced
+		if !c.GlobalBool("force-non-ssl") && strings.HasPrefix(auth.ServerAddress, "http:") {
+			return fmt.Errorf("Attempt to use insecure protocol! Use non-ssl option to force")
+		}
+
+		// create the registry client
+		if c.GlobalBool("insecure") {
+			r, err = registry.NewInsecure(auth, c.GlobalBool("debug"))
+			if err != nil {
+				return err
 			}
+
+			return
+		}
+
+		r, err = registry.New(auth, c.GlobalBool("debug"))
+		if err != nil {
+			return err
 		}
 
 		return nil
