@@ -1,8 +1,7 @@
-package libcontainerd
+package libcontainerd // import "github.com/docker/docker/libcontainerd"
 
 import (
 	"context"
-	"io"
 	"time"
 
 	"github.com/containerd/containerd"
@@ -72,8 +71,7 @@ type EventInfo struct {
 	ExitCode    uint32
 	ExitedAt    time.Time
 	OOMKilled   bool
-	// Windows Only field
-	UpdatePending bool
+	Error       error
 }
 
 // Backend defines callbacks that the client of the library needs to implement.
@@ -107,20 +105,4 @@ type Client interface {
 }
 
 // StdioCallback is called to connect a container or process stdio.
-type StdioCallback func(*IOPipe) (cio.IO, error)
-
-// IOPipe contains the stdio streams.
-type IOPipe struct {
-	Stdin    io.WriteCloser
-	Stdout   io.ReadCloser
-	Stderr   io.ReadCloser
-	Terminal bool // Whether stderr is connected on Windows
-
-	cancel context.CancelFunc
-	config cio.Config
-}
-
-// ServerVersion contains version information as retrieved from the
-// server
-type ServerVersion struct {
-}
+type StdioCallback func(io *cio.DirectIO) (cio.IO, error)

@@ -22,11 +22,13 @@ BuildRequires: pkgconfig(libsystemd-journal)
 # required packages on install
 Requires: /bin/sh
 Requires: container-selinux >= 2.9
+Requires: libseccomp >= 2.3
 Requires: iptables
 Requires: libcgroup
 Requires: systemd-units
 Requires: tar
 Requires: xz
+Requires: pigz
 
 # Resolves: rhbz#1165615
 Requires: device-mapper-libs >= 1.02.90-1
@@ -65,7 +67,9 @@ pushd /go/src/github.com/docker/cli
 make VERSION=%{_origversion} GITCOMMIT=%{_gitcommit} dynbinary manpages # cli
 popd
 pushd engine
-TMP_GOPATH="/go" hack/dockerfile/install-binaries.sh runc-dynamic containerd-dynamic proxy-dynamic tini
+for component in tini proxy runc containerd;do
+    TMP_GOPATH="/go" hack/dockerfile/install/install.sh $component
+done
 VERSION=%{_origversion} hack/make.sh dynbinary
 popd
 

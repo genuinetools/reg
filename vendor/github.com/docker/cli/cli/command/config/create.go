@@ -16,9 +16,10 @@ import (
 )
 
 type createOptions struct {
-	name   string
-	file   string
-	labels opts.ListOpts
+	name           string
+	templateDriver string
+	file           string
+	labels         opts.ListOpts
 }
 
 func newConfigCreateCommand(dockerCli command.Cli) *cobra.Command {
@@ -28,7 +29,7 @@ func newConfigCreateCommand(dockerCli command.Cli) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "create [OPTIONS] CONFIG file|-",
-		Short: "Create a configuration file from a file or STDIN as content",
+		Short: "Create a config from a file or STDIN",
 		Args:  cli.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			createOpts.name = args[0]
@@ -38,6 +39,8 @@ func newConfigCreateCommand(dockerCli command.Cli) *cobra.Command {
 	}
 	flags := cmd.Flags()
 	flags.VarP(&createOpts.labels, "label", "l", "Config labels")
+	flags.StringVar(&createOpts.templateDriver, "template-driver", "", "Template driver")
+	flags.SetAnnotation("driver", "version", []string{"1.37"})
 
 	return cmd
 }
@@ -68,7 +71,11 @@ func runConfigCreate(dockerCli command.Cli, options createOptions) error {
 		},
 		Data: configData,
 	}
-
+	if options.templateDriver != "" {
+		spec.Templating = &swarm.Driver{
+			Name: options.templateDriver,
+		}
+	}
 	r, err := client.ConfigCreate(ctx, spec)
 	if err != nil {
 		return err

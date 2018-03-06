@@ -1,4 +1,4 @@
-package dockerfile
+package dockerfile // import "github.com/docker/docker/builder/dockerfile"
 
 // internals for handling commands. Covers many areas and a lot of
 // non-contiguous functionality. Please read the comments.
@@ -11,22 +11,21 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
+	"runtime"
 	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/backend"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/builder"
 	"github.com/docker/docker/image"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/chrootarchive"
 	"github.com/docker/docker/pkg/containerfs"
 	"github.com/docker/docker/pkg/idtools"
 	"github.com/docker/docker/pkg/stringid"
-	"github.com/docker/docker/pkg/symlink"
 	"github.com/docker/docker/pkg/system"
 	"github.com/docker/go-connections/nat"
-	lcUser "github.com/opencontainers/runc/libcontainer/user"
 	"github.com/pkg/errors"
 )
 
@@ -103,29 +102,21 @@ func (b *Builder) commitContainer(dispatchState *dispatchState, id string, conta
 		return nil
 	}
 
-	commitCfg := &backend.ContainerCommitConfig{
-		ContainerCommitConfig: types.ContainerCommitConfig{
-			Author: dispatchState.maintainer,
-			Pause:  true,
-			// TODO: this should be done by Commit()
-			Config: copyRunConfig(dispatchState.runConfig),
-		},
+	commitCfg := backend.CommitConfig{
+		Author: dispatchState.maintainer,
+		// TODO: this copy should be done by Commit()
+		Config:          copyRunConfig(dispatchState.runConfig),
 		ContainerConfig: containerConfig,
+		ContainerID:     id,
 	}
 
-	// Commit the container
-	imageID, err := b.docker.Commit(id, commitCfg)
-	if err != nil {
-		return err
-	}
-
-	dispatchState.imageID = imageID
-	return nil
+	imageID, err := b.docker.CommitBuildStep(commitCfg)
+	dispatchState.imageID = string(imageID)
+	return err
 }
 
-func (b *Builder) exportImage(state *dispatchState, imageMount *imageMount, runConfig *container.Config) error {
-	optionsPlatform := system.ParsePlatform(b.options.Platform)
-	newLayer, err := imageMount.Layer().Commit(optionsPlatform.OS)
+func (b *Builder) exportImage(state *dispatchState, layer builder.RWLayer, parent builder.Image, runConfig *container.Config) error {
+	newLayer, err := layer.Commit()
 	if err != nil {
 		return err
 	}
@@ -134,7 +125,7 @@ func (b *Builder) exportImage(state *dispatchState, imageMount *imageMount, runC
 	// if there is an error before we can add the full mount with image
 	b.imageSources.Add(newImageMount(nil, newLayer))
 
-	parentImage, ok := imageMount.Image().(*image.Image)
+	parentImage, ok := parent.(*image.Image)
 	if !ok {
 		return errors.Errorf("unexpected image type")
 	}
@@ -153,7 +144,7 @@ func (b *Builder) exportImage(state *dispatchState, imageMount *imageMount, runC
 		return errors.Wrap(err, "failed to encode image config")
 	}
 
-	exportedImage, err := b.docker.CreateImage(config, state.imageID, parentImage.OS)
+	exportedImage, err := b.docker.CreateImage(config, state.imageID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to export image")
 	}
@@ -187,7 +178,13 @@ func (b *Builder) performCopy(state *dispatchState, inst copyInstruction) error 
 		return errors.Wrapf(err, "failed to get destination image %q", state.imageID)
 	}
 
-	destInfo, err := createDestInfo(state.runConfig.WorkingDir, inst, imageMount, b.options.Platform)
+	rwLayer, err := imageMount.NewRWLayer()
+	if err != nil {
+		return err
+	}
+	defer rwLayer.Release()
+
+	destInfo, err := createDestInfo(state.runConfig.WorkingDir, inst, rwLayer, b.options.Platform)
 	if err != nil {
 		return err
 	}
@@ -213,86 +210,10 @@ func (b *Builder) performCopy(state *dispatchState, inst copyInstruction) error 
 			return errors.Wrapf(err, "failed to copy files")
 		}
 	}
-	return b.exportImage(state, imageMount, runConfigWithCommentCmd)
+	return b.exportImage(state, rwLayer, imageMount.Image(), runConfigWithCommentCmd)
 }
 
-func parseChownFlag(chown, ctrRootPath string, idMappings *idtools.IDMappings) (idtools.IDPair, error) {
-	var userStr, grpStr string
-	parts := strings.Split(chown, ":")
-	if len(parts) > 2 {
-		return idtools.IDPair{}, errors.New("invalid chown string format: " + chown)
-	}
-	if len(parts) == 1 {
-		// if no group specified, use the user spec as group as well
-		userStr, grpStr = parts[0], parts[0]
-	} else {
-		userStr, grpStr = parts[0], parts[1]
-	}
-
-	passwdPath, err := symlink.FollowSymlinkInScope(filepath.Join(ctrRootPath, "etc", "passwd"), ctrRootPath)
-	if err != nil {
-		return idtools.IDPair{}, errors.Wrapf(err, "can't resolve /etc/passwd path in container rootfs")
-	}
-	groupPath, err := symlink.FollowSymlinkInScope(filepath.Join(ctrRootPath, "etc", "group"), ctrRootPath)
-	if err != nil {
-		return idtools.IDPair{}, errors.Wrapf(err, "can't resolve /etc/group path in container rootfs")
-	}
-	uid, err := lookupUser(userStr, passwdPath)
-	if err != nil {
-		return idtools.IDPair{}, errors.Wrapf(err, "can't find uid for user "+userStr)
-	}
-	gid, err := lookupGroup(grpStr, groupPath)
-	if err != nil {
-		return idtools.IDPair{}, errors.Wrapf(err, "can't find gid for group "+grpStr)
-	}
-
-	// convert as necessary because of user namespaces
-	chownPair, err := idMappings.ToHost(idtools.IDPair{UID: uid, GID: gid})
-	if err != nil {
-		return idtools.IDPair{}, errors.Wrapf(err, "unable to convert uid/gid to host mapping")
-	}
-	return chownPair, nil
-}
-
-func lookupUser(userStr, filepath string) (int, error) {
-	// if the string is actually a uid integer, parse to int and return
-	// as we don't need to translate with the help of files
-	uid, err := strconv.Atoi(userStr)
-	if err == nil {
-		return uid, nil
-	}
-	users, err := lcUser.ParsePasswdFileFilter(filepath, func(u lcUser.User) bool {
-		return u.Name == userStr
-	})
-	if err != nil {
-		return 0, err
-	}
-	if len(users) == 0 {
-		return 0, errors.New("no such user: " + userStr)
-	}
-	return users[0].Uid, nil
-}
-
-func lookupGroup(groupStr, filepath string) (int, error) {
-	// if the string is actually a gid integer, parse to int and return
-	// as we don't need to translate with the help of files
-	gid, err := strconv.Atoi(groupStr)
-	if err == nil {
-		return gid, nil
-	}
-	groups, err := lcUser.ParseGroupFileFilter(filepath, func(g lcUser.Group) bool {
-		return g.Name == groupStr
-	})
-	if err != nil {
-		return 0, err
-	}
-	if len(groups) == 0 {
-		return 0, errors.New("no such group: " + groupStr)
-	}
-	return groups[0].Gid, nil
-}
-
-func createDestInfo(workingDir string, inst copyInstruction, imageMount *imageMount, platform string) (copyInfo, error) {
+func createDestInfo(workingDir string, inst copyInstruction, rwLayer builder.RWLayer, platform string) (copyInfo, error) {
 	// Twiddle the destination when it's a relative path - meaning, make it
 	// relative to the WORKINGDIR
 	dest, err := normalizeDest(workingDir, inst.dest, platform)
@@ -300,12 +221,7 @@ func createDestInfo(workingDir string, inst copyInstruction, imageMount *imageMo
 		return copyInfo{}, errors.Wrapf(err, "invalid %s", inst.cmdName)
 	}
 
-	destMount, err := imageMount.Source()
-	if err != nil {
-		return copyInfo{}, errors.Wrapf(err, "failed to mount copy source")
-	}
-
-	return newCopyInfoFromSource(destMount, dest, ""), nil
+	return copyInfo{root: rwLayer.Root(), path: dest}, nil
 }
 
 // normalizeDest normalises the destination of a COPY/ADD command in a
@@ -501,15 +417,13 @@ func (b *Builder) probeAndCreate(dispatchState *dispatchState, runConfig *contai
 	}
 	// Set a log config to override any default value set on the daemon
 	hostConfig := &container.HostConfig{LogConfig: defaultLogConfig}
-	optionsPlatform := system.ParsePlatform(b.options.Platform)
-	container, err := b.containerManager.Create(runConfig, hostConfig, optionsPlatform.OS)
+	container, err := b.containerManager.Create(runConfig, hostConfig)
 	return container.ID, err
 }
 
 func (b *Builder) create(runConfig *container.Config) (string, error) {
 	hostConfig := hostConfigFromOptions(b.options)
-	optionsPlatform := system.ParsePlatform(b.options.Platform)
-	container, err := b.containerManager.Create(runConfig, hostConfig, optionsPlatform.OS)
+	container, err := b.containerManager.Create(runConfig, hostConfig)
 	if err != nil {
 		return "", err
 	}
@@ -534,7 +448,7 @@ func hostConfigFromOptions(options *types.ImageBuildOptions) *container.HostConf
 		Ulimits:      options.Ulimits,
 	}
 
-	return &container.HostConfig{
+	hc := &container.HostConfig{
 		SecurityOpt: options.SecurityOpt,
 		Isolation:   options.Isolation,
 		ShmSize:     options.ShmSize,
@@ -544,6 +458,17 @@ func hostConfigFromOptions(options *types.ImageBuildOptions) *container.HostConf
 		LogConfig:  defaultLogConfig,
 		ExtraHosts: options.ExtraHosts,
 	}
+
+	// For WCOW, the default of 20GB hard-coded in the platform
+	// is too small for builder scenarios where many users are
+	// using RUN statements to install large amounts of data.
+	// Use 127GB as that's the default size of a VHD in Hyper-V.
+	if runtime.GOOS == "windows" && options.Platform == "windows" {
+		hc.StorageOpt = make(map[string]string)
+		hc.StorageOpt["size"] = "127GB"
+	}
+
+	return hc
 }
 
 // fromSlash works like filepath.FromSlash but with a given OS platform field

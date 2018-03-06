@@ -1,4 +1,4 @@
-package plugin
+package plugin // import "github.com/docker/docker/plugin"
 
 import (
 	"encoding/json"
@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
-	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -112,11 +111,6 @@ func NewManager(config ManagerConfig) (*Manager, error) {
 			return nil, errors.Wrapf(err, "failed to mkdir %v", dirName)
 		}
 	}
-
-	if err := setupRoot(manager.config.Root); err != nil {
-		return nil, err
-	}
-
 	var err error
 	manager.executor, err = config.CreateExecutor(manager)
 	if err != nil {
@@ -151,16 +145,6 @@ func (pm *Manager) HandleExitEvent(id string) error {
 
 	os.RemoveAll(filepath.Join(pm.config.ExecRoot, id))
 
-	if p.PropagatedMount != "" {
-		if err := mount.Unmount(p.PropagatedMount); err != nil {
-			logrus.Warnf("Could not unmount %s: %v", p.PropagatedMount, err)
-		}
-		propRoot := filepath.Join(filepath.Dir(p.Rootfs), "propagated-mount")
-		if err := mount.Unmount(propRoot); err != nil {
-			logrus.Warn("Could not unmount %s: %v", propRoot, err)
-		}
-	}
-
 	pm.mu.RLock()
 	c := pm.cMap[p]
 	if c.exitChan != nil {
@@ -171,6 +155,10 @@ func (pm *Manager) HandleExitEvent(id string) error {
 
 	if restart {
 		pm.enable(p, c, true)
+	} else {
+		if err := mount.RecursiveUnmount(filepath.Join(pm.config.Root, id)); err != nil {
+			return errors.Wrap(err, "error cleaning up plugin mounts")
+		}
 	}
 	return nil
 }
@@ -239,27 +227,16 @@ func (pm *Manager) reload() error { // todo: restore
 						// check if we need to migrate an older propagated mount from before
 						// these mounts were stored outside the plugin rootfs
 						if _, err := os.Stat(propRoot); os.IsNotExist(err) {
-							if _, err := os.Stat(p.PropagatedMount); err == nil {
-								// make sure nothing is mounted here
-								// don't care about errors
-								mount.Unmount(p.PropagatedMount)
-								if err := os.Rename(p.PropagatedMount, propRoot); err != nil {
+							rootfsProp := filepath.Join(p.Rootfs, p.PluginObj.Config.PropagatedMount)
+							if _, err := os.Stat(rootfsProp); err == nil {
+								if err := os.Rename(rootfsProp, propRoot); err != nil {
 									logrus.WithError(err).WithField("dir", propRoot).Error("error migrating propagated mount storage")
-								}
-								if err := os.MkdirAll(p.PropagatedMount, 0755); err != nil {
-									logrus.WithError(err).WithField("dir", p.PropagatedMount).Error("error migrating propagated mount storage")
 								}
 							}
 						}
 
 						if err := os.MkdirAll(propRoot, 0755); err != nil {
 							logrus.Errorf("failed to create PropagatedMount directory at %s: %v", propRoot, err)
-						}
-						// TODO: sanitize PropagatedMount and prevent breakout
-						p.PropagatedMount = filepath.Join(p.Rootfs, p.PluginObj.Config.PropagatedMount)
-						if err := os.MkdirAll(p.PropagatedMount, 0755); err != nil {
-							logrus.Errorf("failed to create PropagatedMount directory at %s: %v", p.PropagatedMount, err)
-							return
 						}
 					}
 				}
@@ -375,22 +352,17 @@ func isEqualPrivilege(a, b types.PluginPrivilege) bool {
 	return reflect.DeepEqual(a.Value, b.Value)
 }
 
-func configToRootFS(c []byte) (*image.RootFS, layer.OS, error) {
-	// TODO @jhowardmsft LCOW - Will need to revisit this. For now, calculate the operating system.
-	os := layer.OS(runtime.GOOS)
-	if system.LCOWSupported() {
-		os = "linux"
-	}
+func configToRootFS(c []byte) (*image.RootFS, error) {
 	var pluginConfig types.PluginConfig
 	if err := json.Unmarshal(c, &pluginConfig); err != nil {
-		return nil, "", err
+		return nil, err
 	}
 	// validation for empty rootfs is in distribution code
 	if pluginConfig.Rootfs == nil {
-		return nil, os, nil
+		return nil, nil
 	}
 
-	return rootFSFromPlugin(pluginConfig.Rootfs), os, nil
+	return rootFSFromPlugin(pluginConfig.Rootfs), nil
 }
 
 func rootFSFromPlugin(pluginfs *types.PluginConfigRootfs) *image.RootFS {

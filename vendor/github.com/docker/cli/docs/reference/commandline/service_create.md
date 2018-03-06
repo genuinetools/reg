@@ -112,6 +112,26 @@ dmu1ept4cxcf  redis   replicated  1/1       redis:3.0.6
 a8q9dasaafud  redis2  global      1/1       redis:3.0.6
 ```
 
+#### Create a service using an image on a private registry
+
+If your image is available on a private registry which requires login, use the
+`--with-registry-auth` flag with `docker service create`, after logging in. If
+your image is stored on `registry.example.com`, which is a private registry, use
+a command like the following:
+
+```bash
+$ docker login registry.example.com
+
+$ docker service  create \
+  --with-registry-auth \
+  --name my_service \
+  registry.example.com/acme/my_image:latest
+```
+
+This passes the login token from your local client to the swarm nodes where the
+service is deployed, using the encrypted WAL logs. With this information, the
+nodes are able to log into the registry and pull the image.
+
 ### Create a service with 5 replica tasks (--replicas)
 
 Use the `--replicas` flag to set the number of replica tasks for a replicated
@@ -716,7 +736,7 @@ etjpu59cykrptrgw0z0hk5snf
 After you create an overlay network in swarm mode, all manager nodes have
 access to the network.
 
-When you create a service and pass the --network flag to attach the service to
+When you create a service and pass the `--network` flag to attach the service to
 the overlay network:
 
 ```bash
@@ -733,6 +753,9 @@ The swarm extends my-network to each node running the service.
 
 Containers on the same network can access each other using
 [service discovery](https://docs.docker.com/engine/swarm/networking/#use-swarm-mode-service-discovery).
+
+Long form syntax of `--network` allows to specify list of aliases and driver options:  
+`--network name=my-network,alias=web1,driver-opt=field1=value1`
 
 ### Publish service ports externally to the swarm (-p, --publish)
 
@@ -764,19 +787,16 @@ The options you can specify are:
   <th>Long syntax</th>
   <th>Description</th>
 </tr>
+</thead>
 <tr>
-  <td>published and target port </td>
-  <td><tt></tt></td>
-  <td><tt></tt></td>
-  <td></td>
-</tr>
-<tr>
-  <td>protocol</td>
+  <td>published and target port</td>
   <td><tt>--publish 8080:80</tt></td>
   <td><tt>--publish published=8080,target=80</tt></td>
   <td><p>
-    The port to publish the service to on the routing mesh or directly on
-    the node, and the target port on the container.
+    The target port within the container and the port to map it to on the
+    nodes, using the routing mesh (<tt>ingress</tt>) or host-level networking.
+    More options are available, later in this table. The key-value syntax is
+    preferred, because it is somewhat self-documenting.
   </p></td>
 </tr>
 <tr>
@@ -784,8 +804,8 @@ The options you can specify are:
   <td>Not possible to set using short syntax.</td>
   <td><tt>--publish published=8080,target=80,mode=host</tt></td>
   <td><p>
-    The mode to use for binding the port, either `ingress` or `host`. Defaults
-    to `ingress` to use the routing mesh.
+    The mode to use for binding the port, either <tt>ingress</tt> or <tt>host</tt>.
+    Defaults to <tt>ingress</tt> to use the routing mesh.
   </p></td>
 </tr>
 <tr>
@@ -793,13 +813,14 @@ The options you can specify are:
   <td><tt>--publish 8080:80/tcp</tt></td>
   <td><tt>--publish published=8080,target=80,protocol=tcp</tt></td>
   <td><p>
-    The protocol to use, either `tcp` or `udp`. Defaults to `tcp`. To bind a
-    port for both protocols, specify the `-p` or `--publish` flag twice.
+    The protocol to use, <tt>tcp</tt> , <tt>udp</tt>, or <tt>sctp</tt>. Defaults to
+    <tt>tcp</tt>. To bind a port for both protocols, specify the <tt>-p</tt> or
+    <tt>--publish</tt> flag twice.
   </p></td>
 </tr>
 </table>
 
-When you publish a service port using `ingres` mode, the swarm routing mesh
+When you publish a service port using `ingress` mode, the swarm routing mesh
 makes the service accessible at the published port on every node regardless if
 there is a task for the service running on the node. If you use `host` mode,
 the port is only bound on nodes where the service is running, and a given port
@@ -903,9 +924,9 @@ x3ti0erg11rjpg64m75kej2mz-hosttempl
 
 ### Specify isolation mode (Windows)
 
-By default, tasks scheduled on Windows nodes are run using the default isolation mode 
-configured for this particular node. To force a specific isolation mode, you can use 
-the `--isolation` flag: 
+By default, tasks scheduled on Windows nodes are run using the default isolation mode
+configured for this particular node. To force a specific isolation mode, you can use
+the `--isolation` flag:
 
 ```bash
 $ docker service create --name myservice --isolation=process microsoft/nanoserver

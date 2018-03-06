@@ -57,7 +57,7 @@ func TestMain(m *testing.M) {
 	defer os.Remove("testreg" + exeSuffix)
 
 	// create the docker client
-	dcli, err := client.NewEnvClient()
+	dcli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		panic(fmt.Errorf("could not connect to docker: %v", err))
 	}

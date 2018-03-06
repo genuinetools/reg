@@ -1,4 +1,4 @@
-package container
+package container // import "github.com/docker/docker/daemon/cluster/executor/container"
 
 import (
 	"encoding/base64"
@@ -18,6 +18,7 @@ import (
 	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
 	containerpkg "github.com/docker/docker/container"
+	"github.com/docker/docker/daemon"
 	"github.com/docker/docker/daemon/cluster/convert"
 	executorpkg "github.com/docker/docker/daemon/cluster/executor"
 	"github.com/docker/libnetwork"
@@ -36,11 +37,12 @@ import (
 // containerConfig.
 type containerAdapter struct {
 	backend      executorpkg.Backend
+	imageBackend executorpkg.ImageBackend
 	container    *containerConfig
 	dependencies exec.DependencyGetter
 }
 
-func newContainerAdapter(b executorpkg.Backend, task *api.Task, node *api.NodeDescription, dependencies exec.DependencyGetter) (*containerAdapter, error) {
+func newContainerAdapter(b executorpkg.Backend, i executorpkg.ImageBackend, task *api.Task, node *api.NodeDescription, dependencies exec.DependencyGetter) (*containerAdapter, error) {
 	ctnr, err := newContainerConfig(task, node)
 	if err != nil {
 		return nil, err
@@ -49,6 +51,7 @@ func newContainerAdapter(b executorpkg.Backend, task *api.Task, node *api.NodeDe
 	return &containerAdapter{
 		container:    ctnr,
 		backend:      b,
+		imageBackend: i,
 		dependencies: dependencies,
 	}, nil
 }
@@ -66,7 +69,7 @@ func (c *containerAdapter) pullImage(ctx context.Context) error {
 	named, err := reference.ParseNormalizedNamed(spec.Image)
 	if err == nil {
 		if _, ok := named.(reference.Canonical); ok {
-			_, err := c.backend.LookupImage(spec.Image)
+			_, err := c.imageBackend.LookupImage(spec.Image)
 			if err == nil {
 				return nil
 			}
@@ -92,7 +95,7 @@ func (c *containerAdapter) pullImage(ctx context.Context) error {
 		// TODO @jhowardmsft LCOW Support: This will need revisiting as
 		// the stack is built up to include LCOW support for swarm.
 		platform := runtime.GOOS
-		err := c.backend.PullImage(ctx, c.container.image(), "", platform, metaHeaders, authConfig, pw)
+		err := c.imageBackend.PullImage(ctx, c.container.image(), "", platform, metaHeaders, authConfig, pw)
 		pw.CloseWithError(err)
 	}()
 
@@ -143,8 +146,8 @@ func (c *containerAdapter) pullImage(ctx context.Context) error {
 }
 
 func (c *containerAdapter) createNetworks(ctx context.Context) error {
-	for _, network := range c.container.networks() {
-		ncr, err := c.container.networkCreateRequest(network)
+	for name := range c.container.networksAttachments {
+		ncr, err := c.container.networkCreateRequest(name)
 		if err != nil {
 			return err
 		}
@@ -153,7 +156,11 @@ func (c *containerAdapter) createNetworks(ctx context.Context) error {
 			if _, ok := err.(libnetwork.NetworkNameError); ok {
 				continue
 			}
-
+			// We will continue if CreateManagedNetwork returns PredefinedNetworkError error.
+			// Other callers still can treat it as Error.
+			if _, ok := err.(daemon.PredefinedNetworkError); ok {
+				continue
+			}
 			return err
 		}
 	}
@@ -162,15 +169,15 @@ func (c *containerAdapter) createNetworks(ctx context.Context) error {
 }
 
 func (c *containerAdapter) removeNetworks(ctx context.Context) error {
-	for _, nid := range c.container.networks() {
-		if err := c.backend.DeleteManagedNetwork(nid); err != nil {
+	for name, v := range c.container.networksAttachments {
+		if err := c.backend.DeleteManagedNetwork(v.Network.ID); err != nil {
 			switch err.(type) {
 			case *libnetwork.ActiveEndpointsError:
 				continue
 			case libnetwork.ErrNoSuchNetwork:
 				continue
 			default:
-				log.G(ctx).Errorf("network %s remove failed: %v", nid, err)
+				log.G(ctx).Errorf("network %s remove failed: %v", name, err)
 				return err
 			}
 		}
@@ -262,11 +269,7 @@ func (c *containerAdapter) create(ctx context.Context) error {
 		return err
 	}
 
-	if err := c.backend.UpdateContainerServiceConfig(cr.ID, c.container.serviceConfig()); err != nil {
-		return err
-	}
-
-	return nil
+	return c.backend.UpdateContainerServiceConfig(cr.ID, c.container.serviceConfig())
 }
 
 // checkMounts ensures that the provided mounts won't have any host-specific

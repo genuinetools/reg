@@ -1,4 +1,4 @@
-package container
+package container // import "github.com/docker/docker/container"
 
 import (
 	"errors"
@@ -29,7 +29,7 @@ type State struct {
 	Dead              bool
 	Pid               int
 	ExitCodeValue     int    `json:"ExitCode"`
-	ErrorMsg          string `json:"Error"` // contains last known error during container start or remove
+	ErrorMsg          string `json:"Error"` // contains last known error during container start, stop, or remove
 	StartedAt         time.Time
 	FinishedAt        time.Time
 	Health            *Health
@@ -100,15 +100,6 @@ func (s *State) String() string {
 	}
 
 	return fmt.Sprintf("Exited (%d) %s ago", s.ExitCodeValue, units.HumanDuration(time.Now().UTC().Sub(s.FinishedAt)))
-}
-
-// HealthString returns a single string to describe health status.
-func (s *State) HealthString() string {
-	if s.Health == nil {
-		return types.NoHealthcheck
-	}
-
-	return s.Health.String()
 }
 
 // IsValidHealthString checks if the provided string is a valid container health status or not.

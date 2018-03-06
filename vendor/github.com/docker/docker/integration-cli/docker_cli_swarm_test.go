@@ -4,7 +4,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -25,6 +24,7 @@ import (
 	"github.com/docker/libnetwork/driverapi"
 	"github.com/docker/libnetwork/ipamapi"
 	remoteipam "github.com/docker/libnetwork/ipams/remote/api"
+	"github.com/docker/swarmkit/ca/keyutils"
 	"github.com/go-check/check"
 	"github.com/gotestyourself/gotestyourself/fs"
 	"github.com/gotestyourself/gotestyourself/icmd"
@@ -345,13 +345,13 @@ func (s *DockerSwarmSuite) TestSwarmContainerEndpointOptions(c *check.C) {
 	c.Assert(err, checker.IsNil, check.Commentf(out))
 	c.Assert(strings.TrimSpace(out), checker.Not(checker.Equals), "")
 
-	_, err = d.Cmd("run", "-d", "--net=foo", "--name=first", "--net-alias=first-alias", "busybox", "top")
+	_, err = d.Cmd("run", "-d", "--net=foo", "--name=first", "--net-alias=first-alias", "busybox:glibc", "top")
 	c.Assert(err, checker.IsNil, check.Commentf(out))
 
-	_, err = d.Cmd("run", "-d", "--net=foo", "--name=second", "busybox", "top")
+	_, err = d.Cmd("run", "-d", "--net=foo", "--name=second", "busybox:glibc", "top")
 	c.Assert(err, checker.IsNil, check.Commentf(out))
 
-	_, err = d.Cmd("run", "-d", "--net=foo", "--net-alias=third-alias", "busybox", "top")
+	_, err = d.Cmd("run", "-d", "--net=foo", "--net-alias=third-alias", "busybox:glibc", "top")
 	c.Assert(err, checker.IsNil, check.Commentf(out))
 
 	// ping first container and its alias, also ping third and anonymous container by its alias
@@ -1007,7 +1007,7 @@ func checkKeyIsEncrypted(d *daemon.Swarm) func(*check.C) (interface{}, check.Com
 			return fmt.Errorf("invalid PEM-encoded private key"), nil
 		}
 
-		return x509.IsEncryptedPEMBlock(keyBlock), nil
+		return keyutils.IsEncryptedPEMBlock(keyBlock), nil
 	}
 }
 

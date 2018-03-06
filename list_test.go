@@ -10,11 +10,10 @@ func TestList(t *testing.T) {
 	if err != nil {
 		t.Fatalf("output: %s, error: %v", string(out), err)
 	}
-	expected := `REPO                TAGS
-busybox             glibc, musl
-alpine              latest
-`
-	if !strings.HasSuffix(out, expected) {
-		t.Fatalf("expected: %s\ngot: %s", expected, out)
+	expected := []string{"alpine              latest", "busybox             glibc, musl"}
+	for _, e := range expected {
+		if !strings.Contains(out, e) {
+			t.Fatalf("expected to contain: %s\ngot: %s", e, out)
+		}
 	}
 }

@@ -3,12 +3,10 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,11 +19,14 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/client"
 	"github.com/docker/docker/integration-cli/checker"
 	"github.com/docker/docker/integration-cli/daemon"
 	"github.com/docker/docker/integration-cli/request"
 	"github.com/docker/swarmkit/ca"
 	"github.com/go-check/check"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
 )
 
@@ -909,6 +910,8 @@ func (s *DockerSwarmSuite) TestAPIDuplicateNetworks(c *check.C) {
 
 // Test case for 30178
 func (s *DockerSwarmSuite) TestAPISwarmHealthcheckNone(c *check.C) {
+	// Issue #36386 can be a independent one, which is worth further investigation.
+	c.Skip("Root cause of Issue #36386 is needed")
 	d := s.AddDaemon(c, true, true)
 
 	out, err := d.Cmd("network", "create", "-d", "overlay", "lb")
@@ -1006,32 +1009,19 @@ func (s *DockerSwarmSuite) TestSwarmRepeatedRootRotation(c *check.C) {
 func (s *DockerSwarmSuite) TestAPINetworkInspectWithScope(c *check.C) {
 	d := s.AddDaemon(c, true, true)
 
-	name := "foo"
-	networkCreateRequest := types.NetworkCreateRequest{
-		Name: name,
-	}
+	name := "test-scoped-network"
+	ctx := context.Background()
+	apiclient, err := d.NewClient()
+	require.NoError(c, err)
 
-	var n types.NetworkCreateResponse
-	networkCreateRequest.NetworkCreate.Driver = "overlay"
+	resp, err := apiclient.NetworkCreate(ctx, name, types.NetworkCreate{Driver: "overlay"})
+	require.NoError(c, err)
 
-	status, out, err := d.SockRequest("POST", "/networks/create", networkCreateRequest)
-	c.Assert(err, checker.IsNil, check.Commentf(string(out)))
-	c.Assert(status, checker.Equals, http.StatusCreated, check.Commentf(string(out)))
-	c.Assert(json.Unmarshal(out, &n), checker.IsNil)
+	network, err := apiclient.NetworkInspect(ctx, name, types.NetworkInspectOptions{})
+	require.NoError(c, err)
+	assert.Equal(c, "swarm", network.Scope)
+	assert.Equal(c, resp.ID, network.ID)
 
-	var r types.NetworkResource
-
-	status, body, err := d.SockRequest("GET", "/networks/"+name, nil)
-	c.Assert(err, checker.IsNil, check.Commentf(string(out)))
-	c.Assert(status, checker.Equals, http.StatusOK, check.Commentf(string(out)))
-	c.Assert(json.Unmarshal(body, &r), checker.IsNil)
-	c.Assert(r.Scope, checker.Equals, "swarm")
-	c.Assert(r.ID, checker.Equals, n.ID)
-
-	v := url.Values{}
-	v.Set("scope", "local")
-
-	status, body, err = d.SockRequest("GET", "/networks/"+name+"?"+v.Encode(), nil)
-	c.Assert(err, checker.IsNil, check.Commentf(string(out)))
-	c.Assert(status, checker.Equals, http.StatusNotFound, check.Commentf(string(out)))
+	_, err = apiclient.NetworkInspect(ctx, name, types.NetworkInspectOptions{Scope: "local"})
+	assert.True(c, client.IsErrNotFound(err))
 }

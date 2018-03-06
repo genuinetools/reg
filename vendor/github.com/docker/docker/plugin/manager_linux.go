@@ -1,6 +1,4 @@
-// +build linux
-
-package plugin
+package plugin // import "github.com/docker/docker/plugin"
 
 import (
 	"encoding/json"
@@ -11,6 +9,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/daemon/initlayer"
+	"github.com/docker/docker/errdefs"
 	"github.com/docker/docker/pkg/containerfs"
 	"github.com/docker/docker/pkg/idtools"
 	"github.com/docker/docker/pkg/mount"
@@ -23,7 +22,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func (pm *Manager) enable(p *v2.Plugin, c *controller, force bool) (err error) {
+func (pm *Manager) enable(p *v2.Plugin, c *controller, force bool) error {
 	p.Rootfs = filepath.Join(pm.config.Root, p.PluginObj.ID, "rootfs")
 	if p.IsEnabled() && !force {
 		return errors.Wrap(enabledError(p.Name()), "plugin already enabled")
@@ -41,19 +40,15 @@ func (pm *Manager) enable(p *v2.Plugin, c *controller, force bool) (err error) {
 	pm.mu.Unlock()
 
 	var propRoot string
-	if p.PropagatedMount != "" {
+	if p.PluginObj.Config.PropagatedMount != "" {
 		propRoot = filepath.Join(filepath.Dir(p.Rootfs), "propagated-mount")
 
-		if err = os.MkdirAll(propRoot, 0755); err != nil {
+		if err := os.MkdirAll(propRoot, 0755); err != nil {
 			logrus.Errorf("failed to create PropagatedMount directory at %s: %v", propRoot, err)
 		}
 
-		if err = mount.MakeRShared(propRoot); err != nil {
+		if err := mount.MakeRShared(propRoot); err != nil {
 			return errors.Wrap(err, "error setting up propagated mount dir")
-		}
-
-		if err = mount.Mount(propRoot, p.PropagatedMount, "none", "rbind"); err != nil {
-			return errors.Wrap(err, "error creating mount for propagated mount")
 		}
 	}
 
@@ -64,16 +59,12 @@ func (pm *Manager) enable(p *v2.Plugin, c *controller, force bool) (err error) {
 
 	stdout, stderr := makeLoggerStreams(p.GetID())
 	if err := pm.executor.Create(p.GetID(), *spec, stdout, stderr); err != nil {
-		if p.PropagatedMount != "" {
-			if err := mount.Unmount(p.PropagatedMount); err != nil {
-				logrus.Warnf("Could not unmount %s: %v", p.PropagatedMount, err)
-			}
+		if p.PluginObj.Config.PropagatedMount != "" {
 			if err := mount.Unmount(propRoot); err != nil {
 				logrus.Warnf("Could not unmount %s: %v", propRoot, err)
 			}
 		}
 	}
-
 	return pm.pluginPostStart(p, c)
 }
 
@@ -168,13 +159,6 @@ func shutdownPlugin(p *v2.Plugin, c *controller, executor Executor) {
 	}
 }
 
-func setupRoot(root string) error {
-	if err := mount.MakePrivate(root); err != nil {
-		return errors.Wrap(err, "error setting plugin manager root to private")
-	}
-	return nil
-}
-
 func (pm *Manager) disable(p *v2.Plugin, c *controller) error {
 	if !p.IsEnabled() {
 		return errors.Wrap(errDisabled(p.Name()), "plugin is already disabled")
@@ -203,7 +187,9 @@ func (pm *Manager) Shutdown() {
 			shutdownPlugin(p, c, pm.executor)
 		}
 	}
-	mount.Unmount(pm.config.Root)
+	if err := mount.RecursiveUnmount(pm.config.Root); err != nil {
+		logrus.WithError(err).Warn("error cleaning up plugin mounts")
+	}
 }
 
 func (pm *Manager) upgradePlugin(p *v2.Plugin, configDigest digest.Digest, blobsums []digest.Digest, tmpRootFSDir string, privileges *types.PluginPrivileges) (err error) {
@@ -219,12 +205,12 @@ func (pm *Manager) upgradePlugin(p *v2.Plugin, configDigest digest.Digest, blobs
 	// This could happen if the plugin was disabled with `-f` with active mounts.
 	// If there is anything in `orig` is still mounted, this should error out.
 	if err := mount.RecursiveUnmount(orig); err != nil {
-		return systemError{err}
+		return errdefs.System(err)
 	}
 
 	backup := orig + "-old"
 	if err := os.Rename(orig, backup); err != nil {
-		return errors.Wrap(systemError{err}, "error backing up plugin data before upgrade")
+		return errors.Wrap(errdefs.System(err), "error backing up plugin data before upgrade")
 	}
 
 	defer func() {
@@ -250,7 +236,7 @@ func (pm *Manager) upgradePlugin(p *v2.Plugin, configDigest digest.Digest, blobs
 	}()
 
 	if err := os.Rename(tmpRootFSDir, orig); err != nil {
-		return errors.Wrap(systemError{err}, "error upgrading")
+		return errors.Wrap(errdefs.System(err), "error upgrading")
 	}
 
 	p.PluginObj.Config = config
@@ -290,7 +276,7 @@ func (pm *Manager) setupNewPlugin(configDigest digest.Digest, blobsums []digest.
 // createPlugin creates a new plugin. take lock before calling.
 func (pm *Manager) createPlugin(name string, configDigest digest.Digest, blobsums []digest.Digest, rootFSDir string, privileges *types.PluginPrivileges, opts ...CreateOpt) (p *v2.Plugin, err error) {
 	if err := pm.config.Store.validateName(name); err != nil { // todo: this check is wrong. remove store
-		return nil, validationError{err}
+		return nil, errdefs.InvalidParameter(err)
 	}
 
 	config, err := pm.setupNewPlugin(configDigest, blobsums, privileges)

@@ -1,21 +1,15 @@
-package daemon
+package daemon // import "github.com/docker/docker/daemon"
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"runtime"
 	"strings"
 	"time"
 
-	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types/backend"
 	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/builder/dockerfile"
-	"github.com/docker/docker/container"
-	"github.com/docker/docker/image"
-	"github.com/docker/docker/layer"
-	"github.com/docker/docker/pkg/ioutils"
+	"github.com/docker/docker/errdefs"
 	"github.com/pkg/errors"
 )
 
@@ -120,9 +114,10 @@ func merge(userConf, imageConf *containertypes.Config) error {
 	return nil
 }
 
-// Commit creates a new filesystem image from the current state of a container.
-// The image can optionally be tagged into a repository.
-func (daemon *Daemon) Commit(name string, c *backend.ContainerCommitConfig) (string, error) {
+// CreateImageFromContainer creates a new image from a container. The container
+// config will be updated by applying the change set to the custom config, then
+// applying that config over the existing container config.
+func (daemon *Daemon) CreateImageFromContainer(name string, c *backend.CreateImageConfig) (string, error) {
 	start := time.Now()
 	container, err := daemon.GetContainer(name)
 	if err != nil {
@@ -136,12 +131,12 @@ func (daemon *Daemon) Commit(name string, c *backend.ContainerCommitConfig) (str
 
 	if container.IsDead() {
 		err := fmt.Errorf("You cannot commit container %s which is Dead", container.ID)
-		return "", stateConflictError{err}
+		return "", errdefs.Conflict(err)
 	}
 
 	if container.IsRemovalInProgress() {
 		err := fmt.Errorf("You cannot commit container %s which is being removed", container.ID)
-		return "", stateConflictError{err}
+		return "", errdefs.Conflict(err)
 	}
 
 	if c.Pause && !container.IsPaused() {
@@ -149,132 +144,43 @@ func (daemon *Daemon) Commit(name string, c *backend.ContainerCommitConfig) (str
 		defer daemon.containerUnpause(container)
 	}
 
-	newConfig, err := dockerfile.BuildFromConfig(c.Config, c.Changes)
+	if c.Config == nil {
+		c.Config = container.Config
+	}
+	newConfig, err := dockerfile.BuildFromConfig(c.Config, c.Changes, container.OS)
+	if err != nil {
+		return "", err
+	}
+	if err := merge(newConfig, container.Config); err != nil {
+		return "", err
+	}
+
+	id, err := daemon.imageService.CommitImage(backend.CommitConfig{
+		Author:              c.Author,
+		Comment:             c.Comment,
+		Config:              newConfig,
+		ContainerConfig:     container.Config,
+		ContainerID:         container.ID,
+		ContainerMountLabel: container.MountLabel,
+		ContainerOS:         container.OS,
+		ParentImageID:       string(container.ImageID),
+	})
 	if err != nil {
 		return "", err
 	}
 
-	if c.MergeConfigs {
-		if err := merge(newConfig, container.Config); err != nil {
-			return "", err
-		}
-	}
-
-	rwTar, err := daemon.exportContainerRw(container)
-	if err != nil {
-		return "", err
-	}
-	defer func() {
-		if rwTar != nil {
-			rwTar.Close()
-		}
-	}()
-
-	var parent *image.Image
-	if container.ImageID == "" {
-		parent = new(image.Image)
-		parent.RootFS = image.NewRootFS()
-	} else {
-		parent, err = daemon.stores[container.OS].imageStore.Get(container.ImageID)
-		if err != nil {
-			return "", err
-		}
-	}
-
-	l, err := daemon.stores[container.OS].layerStore.Register(rwTar, parent.RootFS.ChainID(), layer.OS(container.OS))
-	if err != nil {
-		return "", err
-	}
-	defer layer.ReleaseAndLog(daemon.stores[container.OS].layerStore, l)
-
-	containerConfig := c.ContainerConfig
-	if containerConfig == nil {
-		containerConfig = container.Config
-	}
-	cc := image.ChildConfig{
-		ContainerID:     container.ID,
-		Author:          c.Author,
-		Comment:         c.Comment,
-		ContainerConfig: containerConfig,
-		Config:          newConfig,
-		DiffID:          l.DiffID(),
-	}
-	config, err := json.Marshal(image.NewChildImage(parent, cc, container.OS))
-	if err != nil {
-		return "", err
-	}
-
-	id, err := daemon.stores[container.OS].imageStore.Create(config)
-	if err != nil {
-		return "", err
-	}
-
-	if container.ImageID != "" {
-		if err := daemon.stores[container.OS].imageStore.SetParent(id, container.ImageID); err != nil {
-			return "", err
-		}
-	}
-
-	imageRef := ""
+	var imageRef string
 	if c.Repo != "" {
-		newTag, err := reference.ParseNormalizedNamed(c.Repo) // todo: should move this to API layer
+		imageRef, err = daemon.imageService.TagImage(string(id), c.Repo, c.Tag)
 		if err != nil {
 			return "", err
 		}
-		if !reference.IsNameOnly(newTag) {
-			return "", errors.Errorf("unexpected repository name: %s", c.Repo)
-		}
-		if c.Tag != "" {
-			if newTag, err = reference.WithTag(newTag, c.Tag); err != nil {
-				return "", err
-			}
-		}
-		if err := daemon.TagImageWithReference(id, container.OS, newTag); err != nil {
-			return "", err
-		}
-		imageRef = reference.FamiliarString(newTag)
 	}
-
-	attributes := map[string]string{
+	daemon.LogContainerEventWithAttributes(container, "commit", map[string]string{
 		"comment":  c.Comment,
 		"imageID":  id.String(),
 		"imageRef": imageRef,
-	}
-	daemon.LogContainerEventWithAttributes(container, "commit", attributes)
+	})
 	containerActions.WithValues("commit").UpdateSince(start)
 	return id.String(), nil
-}
-
-func (daemon *Daemon) exportContainerRw(container *container.Container) (arch io.ReadCloser, err error) {
-	rwlayer, err := daemon.stores[container.OS].layerStore.GetRWLayer(container.ID)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err != nil {
-			daemon.stores[container.OS].layerStore.ReleaseRWLayer(rwlayer)
-		}
-	}()
-
-	// TODO: this mount call is not necessary as we assume that TarStream() should
-	// mount the layer if needed. But the Diff() function for windows requests that
-	// the layer should be mounted when calling it. So we reserve this mount call
-	// until windows driver can implement Diff() interface correctly.
-	_, err = rwlayer.Mount(container.GetMountLabel())
-	if err != nil {
-		return nil, err
-	}
-
-	archive, err := rwlayer.TarStream()
-	if err != nil {
-		rwlayer.Unmount()
-		return nil, err
-	}
-	return ioutils.NewReadCloserWrapper(archive, func() error {
-			archive.Close()
-			err = rwlayer.Unmount()
-			daemon.stores[container.OS].layerStore.ReleaseRWLayer(rwlayer)
-			return err
-		}),
-		nil
 }

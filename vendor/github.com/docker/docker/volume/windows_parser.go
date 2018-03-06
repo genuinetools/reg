@@ -1,4 +1,4 @@
-package volume
+package volume // import "github.com/docker/docker/volume"
 
 import (
 	"errors"
@@ -189,7 +189,7 @@ func (p *windowsParser) ValidateVolumeName(name string) error {
 	}
 	return nil
 }
-func (p *windowsParser) validateMountConfig(mnt *mount.Mount) error {
+func (p *windowsParser) ValidateMountConfig(mnt *mount.Mount) error {
 	return p.validateMountConfigReg(mnt, rxDestination, windowsSpecificValidators)
 }
 
@@ -252,7 +252,7 @@ func (p *windowsParser) validateMountConfigReg(mnt *mount.Mount, destRegex strin
 			return &errMountConfig{mnt, err}
 		}
 		if !exists {
-			return &errMountConfig{mnt, errBindNotExist}
+			return &errMountConfig{mnt, errBindSourceDoesNotExist(mnt.Source)}
 		}
 		if !isdir {
 			return &errMountConfig{mnt, fmt.Errorf("source path must be a directory")}

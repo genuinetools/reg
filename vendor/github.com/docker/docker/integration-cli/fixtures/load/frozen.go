@@ -1,4 +1,4 @@
-package load
+package load // import "github.com/docker/docker/integration-cli/fixtures/load"
 
 import (
 	"bufio"
@@ -26,7 +26,6 @@ const frozenImgDir = "/docker-frozen-images"
 // images were passed in. If the images need to be downloaded, then it will respect
 // the passed in images
 func FrozenImagesLinux(client client.APIClient, images ...string) error {
-	imgNS := os.Getenv("TEST_IMAGE_NAMESPACE")
 	var loadImages []struct{ srcName, destName string }
 	for _, img := range images {
 		if !imageExists(client, img) {
@@ -37,9 +36,6 @@ func FrozenImagesLinux(client client.APIClient, images ...string) error {
 			// small image
 			if img == "hello-world:frozen" {
 				srcName = "hello-world:latest"
-			}
-			if imgNS != "" {
-				srcName = imgNS + "/" + srcName
 			}
 			loadImages = append(loadImages, struct{ srcName, destName string }{
 				srcName:  srcName,

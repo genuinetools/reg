@@ -15,7 +15,6 @@ import (
 	"github.com/docker/docker/integration-cli/cli"
 	"github.com/docker/docker/integration-cli/daemon"
 	"github.com/docker/docker/integration-cli/fixtures/plugin"
-	"github.com/docker/docker/integration-cli/request"
 	"github.com/go-check/check"
 	"github.com/gotestyourself/gotestyourself/icmd"
 	"golang.org/x/net/context"
@@ -55,7 +54,7 @@ func (ps *DockerPluginSuite) TestPluginBasicOps(c *check.C) {
 	c.Assert(err, checker.IsNil)
 	c.Assert(out, checker.Contains, plugin)
 
-	_, err = os.Stat(filepath.Join(testEnv.DockerBasePath(), "plugins", id))
+	_, err = os.Stat(filepath.Join(testEnv.DaemonInfo.DockerRootDir, "plugins", id))
 	if !os.IsNotExist(err) {
 		c.Fatal(err)
 	}
@@ -159,9 +158,7 @@ func (s *DockerSuite) TestPluginInstallDisableVolumeLs(c *check.C) {
 }
 
 func (ps *DockerPluginSuite) TestPluginSet(c *check.C) {
-	// Create a new plugin with extra settings
-	client, err := request.NewClient()
-	c.Assert(err, checker.IsNil, check.Commentf("failed to create test client"))
+	client := testEnv.APIClient()
 
 	name := "test"
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
@@ -171,7 +168,8 @@ func (ps *DockerPluginSuite) TestPluginSet(c *check.C) {
 	mntSrc := "foo"
 	devPath := "/dev/bar"
 
-	err = plugin.Create(ctx, client, name, func(cfg *plugin.Config) {
+	// Create a new plugin with extra settings
+	err := plugin.Create(ctx, client, name, func(cfg *plugin.Config) {
 		cfg.Env = []types.PluginEnv{{Name: "DEBUG", Value: &initialValue, Settable: []string{"value"}}}
 		cfg.Mounts = []types.PluginMount{
 			{Name: "pmount1", Settable: []string{"source"}, Type: "none", Source: &mntSrc},
@@ -401,12 +399,11 @@ func (s *DockerTrustSuite) TestPluginUntrustedInstall(c *check.C) {
 
 func (ps *DockerPluginSuite) TestPluginIDPrefix(c *check.C) {
 	name := "test"
-	client, err := request.NewClient()
-	c.Assert(err, checker.IsNil, check.Commentf("error creating test client"))
+	client := testEnv.APIClient()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	initialValue := "0"
-	err = plugin.Create(ctx, client, name, func(cfg *plugin.Config) {
+	err := plugin.Create(ctx, client, name, func(cfg *plugin.Config) {
 		cfg.Env = []types.PluginEnv{{Name: "DEBUG", Value: &initialValue, Settable: []string{"value"}}}
 	})
 	cancel()
@@ -466,8 +463,7 @@ func (ps *DockerPluginSuite) TestPluginListDefaultFormat(c *check.C) {
 	c.Assert(err, check.IsNil)
 
 	name := "test:latest"
-	client, err := request.NewClient()
-	c.Assert(err, checker.IsNil, check.Commentf("error creating test client"))
+	client := testEnv.APIClient()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -506,14 +502,14 @@ func (s *DockerSuite) TestPluginUpgrade(c *check.C) {
 	id := strings.TrimSpace(out)
 
 	// make sure "v2" does not exists
-	_, err = os.Stat(filepath.Join(testEnv.DockerBasePath(), "plugins", id, "rootfs", "v2"))
+	_, err = os.Stat(filepath.Join(testEnv.DaemonInfo.DockerRootDir, "plugins", id, "rootfs", "v2"))
 	c.Assert(os.IsNotExist(err), checker.True, check.Commentf(out))
 
 	dockerCmd(c, "plugin", "disable", "-f", plugin)
 	dockerCmd(c, "plugin", "upgrade", "--grant-all-permissions", "--skip-remote-check", plugin, pluginV2)
 
 	// make sure "v2" file exists
-	_, err = os.Stat(filepath.Join(testEnv.DockerBasePath(), "plugins", id, "rootfs", "v2"))
+	_, err = os.Stat(filepath.Join(testEnv.DaemonInfo.DockerRootDir, "plugins", id, "rootfs", "v2"))
 	c.Assert(err, checker.IsNil)
 
 	dockerCmd(c, "plugin", "enable", plugin)
