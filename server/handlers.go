@@ -214,24 +214,10 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	m1, err := rc.reg.ManifestV1(repo, tag)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"func":   "vulnerabilities",
-			"URL":    r.URL,
-			"method": r.Method,
-			"repo":   repo,
-			"tag":    tag,
-		}).Errorf("getting v1 manifest for %s:%s failed: %v", repo, tag, err)
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, "Manifest not found")
-		return
-	}
-
 	result := clair.VulnerabilityReport{}
 
 	if rc.cl != nil {
-		result, err = rc.cl.Vulnerabilities(rc.reg, repo, tag, m1)
+		result, err = rc.cl.Vulnerabilities(rc.reg, repo, tag)
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
 				"func":   "vulnerabilities",

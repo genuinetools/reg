@@ -31,7 +31,7 @@ func (asm authServiceMock) equalTo(v *authService) bool {
 	return true
 }
 
-func Test_parseChallenge(t *testing.T) {
+func TestParseChallenge(t *testing.T) {
 	challengeHeaderCases := []challengeTestCase{
 		{
 			header: `Bearer realm="https://foobar.com/api/v1/token",service=foobar.com,scope=""`,
@@ -41,6 +41,7 @@ func Test_parseChallenge(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tc := range challengeHeaderCases {
 		val, err := parseChallenge(tc.header)
 		if err != nil && !strings.Contains(err.Error(), tc.errorString) {

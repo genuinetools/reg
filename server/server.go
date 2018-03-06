@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jessfraz/reg/clair"
 	"github.com/jessfraz/reg/registry"
-	"github.com/jessfraz/reg/utils"
+	"github.com/jessfraz/reg/repoutils"
 	wordwrap "github.com/mitchellh/go-wordwrap"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -98,7 +98,7 @@ func main() {
 		},
 	}
 	app.Action = func(c *cli.Context) error {
-		auth, err := utils.GetAuthConfig(c.GlobalString("username"), c.GlobalString("password"), c.GlobalString("registry"))
+		auth, err := repoutils.GetAuthConfig(c.GlobalString("username"), c.GlobalString("password"), c.GlobalString("registry"))
 		if err != nil {
 			logrus.Fatal(err)
 		}

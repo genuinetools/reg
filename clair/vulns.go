@@ -11,7 +11,7 @@ import (
 )
 
 // Vulnerabilities scans the given repo and tag
-func (c *Clair) Vulnerabilities(r *registry.Registry, repo, tag string, m schema1.SignedManifest) (VulnerabilityReport, error) {
+func (c *Clair) Vulnerabilities(r *registry.Registry, repo, tag string) (VulnerabilityReport, error) {
 	report := VulnerabilityReport{
 		RegistryURL:     r.Domain,
 		Repo:            repo,
@@ -20,13 +20,20 @@ func (c *Clair) Vulnerabilities(r *registry.Registry, repo, tag string, m schema
 		VulnsBySeverity: make(map[string][]Vulnerability),
 	}
 
-	// filter out the empty layers
+	// Get the v1 manifest to pass to clair.
+	m, err := r.ManifestV1(repo, tag)
+	if err != nil {
+		return report, fmt.Errorf("getting the v1 manifest for %s:%s failed: %v", repo, tag, err)
+	}
+
+	// Filter out the empty layers.
 	var filteredLayers []schema1.FSLayer
 	for _, layer := range m.FSLayers {
 		if layer.BlobSum != EmptyLayerBlobSum {
 			filteredLayers = append(filteredLayers, layer)
 		}
 	}
+
 	m.FSLayers = filteredLayers
 	if len(m.FSLayers) == 0 {
 		fmt.Printf("No need to analyse image %s:%s as there is no non-emtpy layer", repo, tag)
@@ -34,13 +41,13 @@ func (c *Clair) Vulnerabilities(r *registry.Registry, repo, tag string, m schema
 	}
 
 	for i := len(m.FSLayers) - 1; i >= 0; i-- {
-		// form the clair layer
+		// Form the clair layer.
 		l, err := c.NewClairLayer(r, repo, m.FSLayers, i)
 		if err != nil {
 			return report, err
 		}
 
-		// post the layer
+		// Post the layer.
 		if _, err := c.PostLayer(l); err != nil {
 			return report, err
 		}
@@ -51,7 +58,7 @@ func (c *Clair) Vulnerabilities(r *registry.Registry, repo, tag string, m schema
 		return report, err
 	}
 
-	// get the vulns
+	// Get the vulns.
 	for _, f := range vl.Features {
 		for _, v := range f.Vulnerabilities {
 			report.Vulns = append(report.Vulns, v)
