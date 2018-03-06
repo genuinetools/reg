@@ -99,11 +99,7 @@ func main() {
 		}
 
 		r, err = registry.New(auth, c.GlobalBool("debug"))
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return err
 	}
 
 	if err := app.Run(os.Args); err != nil {
