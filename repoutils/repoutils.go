@@ -30,7 +30,7 @@ func GetAuthConfig(username, password, registry string) (types.AuthConfig, error
 
 	dcfg, err := config.Load(config.Dir())
 	if err != nil {
-		return types.AuthConfig{}, fmt.Errorf("Loading config file failed: %v", err)
+		return types.AuthConfig{}, fmt.Errorf("Loading config file from %s failed: %v", config.Dir(), err)
 	}
 
 	// return error early if there are no auths saved

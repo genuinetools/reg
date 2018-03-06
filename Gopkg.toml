@@ -36,19 +36,19 @@
   name = "github.com/docker/docker-ce"
   branch = "master"
 
-[[constraint]]
+[[override]]
   name = "github.com/docker/cli"
   branch = "master"
 
-[[constraint]]
+[[override]]
   name = "github.com/docker/docker-credentials-helpers"
   branch = "master"
 
-[[constraint]]
+[[override]]
   name = "github.com/docker/go-connections"
   branch = "master"
 
-[[constraint]]
+[[override]]
   name = "github.com/docker/go-units"
   branch = "master"
 

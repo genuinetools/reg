@@ -4,7 +4,43 @@ import (
 	"testing"
 
 	"github.com/docker/distribution/reference"
+	"github.com/docker/docker/api/types"
+	"github.com/google/go-cmp/cmp"
 )
+
+func TestGetAuthConfig(t *testing.T) {
+	configTestcases := []struct {
+		name                         string
+		username, password, registry string
+		err                          error
+		config                       types.AuthConfig
+	}{
+		{
+			name:     "pass in all details",
+			username: "jess",
+			password: "password",
+			registry: "r.j3ss.co",
+			config: types.AuthConfig{
+				Username:      "jess",
+				Password:      "password",
+				ServerAddress: "r.j3ss.co",
+			},
+		},
+	}
+
+	for _, testcase := range configTestcases {
+		cfg, err := GetAuthConfig(testcase.username, testcase.password, testcase.registry)
+		if err != nil {
+			if err.Error() != testcase.err.Error() {
+				t.Fatalf("%q: expected err (%v), got err (%v)", testcase.name, testcase.err, err)
+			}
+			continue
+		}
+		if diff := cmp.Diff(testcase.config, cfg); diff != "" {
+			t.Errorf("%s: authconfig differs: (-got +want)\n%s", testcase.name, diff)
+		}
+	}
+}
 
 func TestGetRepoAndRef(t *testing.T) {
 	imageTestcases := []struct {
