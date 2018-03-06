@@ -18,9 +18,9 @@ Docker registry v2 command line client.
 
 #### Binaries
 
-- **darwin** [386](https://github.com/jessfraz/reg/releases/download/v0.11.0/reg-darwin-386) / [amd64](https://github.com/jessfraz/reg/releases/download/v0.11.0/reg-darwin-amd64)
-- **linux** [386](https://github.com/jessfraz/reg/releases/download/v0.11.0/reg-linux-386) / [amd64](https://github.com/jessfraz/reg/releases/download/v0.11.0/reg-linux-amd64) / [arm](https://github.com/jessfraz/reg/releases/download/v0.11.0/reg-linux-arm) / [arm64](https://github.com/jessfraz/reg/releases/download/v0.11.0/reg-linux-arm64)
-- **windows** [386](https://github.com/jessfraz/reg/releases/download/v0.11.0/reg-windows-386) / [amd64](https://github.com/jessfraz/reg/releases/download/v0.11.0/reg-windows-amd64)
+- **darwin** [386](https://github.com/jessfraz/reg/releases/download/v0.12.0/reg-darwin-386) / [amd64](https://github.com/jessfraz/reg/releases/download/v0.12.0/reg-darwin-amd64)
+- **linux** [386](https://github.com/jessfraz/reg/releases/download/v0.12.0/reg-linux-386) / [amd64](https://github.com/jessfraz/reg/releases/download/v0.12.0/reg-linux-amd64) / [arm](https://github.com/jessfraz/reg/releases/download/v0.12.0/reg-linux-arm) / [arm64](https://github.com/jessfraz/reg/releases/download/v0.12.0/reg-linux-arm64)
+- **windows** [386](https://github.com/jessfraz/reg/releases/download/v0.12.0/reg-windows-386) / [amd64](https://github.com/jessfraz/reg/releases/download/v0.12.0/reg-windows-amd64)
 
 #### Via Go
 
@@ -39,7 +39,7 @@ USAGE:
    reg [global options] command [command options] [arguments...]
 
 VERSION:
-   version v0.11.0, build 3b7dafb
+   version v0.12.0, build 3b7dafb
 
 AUTHOR:
    @jessfraz <no-reply@butts.com>
