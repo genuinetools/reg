@@ -39,17 +39,17 @@ USAGE:
    reg [global options] command [command options] [arguments...]
 
 VERSION:
-   v0.2.0
+   version v0.9.0, build 3b7dafb
 
-AUTHOR(S):
+AUTHOR:
    @jessfraz <no-reply@butts.com>
 
 COMMANDS:
      delete, rm       delete a specific reference of a repository
+     layer, download  download a layer for the specific reference of a repository
      list, ls         list all repositories
      manifest         get the json manifest for the specific reference of a repository
      tags             get the tags for a repository
-     download, layer  download a layer for the specific reference of a repository
      vulns            get a vulnerability report for the image from CoreOS Clair
      help, h          Shows a list of commands or help for one command
 
@@ -59,7 +59,7 @@ GLOBAL OPTIONS:
    --force-non-ssl, -f         force allow use of non-ssl
    --username value, -u value  username for the registry
    --password value, -p value  password for the registry
-   --registry value, -r value  URL to the private registry (ex. r.j3ss.co)
+   --registry value, -r value  URL to the private registry (ex. r.j3ss.co) (default: "https://registry-1.docker.io")
    --help, -h                  show help
    --version, -v               print the version
 ```
