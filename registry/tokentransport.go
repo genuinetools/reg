@@ -118,7 +118,12 @@ func isTokenDemand(resp *http.Response) (*authService, error) {
 func (r *Registry) Token(url string) (string, error) {
 	r.Logf("registry.token url=%s", url)
 
-	resp, err := http.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := r.Client.Do(req)
 	if err != nil {
 		return "", err
 	}
