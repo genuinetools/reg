@@ -1,10 +1,10 @@
 package repoutils
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/docker/distribution/reference"
 	"github.com/docker/docker-ce/components/cli/cli/config"
 	"github.com/docker/docker/api/types"
 )
@@ -12,6 +12,8 @@ import (
 const (
 	// DefaultDockerRegistry is the default docker registry address.
 	DefaultDockerRegistry = "https://registry-1.docker.io"
+
+	latestTagSuffix = ":latest"
 )
 
 // GetAuthConfig returns the docker registry AuthConfig.
@@ -97,27 +99,34 @@ func GetAuthConfig(username, password, registry string) (types.AuthConfig, error
 }
 
 // GetRepoAndRef parses the repo name and reference.
-func GetRepoAndRef(arg string) (repo, ref string, err error) {
-	if arg == "" {
-		return "", "", errors.New("pass the name of the repository")
+func GetRepoAndRef(image string) (repo, ref string, err error) {
+	if image == "" {
+		return "", "", reference.ErrNameEmpty
 	}
 
+	image = addLatestTagSuffix(image)
+
 	var parts []string
-	if strings.Contains(arg, "@") {
-		parts = strings.Split(arg, "@")
-	} else if strings.Contains(arg, ":") {
-		parts = strings.Split(arg, ":")
-	} else {
-		parts = []string{arg}
+	if strings.Contains(image, "@") {
+		parts = strings.Split(image, "@")
+	} else if strings.Contains(image, ":") {
+		parts = strings.Split(image, ":")
 	}
 
 	repo = parts[0]
-	ref = "latest"
 	if len(parts) > 1 {
 		ref = parts[1]
 	}
 
 	return
+}
+
+// addLatestTagSuffix adds :latest to the image if it does not have a tag
+func addLatestTagSuffix(image string) string {
+	if !strings.Contains(image, ":") {
+		return image + latestTagSuffix
+	}
+	return image
 }
 
 func setDefaultRegistry(auth types.AuthConfig) types.AuthConfig {

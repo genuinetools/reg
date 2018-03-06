@@ -72,7 +72,11 @@ func StartRegistry(dcli *client.Client, config, username, password string) (stri
 		return r.ID, addr, err
 	}
 
-	if err := prefillRegistry(dcli, "localhost"+port, username, password); err != nil {
+	if err := prefillRegistry("alpine:latest", dcli, "localhost"+port, username, password); err != nil {
+		return r.ID, addr, err
+	}
+
+	if err := prefillRegistry("busybox:latest", dcli, "localhost"+port, username, password); err != nil {
 		return r.ID, addr, err
 	}
 
@@ -99,9 +103,7 @@ func dockerLogin(addr, username, password string) error {
 }
 
 // prefillRegistry adds images to a registry.
-func prefillRegistry(dcli *client.Client, addr, username, password string) error {
-	image := "alpine:latest"
-
+func prefillRegistry(image string, dcli *client.Client, addr, username, password string) error {
 	if err := pullDockerImage(dcli, image); err != nil {
 		return err
 	}
