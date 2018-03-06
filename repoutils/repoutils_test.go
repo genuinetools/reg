@@ -1,9 +1,14 @@
 package repoutils
 
 import (
+	"errors"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/docker/distribution/reference"
+	"github.com/docker/docker-ce/components/cli/cli/config"
 	"github.com/docker/docker/api/types"
 	"github.com/google/go-cmp/cmp"
 )
@@ -12,6 +17,7 @@ func TestGetAuthConfig(t *testing.T) {
 	configTestcases := []struct {
 		name                         string
 		username, password, registry string
+		configdir                    string
 		err                          error
 		config                       types.AuthConfig
 	}{
@@ -26,16 +32,110 @@ func TestGetAuthConfig(t *testing.T) {
 				ServerAddress: "r.j3ss.co",
 			},
 		},
+		{
+			name:      "invalid config dir",
+			configdir: "testdata/invalid",
+			err:       errors.New("Loading config file failed: "),
+			config:    types.AuthConfig{},
+		},
+		{
+			name:      "empty config",
+			configdir: "testdata/empty",
+			config:    types.AuthConfig{},
+		},
+		{
+			name:      "empty config with registry",
+			registry:  "r.j3ss.co",
+			configdir: "testdata/empty",
+			config: types.AuthConfig{
+				ServerAddress: "r.j3ss.co",
+			},
+		},
+		{
+			name:      "valid with multiple",
+			registry:  "r.j3ss.co",
+			configdir: "testdata/valid",
+			config: types.AuthConfig{
+				ServerAddress: "r.j3ss.co",
+				Username:      "user",
+				Password:      "blah\n",
+			},
+		},
+		{
+			name:      "valid with multiple and https:// prefix",
+			registry:  "https://r.j3ss.co",
+			configdir: "testdata/valid",
+			config: types.AuthConfig{
+				ServerAddress: "r.j3ss.co",
+				Username:      "user",
+				Password:      "blah\n",
+			},
+		},
+		{
+			name:      "valid with multiple and http:// prefix",
+			registry:  "http://r.j3ss.co",
+			configdir: "testdata/valid",
+			config: types.AuthConfig{
+				ServerAddress: "r.j3ss.co",
+				Username:      "user",
+				Password:      "blah\n",
+			},
+		},
+		{
+			name:      "valid with multiple and no https:// prefix",
+			registry:  "reg.j3ss.co",
+			configdir: "testdata/valid",
+			config: types.AuthConfig{
+				ServerAddress: "https://reg.j3ss.co",
+				Username:      "joe",
+				Password:      "otherthing\n",
+			},
+		},
+		{
+			name:      "valid with multiple and but registry not found",
+			registry:  "otherreg.j3ss.co",
+			configdir: "testdata/valid",
+			config: types.AuthConfig{
+				ServerAddress: "otherreg.j3ss.co",
+			},
+		},
+		{
+			name:      "valid and no registry passed",
+			configdir: "testdata/singlevalid",
+			config: types.AuthConfig{
+				ServerAddress: "https://index.docker.io/v1/",
+				Username:      "user",
+				Password:      "thing\n",
+			},
+		},
+		{
+			name:      "no authentication",
+			configdir: "testdata/empty",
+			config:    types.AuthConfig{},
+		},
 	}
 
 	for _, testcase := range configTestcases {
+		if testcase.configdir != "" {
+			// Set the config directory.
+			wd, err := os.Getwd()
+			if err != nil {
+				t.Fatalf("get working directory failed: %v", err)
+			}
+			config.SetDir(filepath.Join(wd, testcase.configdir))
+		}
+
 		cfg, err := GetAuthConfig(testcase.username, testcase.password, testcase.registry)
-		if err != nil {
-			if err.Error() != testcase.err.Error() {
+		if err != nil || testcase.err != nil {
+			if err == nil || testcase.err == nil {
+				t.Fatalf("%q: expected err (%v), got err (%v)", testcase.name, testcase.err, err)
+			}
+			if !strings.Contains(err.Error(), testcase.err.Error()) {
 				t.Fatalf("%q: expected err (%v), got err (%v)", testcase.name, testcase.err, err)
 			}
 			continue
 		}
+
 		if diff := cmp.Diff(testcase.config, cfg); diff != "" {
 			t.Errorf("%s: authconfig differs: (-got +want)\n%s", testcase.name, diff)
 		}
@@ -76,7 +176,10 @@ func TestGetRepoAndRef(t *testing.T) {
 
 	for _, testcase := range imageTestcases {
 		repo, ref, err := GetRepoAndRef(testcase.input)
-		if err != nil {
+		if err != nil || testcase.err != nil {
+			if err == nil || testcase.err == nil {
+				t.Fatalf("%q: expected err (%v), got err (%v)", testcase.input, testcase.err, err)
+			}
 			if err.Error() != testcase.err.Error() {
 				t.Fatalf("%q: expected err (%v), got err (%v)", testcase.input, testcase.err, err)
 			}

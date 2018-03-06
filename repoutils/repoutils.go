@@ -30,7 +30,7 @@ func GetAuthConfig(username, password, registry string) (types.AuthConfig, error
 
 	dcfg, err := config.Load(config.Dir())
 	if err != nil {
-		return types.AuthConfig{}, fmt.Errorf("Loading config file from %s failed: %v", config.Dir(), err)
+		return types.AuthConfig{}, fmt.Errorf("Loading config file failed: %v", err)
 	}
 
 	// return error early if there are no auths saved
@@ -79,7 +79,8 @@ func GetAuthConfig(username, password, registry string) (types.AuthConfig, error
 				return creds, nil
 			}
 		}
-		fmt.Printf("Using registry '%s' with no authentication\n", registry)
+
+		fmt.Printf("Using registry %q with no authentication\n", registry)
 
 		// Otherwise just use the registry with no auth.
 		return setDefaultRegistry(types.AuthConfig{
@@ -90,10 +91,12 @@ func GetAuthConfig(username, password, registry string) (types.AuthConfig, error
 	// Just set the auth config as the first registryURL, username and password
 	// found in the auth config.
 	for _, creds := range authConfigs {
+		fmt.Printf("No registry passed. Using registry %q\n", creds.ServerAddress)
 		return creds, nil
 	}
 
 	// Don't use any authentication.
+	// We should never get here.
 	fmt.Println("Not using any authentication")
 	return types.AuthConfig{}, nil
 }
