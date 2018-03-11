@@ -42,7 +42,7 @@
     "cli/config/credentials",
     "opts"
   ]
-  revision = "fe067a08779bbaae53bc9aca20745500bfddabe4"
+  revision = "2731c71c993a4d1e43101eea56e7c343315024f1"
 
 [[projects]]
   branch = "master"
@@ -103,13 +103,13 @@
     "registry",
     "registry/resumable"
   ]
-  revision = "f0694e968fe600efdf24ab0d3a1b0e887267aea2"
+  revision = "a575b0b1384b2ba89b79cbd7e770fbeb616758b3"
 
 [[projects]]
   branch = "master"
   name = "github.com/docker/docker-ce"
   packages = ["components/cli/cli/config"]
-  revision = "e5ed7f42255e8ef3f5cc64eb60dce3243aecb1eb"
+  revision = "0b63fed1587e3fedd1ab72d9f6e80f71e8c52f8b"
 
 [[projects]]
   name = "github.com/docker/docker-credential-helpers"
@@ -263,7 +263,7 @@
     "nfs",
     "xfs"
   ]
-  revision = "7186fbf4eb22a031bcd4657c8adc3fc39acf6d8a"
+  revision = "54d17b57dd7d4a3aa092476596b3f8a933bde349"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
@@ -281,7 +281,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "91a49db82a88618983a78a06c1cbd4e00ab749ab"
+  revision = "c7dcf104e3a7a1417abc0230cb0d5240d764159d"
 
 [[projects]]
   branch = "master"
@@ -291,7 +291,7 @@
     "context/ctxhttp",
     "proxy"
   ]
-  revision = "d25186b37f34ebdbbea8f488ef055638dfab272d"
+  revision = "d0aafc73d5cdc42264b0af071c261abac580695e"
 
 [[projects]]
   branch = "master"
@@ -300,7 +300,7 @@
     "unix",
     "windows"
   ]
-  revision = "dd2ff4accc098aceecb86b36eaa7829b2a17b1c9"
+  revision = "7dca6fe1f43775aa6d1334576870ff63f978f539"
 
 [solve-meta]
   analyzer-name = "dep"
