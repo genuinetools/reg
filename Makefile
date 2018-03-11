@@ -3,7 +3,7 @@ PREFIX?=$(shell pwd)
 
 # Setup name variables for the package/tool
 NAME := reg
-PKG := github.com/jessfraz/$(NAME)
+PKG := github.com/genuinetools/$(NAME)
 
 # Set any default go build tags
 BUILDTAGS :=
@@ -13,7 +13,7 @@ BUILDDIR := ${PREFIX}/cross
 
 # Populate version variables
 # Add to compile time flags
-VERSION := $(shell cat VERSION)
+VERSION := $(shell cat VERSION.txt)
 GITCOMMIT := $(shell git rev-parse --short HEAD)
 GITUNTRACKEDCHANGES := $(shell git status --porcelain --untracked-files=no)
 ifneq ($(GITUNTRACKEDCHANGES),)
@@ -31,7 +31,7 @@ all: clean build fmt lint test staticcheck vet install ## Runs a clean, build, f
 .PHONY: build
 build: $(NAME) ## Builds a dynamic executable or package
 
-$(NAME): *.go VERSION
+$(NAME): *.go VERSION.txt
 	@echo "+ $@"
 	go build -tags "$(BUILDTAGS)" ${GO_LDFLAGS} -o $(NAME) .
 
@@ -71,7 +71,7 @@ staticcheck: ## Verifies `staticcheck` passes
 cover: ## Runs go test with coverage
 	@echo "" > coverage.txt
 	@for d in $(shell go list ./... | grep -v vendor); do \
-		go test -coverprofile=profile.out -covermode=atomic "$d"; \
+		go test -race -coverprofile=profile.out -covermode=atomic "$$d"; \
 		if [ -f profile.out ]; then \
 			cat profile.out >> coverage.txt; \
 			rm profile.out; \
@@ -94,7 +94,7 @@ sha256sum $(BUILDDIR)/$(1)/$(2)/$(NAME) > $(BUILDDIR)/$(1)/$(2)/$(NAME).sha256;
 endef
 
 .PHONY: cross
-cross: *.go VERSION ## Builds the cross-compiled binaries, creating a clean directory structure (eg. GOOS/GOARCH/binary)
+cross: *.go VERSION.txt ## Builds the cross-compiled binaries, creating a clean directory structure (eg. GOOS/GOARCH/binary)
 	@echo "+ $@"
 	$(foreach GOOSARCH,$(GOOSARCHES), $(call buildpretty,$(subst /,,$(dir $(GOOSARCH))),$(notdir $(GOOSARCH))))
 
@@ -108,7 +108,7 @@ sha256sum $(BUILDDIR)/$(NAME)-$(1)-$(2) > $(BUILDDIR)/$(NAME)-$(1)-$(2).sha256;
 endef
 
 .PHONY: release
-release: *.go VERSION ## Builds the cross-compiled binaries, naming them in such a way for release (eg. binary-GOOS-GOARCH)
+release: *.go VERSION.txt ## Builds the cross-compiled binaries, naming them in such a way for release (eg. binary-GOOS-GOARCH)
 	@echo "+ $@"
 	$(foreach GOOSARCH,$(GOOSARCHES), $(call buildrelease,$(subst /,,$(dir $(GOOSARCH))),$(notdir $(GOOSARCH))))
 
@@ -117,11 +117,11 @@ BUMP := patch
 bump-version: ## Bump the version in the version file. Set BUMP to [ patch | major | minor ]
 	@go get -u github.com/jessfraz/junk/sembump # update sembump tool
 	$(eval NEW_VERSION = $(shell sembump --kind $(BUMP) $(VERSION)))
-	@echo "Bumping VERSION from $(VERSION) to $(NEW_VERSION)"
-	echo $(NEW_VERSION) > VERSION
+	@echo "Bumping VERSION.txt from $(VERSION) to $(NEW_VERSION)"
+	echo $(NEW_VERSION) > VERSION.txt
 	@echo "Updating links to download binaries in README.md"
 	sed -i s/$(VERSION)/$(NEW_VERSION)/g README.md
-	git add VERSION README.md
+	git add VERSION.txt README.md
 	git commit -vsam "Bump version to $(NEW_VERSION)"
 	@echo "Run make tag to create and push the tag for new version $(NEW_VERSION)"
 

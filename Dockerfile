@@ -7,7 +7,7 @@ ENV GOPATH /go
 RUN	apk add --no-cache \
 	ca-certificates
 
-COPY . /go/src/github.com/jessfraz/reg
+COPY . /go/src/github.com/genuinetools/reg
 
 RUN set -x \
 	&& apk add --no-cache --virtual .build-deps \
@@ -16,7 +16,7 @@ RUN set -x \
 		libc-dev \
 		libgcc \
 		make \
-	&& cd /go/src/github.com/jessfraz/reg \
+	&& cd /go/src/github.com/genuinetools/reg \
 	&& make static \
 	&& mv reg /usr/bin/reg \
 	&& apk del .build-deps \
