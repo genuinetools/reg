@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/jessfraz/reg/repoutils"
+	"github.com/genuinetools/reg/repoutils"
 	"github.com/urfave/cli"
 )
 

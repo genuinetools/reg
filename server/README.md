@@ -19,7 +19,7 @@ VERSION:
    v0.1.0
 
 AUTHOR:
-   @jessfraz <no-reply@butts.com>
+   The Genuinetools Authors <no-reply@butts.com>
 
 COMMANDS:
      help, h  Shows a list of commands or help for one command

@@ -13,8 +13,8 @@ RUN set -x \
 		gcc \
 		libc-dev \
 		libgcc \
-	&& go get -v github.com/jessfraz/reg \
-	&& cd /go/src/github.com/jessfraz/reg \
+	&& go get -v github.com/genuinetools/reg \
+	&& cd /go/src/github.com/genuinetools/reg \
 	&& CGO_ENABLED=0 go build -a -tags netgo -ldflags '-extldflags "-static"' -o /usr/bin/reg-server ./server \
 	&& apk del .build-deps \
 	&& rm -rf /go \

@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/genuinetools/reg/clair"
+	"github.com/genuinetools/reg/registry"
 	"github.com/gorilla/mux"
-	"github.com/jessfraz/reg/clair"
-	"github.com/jessfraz/reg/registry"
 	"github.com/sirupsen/logrus"
 )
 

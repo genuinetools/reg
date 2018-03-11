@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/docker/distribution/manifest/schema1"
-	"github.com/jessfraz/reg/registry"
+	"github.com/genuinetools/reg/registry"
 )
 
 // Vulnerabilities scans the given repo and tag

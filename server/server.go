@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/genuinetools/reg/clair"
+	"github.com/genuinetools/reg/registry"
+	"github.com/genuinetools/reg/repoutils"
 	"github.com/gorilla/mux"
-	"github.com/jessfraz/reg/clair"
-	"github.com/jessfraz/reg/registry"
-	"github.com/jessfraz/reg/repoutils"
 	wordwrap "github.com/mitchellh/go-wordwrap"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -43,7 +43,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "reg-server"
 	app.Version = VERSION
-	app.Author = "@jessfraz"
+	app.Author = "The Genuinetools Authors"
 	app.Email = "no-reply@butts.com"
 	app.Usage = "Docker registry v2 static UI server."
 	app.Before = preload

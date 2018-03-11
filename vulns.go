@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jessfraz/reg/clair"
-	"github.com/jessfraz/reg/repoutils"
+	"github.com/genuinetools/reg/clair"
+	"github.com/genuinetools/reg/repoutils"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )

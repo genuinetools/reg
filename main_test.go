@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/docker/docker/client"
-	"github.com/jessfraz/reg/testutils"
+	"github.com/genuinetools/reg/testutils"
 )
 
 var (

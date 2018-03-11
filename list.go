@@ -45,7 +45,7 @@ var listCommand = cli.Command{
 				out := fmt.Sprintf("%s\t%s\n", repo, strings.Join(tags, ", "))
 
 				// Lock around the tabwriter to prevent garbled output.
-				// See: https://github.com/jessfraz/reg/issues/54
+				// See: https://github.com/genuinetools/reg/issues/54
 				l.Lock()
 				w.Write([]byte(out))
 				l.Unlock()

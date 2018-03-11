@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
-	"github.com/jessfraz/reg/registry"
-	"github.com/jessfraz/reg/repoutils"
-	"github.com/jessfraz/reg/version"
+	"github.com/genuinetools/reg/registry"
+	"github.com/genuinetools/reg/repoutils"
+	"github.com/genuinetools/reg/version"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
@@ -22,7 +22,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "reg"
 	app.Version = fmt.Sprintf("version %s, build %s", version.VERSION, version.GITCOMMIT)
-	app.Author = "@jessfraz"
+	app.Author = "The Genuinetools Authors"
 	app.Email = "no-reply@butts.com"
 	app.Usage = "Docker registry v2 client."
 

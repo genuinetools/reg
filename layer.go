@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/jessfraz/reg/repoutils"
+	"github.com/genuinetools/reg/repoutils"
 	digest "github.com/opencontainers/go-digest"
 	"github.com/urfave/cli"
 )

@@ -1,6 +1,6 @@
 # reg
 
-[![Travis CI](https://travis-ci.org/jessfraz/reg.svg?branch=master)](https://travis-ci.org/jessfraz/reg)
+[![Travis CI](https://travis-ci.org/genuinetools/reg.svg?branch=master)](https://travis-ci.org/genuinetools/reg)
 
 Docker registry v2 command line client.
 
@@ -18,14 +18,14 @@ Docker registry v2 command line client.
 
 #### Binaries
 
-- **darwin** [386](https://github.com/jessfraz/reg/releases/download/v0.12.0/reg-darwin-386) / [amd64](https://github.com/jessfraz/reg/releases/download/v0.12.0/reg-darwin-amd64)
-- **linux** [386](https://github.com/jessfraz/reg/releases/download/v0.12.0/reg-linux-386) / [amd64](https://github.com/jessfraz/reg/releases/download/v0.12.0/reg-linux-amd64) / [arm](https://github.com/jessfraz/reg/releases/download/v0.12.0/reg-linux-arm) / [arm64](https://github.com/jessfraz/reg/releases/download/v0.12.0/reg-linux-arm64)
-- **windows** [386](https://github.com/jessfraz/reg/releases/download/v0.12.0/reg-windows-386) / [amd64](https://github.com/jessfraz/reg/releases/download/v0.12.0/reg-windows-amd64)
+- **darwin** [386](https://github.com/genuinetools/reg/releases/download/v0.12.0/reg-darwin-386) / [amd64](https://github.com/genuinetools/reg/releases/download/v0.12.0/reg-darwin-amd64)
+- **linux** [386](https://github.com/genuinetools/reg/releases/download/v0.12.0/reg-linux-386) / [amd64](https://github.com/genuinetools/reg/releases/download/v0.12.0/reg-linux-amd64) / [arm](https://github.com/genuinetools/reg/releases/download/v0.12.0/reg-linux-arm) / [arm64](https://github.com/genuinetools/reg/releases/download/v0.12.0/reg-linux-arm64)
+- **windows** [386](https://github.com/genuinetools/reg/releases/download/v0.12.0/reg-windows-386) / [amd64](https://github.com/genuinetools/reg/releases/download/v0.12.0/reg-windows-amd64)
 
 #### Via Go
 
 ```bash
-$ go get github.com/jessfraz/reg
+$ go get github.com/genuinetools/reg
 ```
 
 ## Usage
@@ -42,7 +42,7 @@ VERSION:
    version v0.12.0, build 3b7dafb
 
 AUTHOR:
-   @jessfraz <no-reply@butts.com>
+   The Genuinetools Authors <no-reply@butts.com>
 
 COMMANDS:
      delete, rm       delete a specific reference of a repository
