@@ -67,6 +67,10 @@ GLOBAL OPTIONS:
 Note that the `--registry` can be set by an environment variable `REG_REGISTRY`, so you can set this in your shell login scripts.
 Specifying the registry on the command-line will override an environment variable setting.
 
+## Note
+
+Be aware that reg doesn't work with `hub.docker.com` as it has a different API.
+
 ## Auth
 
 `reg` will automatically try to parse your docker config credentials, but if
