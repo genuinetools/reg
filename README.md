@@ -69,7 +69,7 @@ Specifying the registry on the command-line will override an environment variabl
 
 ## Note
 
-Be aware that reg doesn't work with `hub.docker.com` as it has a different API.
+Be aware that `reg ls` doesn't work with `hub.docker.com` as it has a different API then the [OSS Docker Registry](https://github.com/docker/distribution)
 
 ## Auth
 
