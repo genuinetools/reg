@@ -2,14 +2,15 @@ package client // import "github.com/docker/docker/client"
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
+	"github.com/gotestyourself/gotestyourself/assert"
+	is "github.com/gotestyourself/gotestyourself/assert/cmp"
 )
 
 func TestServiceRemoveError(t *testing.T) {
@@ -18,7 +19,7 @@ func TestServiceRemoveError(t *testing.T) {
 	}
 
 	err := client.ServiceRemove(context.Background(), "service_id")
-	assert.EqualError(t, err, "Error response from daemon: Server error")
+	assert.Check(t, is.Error(err, "Error response from daemon: Server error"))
 }
 
 func TestServiceRemoveNotFoundError(t *testing.T) {
@@ -27,8 +28,8 @@ func TestServiceRemoveNotFoundError(t *testing.T) {
 	}
 
 	err := client.ServiceRemove(context.Background(), "service_id")
-	assert.EqualError(t, err, "Error: No such service: service_id")
-	assert.True(t, IsErrNotFound(err))
+	assert.Check(t, is.Error(err, "Error: No such service: service_id"))
+	assert.Check(t, IsErrNotFound(err))
 }
 
 func TestServiceRemove(t *testing.T) {

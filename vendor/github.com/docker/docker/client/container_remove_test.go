@@ -2,6 +2,7 @@ package client // import "github.com/docker/docker/client"
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -9,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/docker/docker/api/types"
-	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
+	"github.com/gotestyourself/gotestyourself/assert"
+	is "github.com/gotestyourself/gotestyourself/assert/cmp"
 )
 
 func TestContainerRemoveError(t *testing.T) {
@@ -18,7 +19,7 @@ func TestContainerRemoveError(t *testing.T) {
 		client: newMockClient(errorMock(http.StatusInternalServerError, "Server error")),
 	}
 	err := client.ContainerRemove(context.Background(), "container_id", types.ContainerRemoveOptions{})
-	assert.EqualError(t, err, "Error response from daemon: Server error")
+	assert.Check(t, is.Error(err, "Error response from daemon: Server error"))
 }
 
 func TestContainerRemoveNotFoundError(t *testing.T) {
@@ -26,8 +27,8 @@ func TestContainerRemoveNotFoundError(t *testing.T) {
 		client: newMockClient(errorMock(http.StatusNotFound, "missing")),
 	}
 	err := client.ContainerRemove(context.Background(), "container_id", types.ContainerRemoveOptions{})
-	assert.EqualError(t, err, "Error: No such container: container_id")
-	assert.True(t, IsErrNotFound(err))
+	assert.Check(t, is.Error(err, "Error: No such container: container_id"))
+	assert.Check(t, IsErrNotFound(err))
 }
 
 func TestContainerRemove(t *testing.T) {
@@ -61,5 +62,5 @@ func TestContainerRemove(t *testing.T) {
 		RemoveVolumes: true,
 		Force:         true,
 	})
-	assert.NoError(t, err)
+	assert.Check(t, err)
 }

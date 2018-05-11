@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 
@@ -12,7 +13,8 @@ import (
 	"github.com/docker/distribution/registry/client/transport"
 	"github.com/docker/docker/api/types"
 	registrytypes "github.com/docker/docker/api/types/registry"
-	"github.com/stretchr/testify/assert"
+	"github.com/gotestyourself/gotestyourself/assert"
+	"github.com/gotestyourself/gotestyourself/skip"
 )
 
 var (
@@ -53,6 +55,7 @@ func spawnTestRegistrySession(t *testing.T) *Session {
 }
 
 func TestPingRegistryEndpoint(t *testing.T) {
+	skip.If(t, os.Getuid() != 0, "skipping test that requires root")
 	testPing := func(index *registrytypes.IndexInfo, expectedStandalone bool, assertMessage string) {
 		ep, err := NewV1Endpoint(index, "", nil)
 		if err != nil {
@@ -72,6 +75,7 @@ func TestPingRegistryEndpoint(t *testing.T) {
 }
 
 func TestEndpoint(t *testing.T) {
+	skip.If(t, os.Getuid() != 0, "skipping test that requires root")
 	// Simple wrapper to fail test if err != nil
 	expandEndpoint := func(index *registrytypes.IndexInfo) *V1Endpoint {
 		endpoint, err := NewV1Endpoint(index, "", nil)
@@ -661,6 +665,7 @@ func TestNewIndexInfo(t *testing.T) {
 }
 
 func TestMirrorEndpointLookup(t *testing.T) {
+	skip.If(t, os.Getuid() != 0, "skipping test that requires root")
 	containsMirror := func(endpoints []APIEndpoint) bool {
 		for _, pe := range endpoints {
 			if pe.URL.Host == "my.mirror" {
@@ -757,12 +762,12 @@ func TestSearchRepositories(t *testing.T) {
 func TestTrustedLocation(t *testing.T) {
 	for _, url := range []string{"http://example.com", "https://example.com:7777", "http://docker.io", "http://test.docker.com", "https://fakedocker.com"} {
 		req, _ := http.NewRequest("GET", url, nil)
-		assert.False(t, trustedLocation(req))
+		assert.Check(t, !trustedLocation(req))
 	}
 
 	for _, url := range []string{"https://docker.io", "https://test.docker.com:80"} {
 		req, _ := http.NewRequest("GET", url, nil)
-		assert.True(t, trustedLocation(req))
+		assert.Check(t, trustedLocation(req))
 	}
 }
 

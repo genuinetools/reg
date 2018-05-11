@@ -2,6 +2,7 @@ package client // import "github.com/docker/docker/client"
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -9,8 +10,7 @@ import (
 	"testing"
 
 	"github.com/docker/docker/api/types"
-	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
+	"github.com/gotestyourself/gotestyourself/assert"
 )
 
 // TestSetHostHeader should set fake host for local communications, set real host
@@ -46,7 +46,7 @@ func TestSetHostHeader(t *testing.T) {
 
 	for c, test := range testCases {
 		hostURL, err := ParseHostURL(test.host)
-		require.NoError(t, err)
+		assert.NilError(t, err)
 
 		client := &Client{
 			client: newMockClient(func(req *http.Request) (*http.Response, error) {
@@ -71,7 +71,7 @@ func TestSetHostHeader(t *testing.T) {
 		}
 
 		_, err = client.sendRequest(context.Background(), "GET", testURL, nil, nil, nil)
-		require.NoError(t, err)
+		assert.NilError(t, err)
 	}
 }
 
