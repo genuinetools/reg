@@ -14,7 +14,7 @@ var manifestCommand = cli.Command{
 	Flags: []cli.Flag{
 		cli.BoolFlag{
 			Name:  "v1",
-			Usage: "force the version of the manifest retreived to v1",
+			Usage: "force the version of the manifest retrieved to v1",
 		},
 	},
 	Action: func(c *cli.Context) error {
