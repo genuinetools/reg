@@ -46,6 +46,7 @@ AUTHOR:
 
 COMMANDS:
      delete, rm       delete a specific reference of a repository
+     digest           get the Docker-Content-Digest
      layer, download  download a layer for the specific reference of a repository
      list, ls         list all repositories
      manifest         get the json manifest for the specific reference of a repository
@@ -100,6 +101,12 @@ alpha
 hardened
 latest
 stable
+```
+
+## Get the Docker-Content-Digest
+```console
+$ reg digest htop
+"sha256:791158756cc0f5b27ef8c5c546284568fc9b7f4cf1429fb736aff3ee2d2e340f"
 ```
 
 ## Get a Manifest
