@@ -202,7 +202,7 @@ dtest: ## Run the tests in a docker container
 		make test
 
 .PHONY: snakeoil
-snakeoil: ## Update snakeoil certs for testing.
+snakeoil: ## Update snakeoil certs for testing
 	go run /usr/local/go/src/crypto/tls/generate_cert.go --host localhost,127.0.0.1 --ca
 	mv $(CURDIR)/key.pem $(CURDIR)/testutils/snakeoil/key.pem
 	mv $(CURDIR)/cert.pem $(CURDIR)/testutils/snakeoil/cert.pem
