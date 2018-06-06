@@ -8,9 +8,7 @@ import (
 
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/schema1"
-	"github.com/docker/distribution/manifest/schema2"
 	"github.com/genuinetools/reg/registry"
-	"github.com/sirupsen/logrus"
 )
 
 // Vulnerabilities scans the given repo and tag.
@@ -23,13 +21,10 @@ func (c *Clair) Vulnerabilities(r *registry.Registry, repo, tag string) (Vulnera
 		VulnsBySeverity: make(map[string][]Vulnerability),
 	}
 
-	// Get the manifest to pass to clair.
-	m2, err := r.Manifest(repo, tag)
+	filteredLayers, err := c.getFilteredLayers(r, repo, tag)
 	if err != nil {
-		return report, fmt.Errorf("getting the v1 manifest for %s:%s failed: %v", repo, tag, err)
+		return report, fmt.Errorf("getting filtered layers failed: %v", err)
 	}
-
-	filteredLayers := getFilteredLayers(m2)
 
 	if len(filteredLayers) == 0 {
 		fmt.Printf("No need to analyse image %s:%s as there is no non-emtpy layer", repo, tag)
@@ -171,8 +166,15 @@ func (c *Clair) NewClairLayerV2(r *registry.Registry, image string, fsLayers []d
 	}, nil
 }
 
-func getFilteredLayers(m2 distribution.Manifest) []distribution.Descriptor {
-	mf, ok := m2.(schema2.DeserializedManifest)
+func (c *Clair) getFilteredLayers(r *registry.Registry, repo, tag string) ([]distribution.Descriptor, error) {
+	ok := true
+	// Get the manifest to pass to clair.
+	mf, err := r.ManifestV2(repo, tag)
+	if err != nil {
+		ok = false
+		c.Logf("couldn't retrieve manifest v2, falling back to v1")
+		//	return nil, fmt.Errorf("getting the v2 manifest for %s:%s failed: %v", repo, tag, err)
+	}
 
 	var filteredLayers []distribution.Descriptor
 
@@ -183,19 +185,16 @@ func getFilteredLayers(m2 distribution.Manifest) []distribution.Descriptor {
 				filteredLayers = append(filteredLayers, layer)
 			}
 		}
-		return filteredLayers
+		return filteredLayers, nil
 	}
 
-	logrus.Debug("couldn't retrieve manifest v2, falling back to v1")
-
-	m, ok := m2.(schema1.SignedManifest)
-	if !ok {
-		logrus.Fatal("converting to v1 manifest failed")
+	m, err := r.ManifestV1(repo, tag)
+	if err != nil {
+		return nil, fmt.Errorf("getting the v1 manifest for %s:%s failed: %v", repo, tag, err)
 	}
 
 	for _, layer := range m.FSLayers {
 		if !IsEmptyLayer(layer.BlobSum) {
-
 			newLayer := distribution.Descriptor{
 				Digest: layer.BlobSum,
 			}
@@ -204,5 +203,5 @@ func getFilteredLayers(m2 distribution.Manifest) []distribution.Descriptor {
 		}
 	}
 
-	return filteredLayers
+	return filteredLayers, nil
 }
