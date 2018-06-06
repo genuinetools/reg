@@ -30,11 +30,14 @@ GLOBAL OPTIONS:
    --password value, -p value  password for the registry
    --registry value, -r value  URL to the private registry (ex. r.j3ss.co)
    --insecure, -k              do not verify tls certificates of registry
+   --once, -o                  generate an output once and then exit
    --port value                port for server to run on (default: "8080")
    --cert value                path to ssl cert
    --key value                 path to ssl key
    --interval value            interval to generate new index.html's at (default: "1h")
    --clair value               url to clair instance
+   --skip-ping                 skip pinging the registry while establishing connection
+   --timeout value             timeout for HTTP requests (default: "1m")
    --help, -h                  show help
    --version, -v               print the version
 ```
