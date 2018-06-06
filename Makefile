@@ -74,7 +74,7 @@ staticcheck: ## Verifies `staticcheck` passes
 cover: ## Runs go test with coverage
 	@echo "" > coverage.txt
 	@for d in $(shell $(GO) list ./... | grep -v vendor); do \
-		$(GO) test -race -coverprofile=profile.out -covermode=atomic "$$d"; \
+		$(GO) test -coverprofile=profile.out -covermode=atomic "$$d"; \
 		if [ -f profile.out ]; then \
 			cat profile.out >> coverage.txt; \
 			rm profile.out; \
@@ -188,6 +188,7 @@ dtest: ## Run the tests in a docker container
 		--workdir /go/src/github.com/genuinetools/reg \
 		-v $(CURDIR)/.certs:/etc/docker/ssl:ro \
 		-v /tmp:/tmp \
+		--disable-content-trust=true \
 		--net container:$(DIND_CONTAINER) \
 		-e DOCKER_HOST=tcp://127.0.0.1:2375 \
 		-e DOCKER_TLS_VERIFY=true \
