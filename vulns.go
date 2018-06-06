@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/genuinetools/reg/clair"
 	"github.com/genuinetools/reg/repoutils"
@@ -42,8 +43,17 @@ var vulnsCommand = cli.Command{
 			return err
 		}
 
+		// Parse the timeout.
+		timeout, err := time.ParseDuration(c.GlobalString("timeout"))
+		if err != nil {
+			return fmt.Errorf("parsing %s as duration failed: %v", c.GlobalString("timeout"), err)
+		}
+
 		// Initialize clair client.
-		cr, err := clair.New(c.String("clair"), c.GlobalBool("debug"))
+		cr, err := clair.New(c.String("clair"), clair.Opt{
+			Debug:   c.GlobalBool("debug"),
+			Timeout: timeout,
+		})
 		if err != nil {
 			return err
 		}

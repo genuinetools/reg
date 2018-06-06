@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/genuinetools/reg/registry"
@@ -98,11 +99,18 @@ func main() {
 			return fmt.Errorf("Attempt to use insecure protocol! Use non-ssl option to force")
 		}
 
+		// Parse the timeout.
+		timeout, err := time.ParseDuration(c.GlobalString("timeout"))
+		if err != nil {
+			return fmt.Errorf("parsing %s as duration failed: %v", c.GlobalString("timeout"), err)
+		}
+
 		// Create the registry client.
 		r, err = registry.New(auth, registry.Opt{
 			Insecure: c.GlobalBool("insecure"),
 			Debug:    c.GlobalBool("debug"),
 			SkipPing: c.GlobalBool("skip-ping"),
+			Timeout:  timeout,
 		})
 		return err
 	}

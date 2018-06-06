@@ -98,6 +98,11 @@ func main() {
 			Name:  "skip-ping",
 			Usage: "skip pinging the registry while establishing connection",
 		},
+		cli.StringFlag{
+			Name:  "timeout",
+			Value: "1m",
+			Usage: "timeout for HTTP requests",
+		},
 	}
 	app.Action = func(c *cli.Context) error {
 		auth, err := repoutils.GetAuthConfig(c.GlobalString("username"), c.GlobalString("password"), c.GlobalString("registry"))
@@ -105,25 +110,29 @@ func main() {
 			logrus.Fatal(err)
 		}
 
-		// Create the registry client.
-		r, err = registry.New(auth, registry.Opt{
-			Insecure: c.GlobalBool("insecure"),
-			Debug:    c.GlobalBool("debug"),
-			SkipPing: c.GlobalBool("skip-ping"),
-		})
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		// parse the timeout
+		// Parse the timeout.
 		timeout, err := time.ParseDuration(c.GlobalString("timeout"))
 		if err != nil {
 			logrus.Fatalf("parsing %s as duration failed: %v", c.GlobalString("timeout"), err)
 		}
 
+		// Create the registry client.
+		r, err = registry.New(auth, registry.Opt{
+			Insecure: c.GlobalBool("insecure"),
+			Debug:    c.GlobalBool("debug"),
+			SkipPing: c.GlobalBool("skip-ping"),
+			Timeout:  timeout,
+		})
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
 		// create a clair instance if needed
 		if c.GlobalString("clair") != "" {
-			cl, err = clair.New(c.GlobalString("clair"), c.GlobalBool("debug"), timeout)
+			cl, err = clair.New(c.String("clair"), clair.Opt{
+				Debug:   c.GlobalBool("debug"),
+				Timeout: timeout,
+			})
 			if err != nil {
 				logrus.Warnf("creation of clair failed: %v", err)
 			}

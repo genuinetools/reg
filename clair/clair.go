@@ -1,6 +1,7 @@
 package clair
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -26,9 +27,24 @@ func Log(format string, args ...interface{}) {
 	log.Printf(format, args...)
 }
 
+// Opt holds the options for a new clair client.
+type Opt struct {
+	Debug    bool
+	Insecure bool
+	Timeout  time.Duration
+}
+
 // New creates a new Clair struct with the given URL and credentials.
-func New(url string, debug bool, timeout time.Duration) (*Clair, error) {
+func New(url string, opt Opt) (*Clair, error) {
 	transport := http.DefaultTransport
+
+	if opt.Insecure {
+		transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		}
+	}
 
 	errorTransport := &ErrorTransport{
 		Transport: transport,
@@ -36,14 +52,14 @@ func New(url string, debug bool, timeout time.Duration) (*Clair, error) {
 
 	// set the logging
 	logf := Quiet
-	if debug {
+	if opt.Debug {
 		logf = Log
 	}
 
 	registry := &Clair{
 		URL: url,
 		Client: &http.Client{
-			Timeout:   timeout,
+			Timeout:   opt.Timeout,
 			Transport: errorTransport,
 		},
 		Logf: logf,

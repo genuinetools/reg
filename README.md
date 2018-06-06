@@ -61,6 +61,7 @@ GLOBAL OPTIONS:
    --username value, -u value  username for the registry
    --password value, -p value  password for the registry
    --registry value, -r value  URL to the private registry (ex. r.j3ss.co) (default: "https://registry-1.docker.io") [$REG_REGISTRY]
+   --timeout value             timeout for HTTP requests (default: "1m")
    --skip-ping                 skip pinging the registry while establishing connection
    --help, -h                  show help
    --version, -v               print the version

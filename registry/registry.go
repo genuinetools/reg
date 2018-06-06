@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/docker/distribution/manifest/schema2"
@@ -42,6 +43,7 @@ type Opt struct {
 	Insecure bool
 	Debug    bool
 	SkipPing bool
+	Timeout  time.Duration
 }
 
 // New creates a new Registry struct with the given URL and credentials.
@@ -91,6 +93,7 @@ func newFromTransport(auth types.AuthConfig, transport http.RoundTripper, opt Op
 		URL:    url,
 		Domain: reProtocol.ReplaceAllString(url, ""),
 		Client: &http.Client{
+			Timeout:   opt.Timeout,
 			Transport: errorTransport,
 		},
 		Username: auth.Username,
