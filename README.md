@@ -11,6 +11,7 @@ Docker registry v2 command line client.
     + [Auth](#auth)
     + [List Repositories and Tags](#list-repositories-and-tags)
     + [Get a Manifest](#get-a-manifest)
+    + [Get the Digest](#get-the-digest)
     + [Download a Layer](#download-a-layer)
     + [Delete an Image](#delete-an-image)
     + [Vulnerability Reports](#vulnerability-reports)
@@ -49,6 +50,7 @@ AUTHOR:
 
 COMMANDS:
      delete, rm       delete a specific reference of a repository
+     digest           get the digest
      layer, download  download a layer for the specific reference of a repository
      list, ls         list all repositories
      manifest         get the json manifest for the specific reference of a repository
@@ -105,7 +107,7 @@ latest
 stable
 ```
 
-### Get a Manifest
+## Get a Manifest
 
 ```console
 $ reg manifest htop
@@ -124,6 +126,12 @@ $ reg manifest htop
      ....
    ]
  }
+```
+
+## Get the Digest
+```console
+$ reg digest htop
+sha256:791158756cc0f5b27ef8c5c546284568fc9b7f4cf1429fb736aff3ee2d2e340f
 ```
 
 ### Download a Layer

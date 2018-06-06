@@ -67,6 +67,7 @@ func main() {
 
 	app.Commands = []cli.Command{
 		deleteCommand,
+		digestCommand,
 		layerCommand,
 		listCommand,
 		manifestCommand,
