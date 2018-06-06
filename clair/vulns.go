@@ -6,11 +6,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/schema1"
+	"github.com/docker/distribution/manifest/schema2"
 	"github.com/genuinetools/reg/registry"
+	"github.com/sirupsen/logrus"
 )
 
-// Vulnerabilities scans the given repo and tag
+// Vulnerabilities scans the given repo and tag.
 func (c *Clair) Vulnerabilities(r *registry.Registry, repo, tag string) (VulnerabilityReport, error) {
 	report := VulnerabilityReport{
 		RegistryURL:     r.Domain,
@@ -20,29 +23,22 @@ func (c *Clair) Vulnerabilities(r *registry.Registry, repo, tag string) (Vulnera
 		VulnsBySeverity: make(map[string][]Vulnerability),
 	}
 
-	// Get the v1 manifest to pass to clair.
-	m, err := r.ManifestV1(repo, tag)
+	// Get the manifest to pass to clair.
+	m2, err := r.Manifest(repo, tag)
 	if err != nil {
 		return report, fmt.Errorf("getting the v1 manifest for %s:%s failed: %v", repo, tag, err)
 	}
 
-	// Filter out the empty layers.
-	var filteredLayers []schema1.FSLayer
-	for _, layer := range m.FSLayers {
-		if layer.BlobSum != EmptyLayerBlobSum {
-			filteredLayers = append(filteredLayers, layer)
-		}
-	}
+	filteredLayers := getFilteredLayers(m2)
 
-	m.FSLayers = filteredLayers
-	if len(m.FSLayers) == 0 {
+	if len(filteredLayers) == 0 {
 		fmt.Printf("No need to analyse image %s:%s as there is no non-emtpy layer", repo, tag)
 		return report, nil
 	}
 
-	for i := len(m.FSLayers) - 1; i >= 0; i-- {
+	for i := len(filteredLayers) - 1; i >= 0; i-- {
 		// Form the clair layer.
-		l, err := c.NewClairLayer(r, repo, m.FSLayers, i)
+		l, err := c.NewClairLayerV2(r, repo, filteredLayers, i)
 		if err != nil {
 			return report, err
 		}
@@ -53,7 +49,7 @@ func (c *Clair) Vulnerabilities(r *registry.Registry, repo, tag string) (Vulnera
 		}
 	}
 
-	vl, err := c.GetLayer(m.FSLayers[0].BlobSum.String(), false, true)
+	vl, err := c.GetLayer(filteredLayers[0].Digest.String(), false, true)
 	if err != nil {
 		return report, err
 	}
@@ -84,7 +80,7 @@ func (c *Clair) Vulnerabilities(r *registry.Registry, repo, tag string) (Vulnera
 	return report, nil
 }
 
-// NewClairLayer will form a layer struct required for a clar scan
+// NewClairLayer will form a layer struct required for a clair scan.
 func (c *Clair) NewClairLayer(r *registry.Registry, image string, fsLayers []schema1.FSLayer, index int) (*Layer, error) {
 	var parentName string
 	if index < len(fsLayers)-1 {
@@ -128,4 +124,85 @@ func (c *Clair) NewClairLayer(r *registry.Registry, image string, fsLayers []sch
 		Format:     "Docker",
 		Headers:    h,
 	}, nil
+}
+
+// NewClairLayerV2 will form a layer struct required for a clair scan.
+func (c *Clair) NewClairLayerV2(r *registry.Registry, image string, fsLayers []distribution.Descriptor, index int) (*Layer, error) {
+	var parentName string
+	if index < len(fsLayers)-1 {
+		parentName = fsLayers[index+1].Digest.String()
+	}
+
+	// Form the path.
+	p := strings.Join([]string{r.URL, "v2", image, "blobs", fsLayers[index].Digest.String()}, "/")
+
+	useBasicAuth := false
+
+	// Get the token.
+	token, err := r.Token(p)
+	if err != nil {
+		// If we get an error here of type: malformed auth challenge header: 'Basic realm="Registry Realm"'
+		// We need to use basic auth for the registry.
+		if !strings.Contains(err.Error(), `malformed auth challenge header: 'Basic realm="Registry Realm"'`) {
+			return nil, err
+		}
+		useBasicAuth = true
+	}
+
+	h := make(map[string]string)
+	if token != "" && !useBasicAuth {
+		h = map[string]string{
+			"Authorization": fmt.Sprintf("Bearer %s", token),
+		}
+	}
+
+	if useBasicAuth {
+		h = map[string]string{
+			"Authorization": fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(r.Username+":"+r.Password))),
+		}
+	}
+
+	return &Layer{
+		Name:       fsLayers[index].Digest.String(),
+		Path:       p,
+		ParentName: parentName,
+		Format:     "Docker",
+		Headers:    h,
+	}, nil
+}
+
+func getFilteredLayers(m2 distribution.Manifest) []distribution.Descriptor {
+	mf, ok := m2.(schema2.DeserializedManifest)
+
+	var filteredLayers []distribution.Descriptor
+
+	// Filter out the empty layers.
+	if ok {
+		for _, layer := range mf.Layers {
+			if !IsEmptyLayer(layer.Digest) {
+				filteredLayers = append(filteredLayers, layer)
+			}
+		}
+		return filteredLayers
+	}
+
+	logrus.Debug("couldn't retrieve manifest v2, falling back to v1")
+
+	m, ok := m2.(schema1.SignedManifest)
+	if !ok {
+		logrus.Fatal("converting to v1 manifest failed")
+	}
+
+	for _, layer := range m.FSLayers {
+		if !IsEmptyLayer(layer.BlobSum) {
+
+			newLayer := distribution.Descriptor{
+				Digest: layer.BlobSum,
+			}
+
+			filteredLayers = append(filteredLayers, newLayer)
+		}
+	}
+
+	return filteredLayers
 }
