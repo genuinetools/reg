@@ -12,6 +12,7 @@ Docker registry v2 command line client.
 - [Download a Layer](#download-a-layer)
 - [Delete an Image](#delete-an-image)
 - [Vulnerability Reports](#vulnerability-reports)
+- [Using Self-Signed Certs with a Registry](#using-self-signed-certs-with-a-registry)
 - [Testing](#testing)
 
 ## Installation
@@ -177,6 +178,26 @@ Negligible: 23
 Low: 3
 Medium: 3
 High: 1
+```
+
+## Using Self-Signed Certs with a Registry
+
+We do not allow users to pass all the custom certificate flags on commands
+because it is unnecessarily messy and can be handled through Linux itself.
+Which we believe is a better user experience than having to pass three
+different flags just to communicate with a registry using self-signed or
+private certificates.
+
+Below are instructions on adding a self-signed or private certificate to your
+trusted ca-certificates on Linux.
+
+Make sure you have the package `ca-certificates` installed.
+
+Copy the public half of your CA certificate (the one user to sign the CSR) into
+the CA certificate directory (as root):
+
+```console
+$ cp cacert.pem /usr/share/ca-certificates
 ```
 
 ## Testing
