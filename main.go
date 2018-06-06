@@ -53,6 +53,11 @@ func main() {
 			Value:  repoutils.DefaultDockerRegistry,
 			EnvVar: "REG_REGISTRY",
 		},
+		cli.StringFlag{
+			Name:  "timeout",
+			Value: "1m",
+			Usage: "timeout for HTTP requests",
+		},
 		cli.BoolFlag{
 			Name:  "skip-ping",
 			Usage: "skip pinging the registry while establishing connection",

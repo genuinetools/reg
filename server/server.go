@@ -115,9 +115,15 @@ func main() {
 			logrus.Fatal(err)
 		}
 
+		// parse the timeout
+		timeout, err := time.ParseDuration(c.GlobalString("timeout"))
+		if err != nil {
+			logrus.Fatalf("parsing %s as duration failed: %v", c.GlobalString("timeout"), err)
+		}
+
 		// create a clair instance if needed
 		if c.GlobalString("clair") != "" {
-			cl, err = clair.New(c.GlobalString("clair"), c.GlobalBool("debug"))
+			cl, err = clair.New(c.GlobalString("clair"), c.GlobalBool("debug"), timeout)
 			if err != nil {
 				logrus.Warnf("creation of clair failed: %v", err)
 			}
