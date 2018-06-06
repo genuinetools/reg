@@ -5,15 +5,17 @@
 Docker registry v2 command line client.
 
 - [Installation](#installation)
+    + [Binaries](#binaries)
+    + [Via Go](#via-go)
 - [Usage](#usage)
-- [Auth](#auth)
-- [List Repositories and Tags](#list-repositories-and-tags)
-- [Get a Manifest](#get-a-manifest)
-- [Download a Layer](#download-a-layer)
-- [Delete an Image](#delete-an-image)
-- [Vulnerability Reports](#vulnerability-reports)
-- [Using Self-Signed Certs with a Registry](#using-self-signed-certs-with-a-registry)
-- [Testing](#testing)
+    + [Auth](#auth)
+    + [List Repositories and Tags](#list-repositories-and-tags)
+    + [Get a Manifest](#get-a-manifest)
+    + [Download a Layer](#download-a-layer)
+    + [Delete an Image](#delete-an-image)
+    + [Vulnerability Reports](#vulnerability-reports)
+    + [Using Self-Signed Certs with a Registry](#using-self-signed-certs-with-a-registry)
+- [Contributing](#contributing)
 
 ## Installation
 
@@ -70,16 +72,14 @@ GLOBAL OPTIONS:
 Note that the `--registry` can be set by an environment variable `REG_REGISTRY`, so you can set this in your shell login scripts.
 Specifying the registry on the command-line will override an environment variable setting.
 
-## Note
+**NOTE:** Be aware that `reg ls` doesn't work with `hub.docker.com` as it has a different API then the [OSS Docker Registry](https://github.com/docker/distribution)
 
-Be aware that `reg ls` doesn't work with `hub.docker.com` as it has a different API then the [OSS Docker Registry](https://github.com/docker/distribution)
-
-## Auth
+### Auth
 
 `reg` will automatically try to parse your docker config credentials, but if
 not present, you can pass through flags directly.
 
-## List Repositories and Tags
+### List Repositories and Tags
 
 **Repositories**
 
@@ -105,7 +105,7 @@ latest
 stable
 ```
 
-## Get a Manifest
+### Get a Manifest
 
 ```console
 $ reg manifest htop
@@ -126,7 +126,7 @@ $ reg manifest htop
  }
 ```
 
-## Download a Layer
+### Download a Layer
 
 ```console
 $ reg layer -o chrome@sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
@@ -135,14 +135,14 @@ $ reg layer chrome@sha256:a3ed95caeb0.. > layer.tar
 ```
 
 
-## Delete an Image
+### Delete an Image
 
 ```console
 $ reg rm chrome@sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
 Deleted chrome@sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
 ```
 
-## Vulnerability Reports
+### Vulnerability Reports
 
 ```console
 $ reg vulns --clair https://clair.j3ss.co chrome
@@ -182,7 +182,7 @@ Medium: 3
 High: 1
 ```
 
-## Using Self-Signed Certs with a Registry
+### Using Self-Signed Certs with a Registry
 
 We do not allow users to pass all the custom certificate flags on commands
 because it is unnecessarily messy and can be handled through Linux itself.
@@ -202,7 +202,7 @@ the CA certificate directory (as root):
 $ cp cacert.pem /usr/share/ca-certificates
 ```
 
-## Testing
+## Contributing
 
 If you plan on contributing you should be able to run the tests locally. The
 tests run for CI via docker-in-docker. But running locally with `go test`, you
@@ -213,5 +213,7 @@ Add the flag `--insecure-registry localhost:5000` to your docker daemon,
 documented [here](https://docs.docker.com/registry/insecure/) for testing
 against an insecure registry.
 
-OR run `make dind dtest` to avoid having to change your local docker config and
+**OR** 
+
+Run `make dind dtest` to avoid having to change your local docker config and
 to run the tests as docker-in-docker.
