@@ -94,6 +94,10 @@ func main() {
 			Name:  "clair",
 			Usage: "url to clair instance",
 		},
+		cli.BoolFlag{
+			Name:  "skip-ping",
+			Usage: "skip pinging the registry while establishing connection",
+		},
 	}
 	app.Action = func(c *cli.Context) error {
 		auth, err := repoutils.GetAuthConfig(c.GlobalString("username"), c.GlobalString("password"), c.GlobalString("registry"))
@@ -101,17 +105,14 @@ func main() {
 			logrus.Fatal(err)
 		}
 
-		// create the registry client
-		if c.GlobalBool("insecure") {
-			r, err = registry.NewInsecure(auth, c.GlobalBool("debug"))
-			if err != nil {
-				logrus.Fatal(err)
-			}
-		} else {
-			r, err = registry.New(auth, c.GlobalBool("debug"))
-			if err != nil {
-				logrus.Fatal(err)
-			}
+		// Create the registry client.
+		r, err = registry.New(auth, registry.Opt{
+			Insecure: c.GlobalBool("insecure"),
+			Debug:    c.GlobalBool("debug"),
+			SkipPing: c.GlobalBool("skip-ping"),
+		})
+		if err != nil {
+			logrus.Fatal(err)
 		}
 
 		// create a clair instance if needed

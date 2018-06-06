@@ -53,6 +53,10 @@ func main() {
 			Value:  repoutils.DefaultDockerRegistry,
 			EnvVar: "REG_REGISTRY",
 		},
+		cli.BoolFlag{
+			Name:  "skip-ping",
+			Usage: "skip pinging the registry while establishing connection",
+		},
 	}
 
 	app.Commands = []cli.Command{
@@ -89,17 +93,12 @@ func main() {
 			return fmt.Errorf("Attempt to use insecure protocol! Use non-ssl option to force")
 		}
 
-		// create the registry client
-		if c.GlobalBool("insecure") {
-			r, err = registry.NewInsecure(auth, c.GlobalBool("debug"))
-			if err != nil {
-				return err
-			}
-
-			return
-		}
-
-		r, err = registry.New(auth, c.GlobalBool("debug"))
+		// Create the registry client.
+		r, err = registry.New(auth, registry.Opt{
+			Insecure: c.GlobalBool("insecure"),
+			Debug:    c.GlobalBool("debug"),
+			SkipPing: c.GlobalBool("skip-ping"),
+		})
 		return err
 	}
 
