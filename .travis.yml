@@ -21,7 +21,7 @@
     - staticcheck $(go list ./... | grep -v vendor)
     - test -z "$(golint ./... | grep -v vendor | tee /dev/stderr)"
     - test -z "$(gofmt -s -l . | grep -v vendor | tee /dev/stderr)"
-    - DOCKER_API_VERSION=1.35 make dind dtest
+    - DOCKER_API_VERSION=1.37 make dind dtest
     - make release
   after_success:
     - bash <(curl -s https://codecov.io/bash)

@@ -32,7 +32,7 @@
   branch = "master"
   name = "github.com/containerd/continuity"
   packages = ["pathdriver"]
-  revision = "c6cef34830231743494fe2969284df7b82cc0ad0"
+  revision = "d3c23511c1bf5851696cba83143d9cbcd666869b"
 
 [[projects]]
   branch = "master"
@@ -42,7 +42,7 @@
     "cli/config/credentials",
     "opts"
   ]
-  revision = "a6b10c2e8524707a3e6168103bded4b1d7ede330"
+  revision = "90f8ce8a5db263842af7bef3726f6c4d6937d85e"
 
 [[projects]]
   branch = "master"
@@ -65,7 +65,7 @@
     "registry/storage/cache",
     "registry/storage/cache/memory"
   ]
-  revision = "83389a148052d74ac602f5f1d62f86ff2f3c4aa5"
+  revision = "f0cc927784781fa395c06317c58dea2841ece3a9"
 
 [[projects]]
   branch = "master"
@@ -103,13 +103,13 @@
     "registry",
     "registry/resumable"
   ]
-  revision = "38162e96552bd30e510e355cd44d801f53bac5ae"
+  revision = "fd2f2a919e392b96de74795ae9af2dc5e510bc4c"
 
 [[projects]]
   branch = "master"
   name = "github.com/docker/docker-ce"
   packages = ["components/cli/cli/config"]
-  revision = "14ad0d5267086c3d13d1daa16d7de2f087c9a5d1"
+  revision = "370137f15d67e96f4d4435fc868fb2deec6f1f89"
 
 [[projects]]
   name = "github.com/docker/docker-credential-helpers"
@@ -175,20 +175,20 @@
 [[projects]]
   name = "github.com/gorilla/context"
   packages = ["."]
-  revision = "1ea25387ff6f684839d82767c1733ff4d4d15d0a"
-  version = "v1.1"
+  revision = "08b5f424b9271eedf6f9f0ce86cb9396ed337a42"
+  version = "v1.1.1"
 
 [[projects]]
   name = "github.com/gorilla/mux"
   packages = ["."]
-  revision = "53c1911da2b537f792e7cafcb446b05ffe33b996"
-  version = "v1.6.1"
+  revision = "e3702bed27f0d39777b0b37b664b6280e8ef8fbf"
+  version = "v1.6.2"
 
 [[projects]]
   name = "github.com/matttproud/golang_protobuf_extensions"
   packages = ["pbutil"]
-  revision = "3247c84500bff8d9fb6d579d800f20b3e091582c"
-  version = "v1.0.0"
+  revision = "c12348ce28de40eed0136aa2b644d0ee0650e56c"
+  version = "v1.0.1"
 
 [[projects]]
   branch = "master"
@@ -236,7 +236,7 @@
     "prometheus",
     "prometheus/promhttp"
   ]
-  revision = "82f5ff156b29e276022b1a958f7d385870fb9814"
+  revision = "208fa994be3bd65c0de04f506db92852b581bc4a"
 
 [[projects]]
   branch = "master"
@@ -252,7 +252,7 @@
     "internal/bitbucket.org/ww/goautoneg",
     "model"
   ]
-  revision = "d811d2e9bf898806ecfb6ef6296774b13ffc314c"
+  revision = "7600349dcfe1abd18d72d3a1770870d9800a7801"
 
 [[projects]]
   branch = "master"
@@ -263,7 +263,7 @@
     "nfs",
     "xfs"
   ]
-  revision = "8b1c2da0d56deffdbb9e48d4414b4e674bd8083e"
+  revision = "94663424ae5ae9856b40a9f170762b4197024661"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
@@ -281,7 +281,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "2d027ae1dddd4694d54f7a8b6cbe78dca8720226"
+  revision = "b47b1587369238182299fe4dad77d05b8b461e06"
 
 [[projects]]
   branch = "master"
@@ -292,7 +292,7 @@
     "internal/socks",
     "proxy"
   ]
-  revision = "2491c5de3490fced2f6cff376127c667efeed857"
+  revision = "1e491301e022f8f977054da4c2d852decd59571f"
 
 [[projects]]
   branch = "master"
@@ -301,7 +301,7 @@
     "unix",
     "windows"
   ]
-  revision = "d0faeb539838e250bd0a9db4182d48d4a1915181"
+  revision = "538ab54ba952cc4c7c705fa213fbf7993c97c175"
 
 [solve-meta]
   analyzer-name = "dep"

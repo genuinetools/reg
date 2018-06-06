@@ -74,7 +74,7 @@ staticcheck: ## Verifies `staticcheck` passes
 cover: ## Runs go test with coverage
 	@echo "" > coverage.txt
 	@for d in $(shell $(GO) list ./... | grep -v vendor); do \
-		$(GO) test -coverprofile=profile.out -covermode=atomic "$$d"; \
+		$(GO) test -race -coverprofile=profile.out -covermode=atomic "$$d"; \
 		if [ -f profile.out ]; then \
 			cat profile.out >> coverage.txt; \
 			rm profile.out; \
@@ -144,7 +144,7 @@ clean: ## Cleanup any build binaries or packages
 	@echo "+ $@"
 	$(RM) $(NAME)
 	$(RM) -r $(BUILDDIR)
-	$(RM) -r $(CURDIR)/.certs
+	sudo $(RM) -r $(CURDIR)/.certs
 
 # set the graph driver as the current graphdriver if not set
 DOCKER_GRAPHDRIVER := $(if $(DOCKER_GRAPHDRIVER),$(DOCKER_GRAPHDRIVER),$(shell docker info 2>&1 | grep "Storage Driver" | sed 's/.*: //'))
@@ -161,7 +161,7 @@ endif
 .PHONY: dind
 DIND_CONTAINER=reg-dind
 DIND_DOCKER_IMAGE=r.j3ss.co/docker:userns
-dind: ## Starts a docker-in-docker container for running the tests with
+dind: stop-dind ## Starts a docker-in-docker container for running the tests with
 	docker run -d  \
 		--name $(DIND_CONTAINER) \
 		--privileged \
@@ -179,6 +179,10 @@ dind: ## Starts a docker-in-docker container for running the tests with
 		--tlskey=/etc/docker/ssl/server.key \
 		--tlscert=/etc/docker/ssl/server.cert
 
+.PHONY: stop-dind
+stop-dind: ## Stops the docker-in-docker container
+	@docker rm -f $(DIND_CONTAINER) >/dev/null 2>&1 || true
+
 .PHONY: dtest
 DOCKER_IMAGE := reg-dev
 dtest: ## Run the tests in a docker container
@@ -195,7 +199,7 @@ dtest: ## Run the tests in a docker container
 		-e DOCKER_CERT_PATH=/etc/docker/ssl \
 		-e DOCKER_API_VERSION \
 		$(DOCKER_IMAGE) \
-		make test cover
+		make test
 
 .PHONY: help
 help:
