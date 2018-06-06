@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/genuinetools/reg/repoutils"
@@ -10,7 +9,7 @@ import (
 
 var digestCommand = cli.Command{
 	Name:  "digest",
-	Usage: "get the Docker-Content-Digest",
+	Usage: "get the digest",
 	Action: func(c *cli.Context) error {
 		if len(c.Args()) < 1 {
 			return fmt.Errorf("pass the name of the repository")
@@ -21,18 +20,12 @@ var digestCommand = cli.Command{
 			return err
 		}
 
-		var digest interface{}
-		digest, err = r.Digest(repo, ref)
+		digest, err := r.Digest(repo, ref)
 		if err != nil {
 			return err
 		}
 
-		b, err := json.MarshalIndent(digest, " ", "  ")
-		if err != nil {
-			return err
-		}
-
-		fmt.Println(string(b))
+		fmt.Println(digest)
 
 		return nil
 	},

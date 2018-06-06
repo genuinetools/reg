@@ -107,7 +107,7 @@ latest
 stable
 ```
 
-## Get a Manifest
+### Get a Manifest
 
 ```console
 $ reg manifest htop
@@ -128,7 +128,7 @@ $ reg manifest htop
  }
 ```
 
-## Get the Digest
+### Get the Digest
 ```console
 $ reg digest htop
 sha256:791158756cc0f5b27ef8c5c546284568fc9b7f4cf1429fb736aff3ee2d2e340f
