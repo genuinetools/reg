@@ -32,7 +32,7 @@ func parseChallenge(challengeHeader string) (*authService, error) {
 	if d := len(match); d != 1 {
 		return nil, fmt.Errorf("malformed auth challenge header: '%s', %d", challengeHeader, d)
 	}
-	parts := strings.SplitN(strings.TrimSpace(match[0][1]), ",",3)
+	parts := strings.SplitN(strings.TrimSpace(match[0][1]), ",", 3)
 
 	var realm, service string
 	var scope []string

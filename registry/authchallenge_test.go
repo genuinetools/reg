@@ -21,7 +21,11 @@ func (asm authServiceMock) equalTo(v *authService) bool {
 	if asm.service != v.Service {
 		return false
 	}
-	for i, v := range v.Scope { if v != asm.scope[i] { return false } }
+	for i, v := range v.Scope {
+		if v != asm.scope[i] {
+			return false
+		}
+	}
 
 	if asm.realm != v.Realm.String() {
 		return false
@@ -57,9 +61,9 @@ func TestParseChallengePush(t *testing.T) {
 		{
 			header: `Bearer realm="https://foo.com/v2/token",service="foo.com",scope="repository:pdr/tls:pull,push"`,
 			value: authServiceMock{
-				realm:   	"https://foo.com/v2/token",
-				service: 	"foo.com",
-				scope: 		[]string{"repository:pdr/tls:pull,push"},
+				realm:   "https://foo.com/v2/token",
+				service: "foo.com",
+				scope:   []string{"repository:pdr/tls:pull,push"},
 			},
 		},
 	}
