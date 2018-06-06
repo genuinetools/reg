@@ -42,6 +42,14 @@ func TestParseChallenge(t *testing.T) {
 				realm:   "https://foobar.com/api/v1/token",
 			},
 		},
+		{
+			header: `Bearer realm="https://r.j3ss.co/auth",service="Docker registry",scope="repository:chrome:pull"`,
+			value: authServiceMock{
+				service: "Docker registry",
+				realm:   "https://r.j3ss.co/auth",
+				scope:   []string{"repository:chrome:pull"},
+			},
+		},
 	}
 
 	for _, tc := range challengeHeaderCases {

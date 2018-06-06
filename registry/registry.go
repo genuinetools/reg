@@ -23,6 +23,7 @@ type Registry struct {
 	Password string
 	Client   *http.Client
 	Logf     LogfCallback
+	Opt      Opt
 }
 
 var reProtocol = regexp.MustCompile("^https?://")
@@ -99,6 +100,7 @@ func newFromTransport(auth types.AuthConfig, transport http.RoundTripper, opt Op
 		Username: auth.Username,
 		Password: auth.Password,
 		Logf:     logf,
+		Opt:      opt,
 	}
 
 	if !opt.SkipPing {

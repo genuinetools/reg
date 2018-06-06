@@ -34,6 +34,8 @@ func (c *Clair) PostLayer(layer *Layer) (*Layer, error) {
 		return nil, err
 	}
 
+	c.Logf("clair.clair req.Body=%s", string(b))
+
 	resp, err := c.Client.Post(url, "application/json", bytes.NewReader(b))
 	if err != nil {
 		return nil, err
