@@ -22,9 +22,9 @@ Docker registry v2 command line client.
 
 #### Binaries
 
-- **darwin** [386](https://github.com/genuinetools/reg/releases/download/v0.13.1/reg-darwin-386) / [amd64](https://github.com/genuinetools/reg/releases/download/v0.13.1/reg-darwin-amd64)
-- **linux** [386](https://github.com/genuinetools/reg/releases/download/v0.13.1/reg-linux-386) / [amd64](https://github.com/genuinetools/reg/releases/download/v0.13.1/reg-linux-amd64) / [arm](https://github.com/genuinetools/reg/releases/download/v0.13.1/reg-linux-arm) / [arm64](https://github.com/genuinetools/reg/releases/download/v0.13.1/reg-linux-arm64)
-- **windows** [386](https://github.com/genuinetools/reg/releases/download/v0.13.1/reg-windows-386) / [amd64](https://github.com/genuinetools/reg/releases/download/v0.13.1/reg-windows-amd64)
+- **darwin** [386](https://github.com/genuinetools/reg/releases/download/v0.13.2/reg-darwin-386) / [amd64](https://github.com/genuinetools/reg/releases/download/v0.13.2/reg-darwin-amd64)
+- **linux** [386](https://github.com/genuinetools/reg/releases/download/v0.13.2/reg-linux-386) / [amd64](https://github.com/genuinetools/reg/releases/download/v0.13.2/reg-linux-amd64) / [arm](https://github.com/genuinetools/reg/releases/download/v0.13.2/reg-linux-arm) / [arm64](https://github.com/genuinetools/reg/releases/download/v0.13.2/reg-linux-arm64)
+- **windows** [386](https://github.com/genuinetools/reg/releases/download/v0.13.2/reg-windows-386) / [amd64](https://github.com/genuinetools/reg/releases/download/v0.13.2/reg-windows-amd64)
 
 #### Via Go
 
@@ -43,7 +43,7 @@ USAGE:
    reg [global options] command [command options] [arguments...]
 
 VERSION:
-   version v0.13.1, build 3b7dafb
+   version v0.13.2, build 3b7dafb
 
 AUTHOR:
    The Genuinetools Authors <no-reply@butts.com>
