@@ -75,7 +75,7 @@
     "registry/storage/cache",
     "registry/storage/cache/memory"
   ]
-  revision = "f0cc927784781fa395c06317c58dea2841ece3a9"
+  revision = "749f6afb4572201e3c37325d0ffedb6f32be8950"
 
 [[projects]]
   branch = "master"
@@ -119,7 +119,7 @@
   branch = "master"
   name = "github.com/docker/docker-ce"
   packages = ["components/cli/cli/config"]
-  revision = "ecac08f83bacbf4b72d6a55e0de3e7969919d0a5"
+  revision = "67f129621461426ba9e6bbced17d8dad595a860f"
 
 [[projects]]
   name = "github.com/docker/docker-credential-helpers"
@@ -328,7 +328,7 @@
     "proxy",
     "trace"
   ]
-  revision = "1e491301e022f8f977054da4c2d852decd59571f"
+  revision = "db08ff08e8622530d9ed3a0e8ac279f6d4c02196"
 
 [[projects]]
   branch = "master"
@@ -403,6 +403,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7c1fd839f687a4f2c428d59dc6ec6387743b88aeec7d16d7818b881879f07b81"
+  inputs-digest = "a36702fe41fd44c9a3ce8abcbe8608ede07bdf3eca773d692b263edee90a0c19"
   solver-name = "gps-cdcl"
   solver-version = 1
