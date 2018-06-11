@@ -1,6 +1,7 @@
 package clair
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -113,6 +114,10 @@ func (c *Clair) VulnerabilitiesV3(r *registry.Registry, repo, tag string) (Vulne
 	vl, err := c.GetAncestry(filteredLayers[0].Digest.String(), true, true)
 	if err != nil {
 		return report, err
+	}
+
+	if vl == nil {
+		return report, errors.New("ancestry response was nil")
 	}
 
 	// Get the vulns.

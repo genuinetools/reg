@@ -7,13 +7,16 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"google.golang.org/grpc"
 )
 
 // Clair defines the client for retriving information from the clair API.
 type Clair struct {
-	URL    string
-	Client *http.Client
-	Logf   LogfCallback
+	URL      string
+	Client   *http.Client
+	Logf     LogfCallback
+	grpcConn *grpc.ClientConn
 }
 
 // LogfCallback is the callback for formatting logs.
@@ -38,12 +41,16 @@ type Opt struct {
 func New(url string, opt Opt) (*Clair, error) {
 	transport := http.DefaultTransport
 
+	grpcOpt := []grpc.DialOption{}
+
 	if opt.Insecure {
 		transport = &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},
 		}
+
+		grpcOpt = append(grpcOpt, grpc.WithInsecure())
 	}
 
 	errorTransport := &ErrorTransport{
@@ -56,13 +63,19 @@ func New(url string, opt Opt) (*Clair, error) {
 		logf = Log
 	}
 
+	conn, err := grpc.Dial(url, grpcOpt...)
+	if err != nil {
+		logf("grpc dial %s failed: %v", url, err)
+	}
+
 	registry := &Clair{
 		URL: url,
 		Client: &http.Client{
 			Timeout:   opt.Timeout,
 			Transport: errorTransport,
 		},
-		Logf: logf,
+		Logf:     logf,
+		grpcConn: conn,
 	}
 
 	return registry, nil

@@ -10,7 +10,7 @@ import (
 )
 
 // NewClairLayer will form a layer struct required for a clair scan.
-func (c *Clair) NewClairLayer(r *registry.Registry, image string, fsLayers []distribution.Descriptor, index int) (*Layer, error) {
+func (c *Clair) NewClairLayer(r *registry.Registry, image string, fsLayers map[int]distribution.Descriptor, index int) (*Layer, error) {
 	var parentName string
 	if index < len(fsLayers)-1 {
 		parentName = fsLayers[index+1].Digest.String()
@@ -52,25 +52,25 @@ func (c *Clair) NewClairV3Layer(r *registry.Registry, image string, fsLayer dist
 	}, nil
 }
 
-func (c *Clair) getFilteredLayers(r *registry.Registry, repo, tag string) ([]distribution.Descriptor, error) {
+func (c *Clair) getFilteredLayers(r *registry.Registry, repo, tag string) (map[int]distribution.Descriptor, error) {
 	ok := true
 	// Get the manifest to pass to clair.
 	mf, err := r.ManifestV2(repo, tag)
 	if err != nil {
 		ok = false
 		c.Logf("couldn't retrieve manifest v2, falling back to v1")
-		//	return nil, fmt.Errorf("getting the v2 manifest for %s:%s failed: %v", repo, tag, err)
 	}
 
-	var filteredLayers []distribution.Descriptor
+	filteredLayers := map[int]distribution.Descriptor{}
 
 	// Filter out the empty layers.
 	if ok {
-		for _, layer := range mf.Layers {
-			if !IsEmptyLayer(layer.Digest) {
-				filteredLayers = append(filteredLayers, layer)
+		for i := 0; i < len(mf.Layers); i++ {
+			if !IsEmptyLayer(mf.Layers[i].Digest) {
+				filteredLayers[i] = mf.Layers[i]
 			}
 		}
+
 		return filteredLayers, nil
 	}
 
@@ -79,13 +79,13 @@ func (c *Clair) getFilteredLayers(r *registry.Registry, repo, tag string) ([]dis
 		return nil, fmt.Errorf("getting the v1 manifest for %s:%s failed: %v", repo, tag, err)
 	}
 
-	for _, layer := range m.FSLayers {
-		if !IsEmptyLayer(layer.BlobSum) {
+	for i := 0; i < len(m.FSLayers); i++ {
+		if !IsEmptyLayer(m.FSLayers[i].BlobSum) {
 			newLayer := distribution.Descriptor{
-				Digest: layer.BlobSum,
+				Digest: m.FSLayers[i].BlobSum,
 			}
 
-			filteredLayers = append(filteredLayers, newLayer)
+			filteredLayers[i] = newLayer
 		}
 	}
 

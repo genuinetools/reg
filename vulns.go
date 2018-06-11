@@ -51,8 +51,9 @@ var vulnsCommand = cli.Command{
 
 		// Initialize clair client.
 		cr, err := clair.New(c.String("clair"), clair.Opt{
-			Debug:   c.GlobalBool("debug"),
-			Timeout: timeout,
+			Debug:    c.GlobalBool("debug"),
+			Timeout:  timeout,
+			Insecure: c.GlobalBool("insecure"),
 		})
 		if err != nil {
 			return err

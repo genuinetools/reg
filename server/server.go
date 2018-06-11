@@ -130,8 +130,9 @@ func main() {
 		// create a clair instance if needed
 		if c.GlobalString("clair") != "" {
 			cl, err = clair.New(c.String("clair"), clair.Opt{
-				Debug:   c.GlobalBool("debug"),
-				Timeout: timeout,
+				Insecure: c.GlobalBool("insecure"),
+				Debug:    c.GlobalBool("debug"),
+				Timeout:  timeout,
 			})
 			if err != nil {
 				logrus.Warnf("creation of clair failed: %v", err)
