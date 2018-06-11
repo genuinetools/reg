@@ -36,13 +36,23 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/coreos/clair"
+  packages = [
+    "api/v3/clairpb",
+    "database",
+    "ext/versionfmt"
+  ]
+  revision = "e907e4d263a743f7d4923c177e5db37f656a53b4"
+
+[[projects]]
+  branch = "master"
   name = "github.com/docker/cli"
   packages = [
     "cli/config/configfile",
     "cli/config/credentials",
     "opts"
   ]
-  revision = "90f8ce8a5db263842af7bef3726f6c4d6937d85e"
+  revision = "4cb3c70f36baeade76879694a587358be2a74854"
 
 [[projects]]
   branch = "master"
@@ -103,13 +113,13 @@
     "registry",
     "registry/resumable"
   ]
-  revision = "fd2f2a919e392b96de74795ae9af2dc5e510bc4c"
+  revision = "d812dee47e26ad4db1d53102f0c16af01f70cf2c"
 
 [[projects]]
   branch = "master"
   name = "github.com/docker/docker-ce"
   packages = ["components/cli/cli/config"]
-  revision = "370137f15d67e96f4d4435fc868fb2deec6f1f89"
+  revision = "ecac08f83bacbf4b72d6a55e0de3e7969919d0a5"
 
 [[projects]]
   name = "github.com/docker/docker-credential-helpers"
@@ -157,7 +167,17 @@
 
 [[projects]]
   name = "github.com/golang/protobuf"
-  packages = ["proto"]
+  packages = [
+    "jsonpb",
+    "proto",
+    "protoc-gen-go/descriptor",
+    "ptypes",
+    "ptypes/any",
+    "ptypes/duration",
+    "ptypes/empty",
+    "ptypes/struct",
+    "ptypes/timestamp"
+  ]
   revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
   version = "v1.1.0"
 
@@ -183,6 +203,16 @@
   packages = ["."]
   revision = "e3702bed27f0d39777b0b37b664b6280e8ef8fbf"
   version = "v1.6.2"
+
+[[projects]]
+  name = "github.com/grpc-ecosystem/grpc-gateway"
+  packages = [
+    "runtime",
+    "runtime/internal",
+    "utilities"
+  ]
+  revision = "92583770e3f01b09a0d3e9bdf64321d8bebd48f2"
+  version = "v1.4.1"
 
 [[projects]]
   name = "github.com/matttproud/golang_protobuf_extensions"
@@ -236,7 +266,7 @@
     "prometheus",
     "prometheus/promhttp"
   ]
-  revision = "208fa994be3bd65c0de04f506db92852b581bc4a"
+  revision = "faf4ec335fe01ae5a6a0eaa34a5a9333bfbd1a30"
 
 [[projects]]
   branch = "master"
@@ -281,7 +311,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "b47b1587369238182299fe4dad77d05b8b461e06"
+  revision = "8ac0e0d97ce45cd83d1d7243c060cb8461dda5e9"
 
 [[projects]]
   branch = "master"
@@ -289,8 +319,14 @@
   packages = [
     "context",
     "context/ctxhttp",
+    "http/httpguts",
+    "http2",
+    "http2/hpack",
+    "idna",
     "internal/socks",
-    "proxy"
+    "internal/timeseries",
+    "proxy",
+    "trace"
   ]
   revision = "1e491301e022f8f977054da4c2d852decd59571f"
 
@@ -301,11 +337,72 @@
     "unix",
     "windows"
   ]
-  revision = "538ab54ba952cc4c7c705fa213fbf7993c97c175"
+  revision = "bff228c7b664c5fce602223a05fb708fd8654986"
+
+[[projects]]
+  name = "golang.org/x/text"
+  packages = [
+    "collate",
+    "collate/build",
+    "internal/colltab",
+    "internal/gen",
+    "internal/tag",
+    "internal/triegen",
+    "internal/ucd",
+    "language",
+    "secure/bidirule",
+    "transform",
+    "unicode/bidi",
+    "unicode/cldr",
+    "unicode/norm",
+    "unicode/rangetable"
+  ]
+  revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
+  version = "v0.3.0"
+
+[[projects]]
+  branch = "master"
+  name = "google.golang.org/genproto"
+  packages = [
+    "googleapis/api/annotations",
+    "googleapis/rpc/status"
+  ]
+  revision = "32ee49c4dd805befd833990acba36cb75042378c"
+
+[[projects]]
+  name = "google.golang.org/grpc"
+  packages = [
+    ".",
+    "balancer",
+    "balancer/base",
+    "balancer/roundrobin",
+    "channelz",
+    "codes",
+    "connectivity",
+    "credentials",
+    "encoding",
+    "encoding/proto",
+    "grpclb/grpc_lb_v1/messages",
+    "grpclog",
+    "internal",
+    "keepalive",
+    "metadata",
+    "naming",
+    "peer",
+    "resolver",
+    "resolver/dns",
+    "resolver/passthrough",
+    "stats",
+    "status",
+    "tap",
+    "transport"
+  ]
+  revision = "7a6a684ca69eb4cae85ad0a484f2e531598c047b"
+  version = "v1.12.2"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5cdf10e821ede3dcf4207f6e2b0e5abe31ac803e81704a82c798b0199c057882"
+  inputs-digest = "7c1fd839f687a4f2c428d59dc6ec6387743b88aeec7d16d7818b881879f07b81"
   solver-name = "gps-cdcl"
   solver-version = 1

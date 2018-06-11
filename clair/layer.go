@@ -34,14 +34,15 @@ func (c *Clair) PostLayer(layer *Layer) (*Layer, error) {
 		return nil, err
 	}
 
-	c.Logf("clair.clair req.Body=%s", string(b))
+	c.Logf("clair.layers.post req.Body=%s", string(b))
 
 	resp, err := c.Client.Post(url, "application/json", bytes.NewReader(b))
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	c.Logf("clair.clair resp.Status=%s", resp.Status)
+
+	c.Logf("clair.layers.post resp.Status=%s", resp.Status)
 
 	var respLayer layerEnvelope
 	if err := json.NewDecoder(resp.Body).Decode(&respLayer); err != nil {
