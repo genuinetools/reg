@@ -67,7 +67,7 @@ func (c *Clair) getFilteredLayers(r *registry.Registry, repo, tag string) (map[i
 	if ok {
 		for i := 0; i < len(mf.Layers); i++ {
 			if !IsEmptyLayer(mf.Layers[i].Digest) {
-				filteredLayers[i] = mf.Layers[i]
+				filteredLayers[len(mf.Layers)-i-1] = mf.Layers[i]
 			}
 		}
 
