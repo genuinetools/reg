@@ -159,6 +159,13 @@ func StartClair(dcli *client.Client) (string, string, error) {
 	}
 	defer resp.Body.Close()
 
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return dbID, "", err
+	}
+
+	fmt.Printf("body: %s\n", string(b))
+
 	c, err := dcli.ContainerCreate(
 		context.Background(),
 		&container.Config{
