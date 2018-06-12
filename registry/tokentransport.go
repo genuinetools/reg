@@ -198,7 +198,8 @@ func (r *Registry) Headers(uri string) (map[string]string, error) {
 	}
 
 	if len(token) < 1 {
-		return nil, fmt.Errorf("got empty token for %s", uri)
+		r.Logf("got empty token for %s", uri)
+		return map[string]string{}, nil
 	}
 
 	return map[string]string{

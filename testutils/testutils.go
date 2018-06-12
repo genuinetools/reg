@@ -1,6 +1,9 @@
 package testutils
 
 import (
+	"archive/tar"
+	"bufio"
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -8,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -50,6 +54,9 @@ func StartRegistry(dcli *client.Client, config, username, password string) (stri
 				filepath.Join(filepath.Dir(filename), "configs", "htpasswd") + ":" + "/etc/docker/registry/htpasswd" + ":ro",
 				filepath.Join(filepath.Dir(filename), "snakeoil") + ":" + "/etc/docker/registry/ssl" + ":ro",
 			},
+			RestartPolicy: container.RestartPolicy{
+				Name: "always",
+			},
 		},
 		nil, "")
 	if err != nil {
@@ -73,7 +80,7 @@ func StartRegistry(dcli *client.Client, config, username, password string) (stri
 	}
 
 	// Prefill the images.
-	images := []string{"alpine:latest", "busybox:latest", "busybox:musl", "busybox:glibc"}
+	images := []string{"alpine:3.5", "alpine:latest", "busybox:latest", "busybox:musl", "busybox:glibc"}
 	for _, image := range images {
 		if err := prefillRegistry(image, dcli, "localhost"+port, username, password); err != nil {
 			return r.ID, addr, err
@@ -83,13 +90,115 @@ func StartRegistry(dcli *client.Client, config, username, password string) (stri
 	return r.ID, addr, nil
 }
 
+func startClairDB(dcli *client.Client) (string, error) {
+	image := "postgres:latest"
+
+	if err := pullDockerImage(dcli, image); err != nil {
+		return "", err
+	}
+
+	c, err := dcli.ContainerCreate(
+		context.Background(),
+		&container.Config{
+			Image: image,
+			Env: []string{
+				"POSTGRES_PASSWORD=password",
+				"POSTGRES_DB=clair",
+				"POSTGRES_USER=hacker",
+			},
+		},
+		&container.HostConfig{
+			NetworkMode: "host",
+			RestartPolicy: container.RestartPolicy{
+				Name: "always",
+			},
+		},
+		nil, "")
+	if err != nil {
+		return "", err
+	}
+
+	// start the container
+	return c.ID, dcli.ContainerStart(context.Background(), c.ID, types.ContainerStartOptions{})
+}
+
+// StartClair starts a new clair container and accompanying database.
+func StartClair(dcli *client.Client) (string, string, error) {
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		return "", "", errors.New("No caller information")
+	}
+
+	// start the database container.
+	dbID, err := startClairDB(dcli)
+	if err != nil {
+		return dbID, "", err
+	}
+
+	image := "clair:dev"
+
+	// build the docker image
+	// create the tar ball
+	ctx := filepath.Dir(filepath.Dir(filename))
+	tw, err := tarit(ctx)
+	if err != nil {
+		return dbID, "", err
+	}
+
+	// build the image
+	resp, err := dcli.ImageBuild(context.Background(), tw, types.ImageBuildOptions{
+		Tags:           []string{image},
+		Dockerfile:     "Dockerfile.clair",
+		ForceRemove:    true,
+		Remove:         true,
+		SuppressOutput: false,
+		PullParent:     true,
+	})
+	if err != nil {
+		return dbID, "", err
+	}
+	defer resp.Body.Close()
+
+	c, err := dcli.ContainerCreate(
+		context.Background(),
+		&container.Config{
+			Image: image,
+		},
+		&container.HostConfig{
+			NetworkMode: "host",
+			Binds: []string{
+				filepath.Join(filepath.Dir(filename), "configs", "clair.yml") + ":" + "/etc/clair/config.yaml" + ":ro",
+			},
+			RestartPolicy: container.RestartPolicy{
+				Name: "always",
+			},
+		},
+		nil, "")
+	if err != nil {
+		return dbID, c.ID, err
+	}
+
+	// start the container
+	err = dcli.ContainerStart(context.Background(), c.ID, types.ContainerStartOptions{})
+
+	// wait for clair to start
+	// TODO: make this not a sleep
+	time.Sleep(time.Second * 5)
+
+	return dbID, c.ID, err
+}
+
 // RemoveContainer removes with force a container by it's container ID.
-func RemoveContainer(dcli *client.Client, ctrID string) error {
-	return dcli.ContainerRemove(context.Background(), ctrID,
-		types.ContainerRemoveOptions{
-			RemoveVolumes: true,
-			Force:         true,
-		})
+func RemoveContainer(dcli *client.Client, ctrs ...string) (err error) {
+	for _, c := range ctrs {
+		err = dcli.ContainerRemove(context.Background(), c,
+			types.ContainerRemoveOptions{
+				RemoveVolumes: true,
+				Force:         true,
+			})
+	}
+
+	return err
 }
 
 // dockerLogin logins via the command line to a docker registry
@@ -238,4 +347,50 @@ func constructRegistryAuth(identity, secret string) (string, error) {
 	}
 
 	return base64.URLEncoding.EncodeToString(buf), nil
+}
+
+func tarit(src string) (io.Reader, error) {
+	s := bytes.NewBuffer(nil)
+	t := bytes.NewBuffer(nil)
+	buf := bufio.NewReadWriter(bufio.NewReader(s), bufio.NewWriter(t))
+	tarball := tar.NewWriter(s)
+
+	err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		header, err := tar.FileInfoHeader(info, info.Name())
+		if err != nil {
+			return err
+		}
+
+		header.Name = strings.TrimPrefix(path, src)
+
+		if err := tarball.WriteHeader(header); err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		_, err = io.Copy(tarball, file)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := s.WriteTo(buf); err != nil {
+		return nil, err
+	}
+
+	err = buf.Writer.Flush()
+	return t, err
 }
