@@ -8,6 +8,8 @@ import (
 	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/distribution/manifest/schema2"
+	"bytes"
+	"encoding/json"
 )
 
 // Manifest returns the manifest for a specific repository:tag.
@@ -83,4 +85,28 @@ func (r *Registry) ManifestV1(repository, ref string) (schema1.SignedManifest, e
 	}
 
 	return m, nil
+}
+
+
+func (r *Registry) PutManifest(repository, reference string, manifest distribution.Manifest) error {
+	url := r.url("/v2/%s/manifests/%s", repository, reference)
+	r.Logf("registry.manifest.put url=%s repository=%s reference=%s", url, repository, reference)
+
+	manifestJson, err := json.Marshal(manifest)
+	if err != nil {
+		return err
+	}
+
+	buffer := bytes.NewBuffer(manifestJson)
+	req, err := http.NewRequest("PUT", url, buffer)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", schema2.MediaTypeManifest)
+	resp, err := r.Client.Do(req)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+	return err
 }
