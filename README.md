@@ -64,7 +64,6 @@ GLOBAL OPTIONS:
    --force-non-ssl, -f         force allow use of non-ssl
    --username value, -u value  username for the registry
    --password value, -p value  password for the registry
-   --registry value, -r value  URL to the private registry (ex. r.j3ss.co) (default: "https://registry-1.docker.io") [$REG_REGISTRY]
    --timeout value             timeout for HTTP requests (default: "1m")
    --skip-ping                 skip pinging the registry while establishing connection
    --help, -h                  show help
@@ -87,7 +86,7 @@ not present, you can pass through flags directly.
 
 ```console
 # this command might take a while if you have hundreds of images like I do
-$ reg -r r.j3ss.co ls
+$ reg ls r.j3ss.co
 Repositories for r.j3ss.co
 REPO                  TAGS
 awscli                latest
@@ -100,7 +99,7 @@ chrome                beta, latest, stable
 **Tags**
 
 ```console
-$ reg tags tor-browser
+$ reg tags r.j3ss.co/tor-browser
 alpha
 hardened
 latest
@@ -110,7 +109,7 @@ stable
 ### Get a Manifest
 
 ```console
-$ reg manifest htop
+$ reg manifest r.j3ss.co/htop
 {
    "schemaVersion": 1,
    "name": "htop",
@@ -130,30 +129,30 @@ $ reg manifest htop
 
 ### Get the Digest
 ```console
-$ reg digest htop
+$ reg digest r.j3ss.co/htop
 sha256:791158756cc0f5b27ef8c5c546284568fc9b7f4cf1429fb736aff3ee2d2e340f
 ```
 
 ### Download a Layer
 
 ```console
-$ reg layer -o chrome@sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
+$ reg layer -o r.j3ss.co/chrome@sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
 OR
-$ reg layer chrome@sha256:a3ed95caeb0.. > layer.tar
+$ reg layer r.j3ss.co/chrome@sha256:a3ed95caeb0.. > layer.tar
 ```
 
 
 ### Delete an Image
 
 ```console
-$ reg rm chrome@sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
+$ reg rm r.j3ss.co/chrome@sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
 Deleted chrome@sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
 ```
 
 ### Vulnerability Reports
 
 ```console
-$ reg vulns --clair https://clair.j3ss.co chrome
+$ reg vulns --clair https://clair.j3ss.co r.j3ss.co/chrome
 Found 32 vulnerabilities
 CVE-2015-5180: [Low]
 

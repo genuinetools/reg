@@ -87,17 +87,17 @@ func (r *Registry) ManifestV1(repository, ref string) (schema1.SignedManifest, e
 	return m, nil
 }
 
+// PutManifest calls a PUT for the specific manifest for an image.
 func (r *Registry) PutManifest(repository, ref string, manifest distribution.Manifest) error {
 	url := r.url("/v2/%s/manifests/%s", repository, ref)
 	r.Logf("registry.manifest.put url=%s repository=%s reference=%s", url, repository, ref)
 
-	manifestJson, err := json.Marshal(manifest)
+	b, err := json.Marshal(manifest)
 	if err != nil {
 		return err
 	}
 
-	buffer := bytes.NewBuffer(manifestJson)
-	req, err := http.NewRequest("PUT", url, buffer)
+	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(b))
 	if err != nil {
 		return err
 	}

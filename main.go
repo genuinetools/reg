@@ -6,17 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/docker/api/types"
 	"github.com/genuinetools/reg/registry"
 	"github.com/genuinetools/reg/repoutils"
 	"github.com/genuinetools/reg/version"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
-)
-
-var (
-	auth types.AuthConfig
-	r    *registry.Registry
 )
 
 func main() {
@@ -47,12 +41,6 @@ func main() {
 		cli.StringFlag{
 			Name:  "password, p",
 			Usage: "password for the registry",
-		},
-		cli.StringFlag{
-			Name:   "registry, r",
-			Usage:  "URL to the private registry (ex. r.j3ss.co)",
-			Value:  repoutils.DefaultDockerRegistry,
-			EnvVar: "REG_REGISTRY",
 		},
 		cli.StringFlag{
 			Name:  "timeout",
@@ -90,33 +78,36 @@ func main() {
 			return
 		}
 
-		auth, err = repoutils.GetAuthConfig(c.GlobalString("username"), c.GlobalString("password"), c.GlobalString("registry"))
-		if err != nil {
-			return err
-		}
-
-		// Prevent non-ssl unless explicitly forced
-		if !c.GlobalBool("force-non-ssl") && strings.HasPrefix(auth.ServerAddress, "http:") {
-			return fmt.Errorf("Attempt to use insecure protocol! Use non-ssl option to force")
-		}
-
-		// Parse the timeout.
-		timeout, err := time.ParseDuration(c.GlobalString("timeout"))
-		if err != nil {
-			return fmt.Errorf("parsing %s as duration failed: %v", c.GlobalString("timeout"), err)
-		}
-
-		// Create the registry client.
-		r, err = registry.New(auth, registry.Opt{
-			Insecure: c.GlobalBool("insecure"),
-			Debug:    c.GlobalBool("debug"),
-			SkipPing: c.GlobalBool("skip-ping"),
-			Timeout:  timeout,
-		})
-		return err
+		return
 	}
 
 	if err := app.Run(os.Args); err != nil {
 		logrus.Fatal(err)
 	}
+}
+
+func createRegistryClient(c *cli.Context, domain string) (*registry.Registry, error) {
+	auth, err := repoutils.GetAuthConfig(c.GlobalString("username"), c.GlobalString("password"), domain)
+	if err != nil {
+		return nil, err
+	}
+
+	// Prevent non-ssl unless explicitly forced
+	if !c.GlobalBool("force-non-ssl") && strings.HasPrefix(auth.ServerAddress, "http:") {
+		return nil, fmt.Errorf("Attempt to use insecure protocol! Use non-ssl option to force")
+	}
+
+	// Parse the timeout.
+	timeout, err := time.ParseDuration(c.GlobalString("timeout"))
+	if err != nil {
+		return nil, fmt.Errorf("parsing %s as duration failed: %v", c.GlobalString("timeout"), err)
+	}
+
+	// Create the registry client.
+	return registry.New(auth, registry.Opt{
+		Insecure: c.GlobalBool("insecure"),
+		Debug:    c.GlobalBool("debug"),
+		SkipPing: c.GlobalBool("skip-ping"),
+		Timeout:  timeout,
+	})
 }

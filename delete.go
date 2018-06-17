@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/genuinetools/reg/repoutils"
+	"github.com/genuinetools/reg/registry"
 	"github.com/urfave/cli"
 )
 
@@ -16,15 +16,32 @@ var deleteCommand = cli.Command{
 			return fmt.Errorf("pass the name of the repository")
 		}
 
-		repo, ref, err := repoutils.GetRepoAndRef(c.Args()[0])
+		image, err := registry.ParseImage(c.Args().First())
 		if err != nil {
 			return err
 		}
 
-		if err := r.Delete(repo, ref); err != nil {
-			return fmt.Errorf("Delete %s@%s failed: %v", repo, ref, err)
+		// Create the registry client.
+		r, err := createRegistryClient(c, image.Domain)
+		if err != nil {
+			return err
 		}
-		fmt.Printf("Deleted %s@%s\n", repo, ref)
+
+		// Get the digest.
+		digest, err := r.Digest(image)
+		if err != nil {
+			return err
+		}
+
+		if err := image.WithDigest(digest); err != nil {
+			return err
+		}
+
+		// Delete the reference.
+		if err := r.Delete(image.Path, digest); err != nil {
+			return err
+		}
+		fmt.Printf("Deleted %s\n", image.String())
 
 		return nil
 	},

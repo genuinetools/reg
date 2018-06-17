@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"text/tabwriter"
@@ -15,13 +16,46 @@ var listCommand = cli.Command{
 	Aliases: []string{"ls"},
 	Usage:   "list all repositories",
 	Action: func(c *cli.Context) error {
+		if len(c.Args()) < 1 {
+			return fmt.Errorf("pass the domain of the registry")
+		}
+
+		// Create the registry client.
+		r, err := createRegistryClient(c, c.Args().First())
+		if err != nil {
+			return err
+		}
+
 		// Get the repositories via catalog.
 		repos, err := r.Catalog("")
 		if err != nil {
 			return err
 		}
+		sort.Strings(repos)
 
-		fmt.Printf("Repositories for %s\n", auth.ServerAddress)
+		fmt.Printf("Repositories for %s\n", r.Domain)
+
+		var (
+			wg       sync.WaitGroup
+			repoTags = map[string][]string{}
+		)
+
+		wg.Add(len(repos))
+		for _, repo := range repos {
+			go func(repo string) {
+				// Get the tags.
+				tags, err := r.Tags(repo)
+				if err != nil {
+					fmt.Printf("Get tags of [%s] error: %s", repo, err)
+				}
+				// Sort the tags
+				sort.Strings(tags)
+				repoTags[repo] = tags
+
+				wg.Done()
+			}(repo)
+		}
+		wg.Wait()
 
 		// Setup the tab writer.
 		w := tabwriter.NewWriter(os.Stdout, 20, 1, 3, ' ', 0)
@@ -29,31 +63,10 @@ var listCommand = cli.Command{
 		// Print header.
 		fmt.Fprintln(w, "REPO\tTAGS")
 
-		var (
-			l  sync.Mutex
-			wg sync.WaitGroup
-		)
-
-		wg.Add(len(repos))
+		// Sort the repos.
 		for _, repo := range repos {
-			go func(repo string) {
-				// Get the tags and print to stdout.
-				tags, err := r.Tags(repo)
-				if err != nil {
-					fmt.Printf("Get tags of [%s] error: %s", repo, err)
-				}
-				out := fmt.Sprintf("%s\t%s\n", repo, strings.Join(tags, ", "))
-
-				// Lock around the tabwriter to prevent garbled output.
-				// See: https://github.com/genuinetools/reg/issues/54
-				l.Lock()
-				w.Write([]byte(out))
-				l.Unlock()
-
-				wg.Done()
-			}(repo)
+			w.Write([]byte(fmt.Sprintf("%s\t%s\n", repo, strings.Join(repoTags[repo], ", "))))
 		}
-		wg.Wait()
 
 		w.Flush()
 

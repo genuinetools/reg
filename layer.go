@@ -5,8 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/genuinetools/reg/repoutils"
-	digest "github.com/opencontainers/go-digest"
+	"github.com/genuinetools/reg/registry"
 	"github.com/urfave/cli"
 )
 
@@ -25,12 +24,25 @@ var layerCommand = cli.Command{
 			return fmt.Errorf("pass the name of the repository")
 		}
 
-		repo, ref, err := repoutils.GetRepoAndRef(c.Args()[0])
+		image, err := registry.ParseImage(c.Args().First())
 		if err != nil {
 			return err
 		}
 
-		layer, err := r.DownloadLayer(repo, digest.FromString(ref))
+		// Create the registry client.
+		r, err := createRegistryClient(c, image.Domain)
+		if err != nil {
+			return err
+		}
+
+		// Get the digest.
+		digest, err := r.Digest(image)
+		if err != nil {
+			return err
+		}
+
+		// Download the layer.
+		layer, err := r.DownloadLayer(image.Path, digest)
 		if err != nil {
 			return err
 		}

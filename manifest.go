@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/genuinetools/reg/repoutils"
+	"github.com/genuinetools/reg/registry"
 	"github.com/urfave/cli"
 )
 
@@ -22,7 +22,13 @@ var manifestCommand = cli.Command{
 			return fmt.Errorf("pass the name of the repository")
 		}
 
-		repo, ref, err := repoutils.GetRepoAndRef(c.Args()[0])
+		image, err := registry.ParseImage(c.Args().First())
+		if err != nil {
+			return err
+		}
+
+		// Create the registry client.
+		r, err := createRegistryClient(c, image.Domain)
 		if err != nil {
 			return err
 		}
@@ -30,13 +36,13 @@ var manifestCommand = cli.Command{
 		var manifest interface{}
 		if c.Bool("v1") {
 			// Get the v1 manifest if it was explicitly asked for.
-			manifest, err = r.ManifestV1(repo, ref)
+			manifest, err = r.ManifestV1(image.Path, image.Reference())
 			if err != nil {
 				return err
 			}
 		} else {
 			// Get the v2 manifest.
-			manifest, err = r.Manifest(repo, ref)
+			manifest, err = r.Manifest(image.Path, image.Reference())
 			if err != nil {
 				return err
 			}

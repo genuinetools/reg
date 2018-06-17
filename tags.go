@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
+	"github.com/genuinetools/reg/registry"
 	"github.com/urfave/cli"
 )
 
@@ -15,10 +17,22 @@ var tagsCommand = cli.Command{
 			return fmt.Errorf("pass the name of the repository")
 		}
 
-		tags, err := r.Tags(c.Args()[0])
+		image, err := registry.ParseImage(c.Args().First())
 		if err != nil {
 			return err
 		}
+
+		// Create the registry client.
+		r, err := createRegistryClient(c, image.Domain)
+		if err != nil {
+			return err
+		}
+
+		tags, err := r.Tags(image.Path)
+		if err != nil {
+			return err
+		}
+		sort.Strings(tags)
 
 		// Print the tags.
 		fmt.Println(strings.Join(tags, "\n"))

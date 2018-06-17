@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/genuinetools/reg/clair"
-	"github.com/genuinetools/reg/repoutils"
+	"github.com/genuinetools/reg/registry"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
@@ -38,7 +38,13 @@ var vulnsCommand = cli.Command{
 			return fmt.Errorf("pass the name of the repository")
 		}
 
-		repo, ref, err := repoutils.GetRepoAndRef(c.Args()[0])
+		image, err := registry.ParseImage(c.Args().First())
+		if err != nil {
+			return err
+		}
+
+		// Create the registry client.
+		r, err := createRegistryClient(c, image.Domain)
 		if err != nil {
 			return err
 		}
@@ -60,7 +66,7 @@ var vulnsCommand = cli.Command{
 		}
 
 		// Get the vulnerability report.
-		report, err := cr.Vulnerabilities(r, repo, ref)
+		report, err := cr.Vulnerabilities(r, image.Path, image.Reference())
 		if err != nil {
 			return err
 		}

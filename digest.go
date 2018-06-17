@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/genuinetools/reg/repoutils"
+	"github.com/genuinetools/reg/registry"
 	"github.com/urfave/cli"
 )
 
@@ -15,17 +15,24 @@ var digestCommand = cli.Command{
 			return fmt.Errorf("pass the name of the repository")
 		}
 
-		repo, ref, err := repoutils.GetRepoAndRef(c.Args()[0])
+		image, err := registry.ParseImage(c.Args().First())
 		if err != nil {
 			return err
 		}
 
-		digest, err := r.Digest(repo, ref)
+		// Create the registry client.
+		r, err := createRegistryClient(c, image.Domain)
 		if err != nil {
 			return err
 		}
 
-		fmt.Println(digest)
+		// Get the digest.
+		digest, err := r.Digest(image)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(digest.String())
 
 		return nil
 	},
