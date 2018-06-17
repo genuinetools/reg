@@ -1,6 +1,8 @@
 package registry
 
 import (
+	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 
@@ -8,8 +10,6 @@ import (
 	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/distribution/manifest/schema2"
-	"bytes"
-	"encoding/json"
 )
 
 // Manifest returns the manifest for a specific repository:tag.
@@ -86,7 +86,6 @@ func (r *Registry) ManifestV1(repository, ref string) (schema1.SignedManifest, e
 
 	return m, nil
 }
-
 
 func (r *Registry) PutManifest(repository, reference string, manifest distribution.Manifest) error {
 	url := r.url("/v2/%s/manifests/%s", repository, reference)
