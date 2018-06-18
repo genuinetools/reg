@@ -36,6 +36,7 @@ var listCommand = cli.Command{
 		fmt.Printf("Repositories for %s\n", r.Domain)
 
 		var (
+			l        sync.Mutex
 			wg       sync.WaitGroup
 			repoTags = map[string][]string{}
 		)
@@ -50,7 +51,11 @@ var listCommand = cli.Command{
 				}
 				// Sort the tags
 				sort.Strings(tags)
+
+				// Lock on the write to the map.
+				l.Lock()
 				repoTags[repo] = tags
+				l.Unlock()
 
 				wg.Done()
 			}(repo)
