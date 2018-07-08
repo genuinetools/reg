@@ -47,7 +47,11 @@ func (t *TokenTransport) authAndRetry(authService *authService, req *http.Reques
 		return authResp, err
 	}
 
-	return t.retry(req, token)
+	response, err := t.retry(req, token)
+	if response != nil {
+		response.Header.Set("request-token", token)
+	}
+	return response, err
 }
 
 func (t *TokenTransport) auth(authService *authService) (string, *http.Response, error) {
