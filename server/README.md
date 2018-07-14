@@ -16,7 +16,7 @@ USAGE:
    reg-server [global options] command [command options] [arguments...]
 
 VERSION:
-   v0.1.0
+   v0.2.0
 
 AUTHOR:
    The Genuinetools Authors <no-reply@butts.com>
@@ -34,7 +34,7 @@ GLOBAL OPTIONS:
    --port value                port for server to run on (default: "8080")
    --cert value                path to ssl cert
    --key value                 path to ssl key
-   --interval value            interval to generate new index.html's at (default: "1h")
+   --interval value            interval to generate new index.html's at (default: 1h0m0s)
    --clair value               url to clair instance
    --skip-ping                 skip pinging the registry while establishing connection
    --timeout value             timeout for HTTP requests (default: "1m")

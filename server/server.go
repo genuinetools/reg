@@ -85,9 +85,9 @@ func main() {
 			Name:  "key",
 			Usage: "path to ssl key",
 		},
-		cli.StringFlag{
+		cli.DurationFlag{
 			Name:  "interval",
-			Value: "1h",
+			Value: time.Hour,
 			Usage: "interval to generate new index.html's at",
 		},
 		cli.StringFlag{
@@ -207,12 +207,7 @@ func main() {
 			return nil
 		}
 
-		// parse the duration
-		dur, err := time.ParseDuration(c.String("interval"))
-		if err != nil {
-			logrus.Fatalf("parsing %s as duration failed: %v", c.String("interval"), err)
-		}
-		ticker := time.NewTicker(dur)
+		ticker := time.NewTicker(c.Duration("interval"))
 
 		go func() {
 			// create more indexes every X minutes based off interval
