@@ -142,7 +142,7 @@ func StartClair(dcli *client.Client) (string, string, error) {
 	ctx := filepath.Dir(filepath.Dir(filename))
 	tw, err := tarit(ctx)
 	if err != nil {
-		return dbID, "", err
+		return dbID, "", fmt.Errorf("tarit: %v", err)
 	}
 
 	// build the image
@@ -366,18 +366,29 @@ func tarit(src string) (io.Reader, error) {
 		if err != nil {
 			return err
 		}
-		header, err := tar.FileInfoHeader(info, info.Name())
+
+		var link string
+		if info.Mode()&os.ModeSymlink == os.ModeSymlink {
+			if link, err = os.Readlink(path); err != nil {
+				return err
+			}
+		}
+
+		header, err := tar.FileInfoHeader(info, link)
 		if err != nil {
 			return err
 		}
 
 		header.Name = strings.TrimPrefix(path, src)
-
 		if err := tarball.WriteHeader(header); err != nil {
 			return err
 		}
 
 		if info.IsDir() {
+			return nil
+		}
+
+		if !info.Mode().IsRegular() { //nothing more to do for non-regular
 			return nil
 		}
 
