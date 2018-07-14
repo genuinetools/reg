@@ -10,9 +10,6 @@ before_install:
 jobs:
   include:
     - script: DOCKER_API_VERSION=1.37 make dind dtest
-    - stage: Run Test Coverage
-      script: make cover
-      after_success: bash <(curl -s https://codecov.io/bash)
     - stage: Build Release
       script:
         - make release
