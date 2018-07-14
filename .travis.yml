@@ -9,7 +9,9 @@ before_install:
   - go get honnef.co/go/tools/cmd/staticcheck
 jobs:
   include:
-    - script: DOCKER_API_VERSION=1.37 make dind dtest
+    - script:
+        - make fmt lint staticcheck vet install
+        - DOCKER_API_VERSION=1.37 make dind dtest
     - stage: Build Release
       script:
         - make release

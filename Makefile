@@ -199,7 +199,7 @@ dtest: ## Run the tests in a docker container
 		-e DOCKER_CERT_PATH=/etc/docker/ssl \
 		-e DOCKER_API_VERSION \
 		$(DOCKER_IMAGE) \
-		make all
+		make test
 
 .PHONY: snakeoil
 snakeoil: ## Update snakeoil certs for testing
