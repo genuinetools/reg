@@ -473,10 +473,6 @@ func (c *context) Apply(resource Resource) error {
 			}
 		}
 
-		// NOTE(stevvooe): Chmod on symlink is not supported on linux. We
-		// may want to maintain support for other platforms that have it.
-		chmod = false
-
 	case Device:
 		if fi == nil {
 			if err := c.driver.Mknod(fp, resource.Mode(), int(r.Major()), int(r.Minor())); err != nil {
