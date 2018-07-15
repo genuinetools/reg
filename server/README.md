@@ -9,37 +9,35 @@ Demo at [r.j3ss.co](https://r.j3ss.co).
 
 ```console
 $ reg-server -h
-NAME:
-   reg-server - Docker registry v2 static UI server.
+reg-server -  Docker registry v2 static UI server.
 
-USAGE:
-   reg-server [global options] command [command options] [arguments...]
+Usage: reg-server <command>
 
-VERSION:
-   v0.2.0
+Flags:
 
-AUTHOR:
-   The Genuinetools Authors <no-reply@butts.com>
+  -cert           path to ssl cert (default: <none>)
+  -clair          url to clair instance (default: <none>)
+  -d              enable debug logging (default: false)
+  -f              force allow use of non-ssl (default: false)
+  -force-non-ssl  force allow use of non-ssl (default: false)
+  -insecure       do not verify tls certificates (default: false)
+  -interval       interval to generate new index.html's at (default: 1h0m0s)
+  -k              do not verify tls certificates (default: false)
+  -key            path to ssl key (default: <none>)
+  -once           generate an output once and then exit (default: false)
+  -p              password for the registry (default: <none>)
+  -password       password for the registry (default: <none>)
+  -port           port for server to run on (default: 8080)
+  -r              URL to the private registry (ex. r.j3ss.co) (default: <none>)
+  -registry       URL to the private registry (ex. r.j3ss.co) (default: <none>)
+  -skip-ping      skip pinging the registry while establishing connection (default: false)
+  -timeout        timeout for HTTP requests (default: 1m0s)
+  -u              username for the registry (default: <none>)
+  -username       username for the registry (default: <none>)
 
-COMMANDS:
-     help, h  Shows a list of commands or help for one command
+Commands:
 
-GLOBAL OPTIONS:
-   --debug, -d                 run in debug mode
-   --username value, -u value  username for the registry
-   --password value, -p value  password for the registry
-   --registry value, -r value  URL to the private registry (ex. r.j3ss.co)
-   --insecure, -k              do not verify tls certificates of registry
-   --once, -o                  generate an output once and then exit
-   --port value                port for server to run on (default: "8080")
-   --cert value                path to ssl cert
-   --key value                 path to ssl key
-   --interval value            interval to generate new index.html's at (default: 1h0m0s)
-   --clair value               url to clair instance
-   --skip-ping                 skip pinging the registry while establishing connection
-   --timeout value             timeout for HTTP requests (default: "1m")
-   --help, -h                  show help
-   --version, -v               print the version
+  version  Show the version information.
 ```
 
 ## Screenshots
