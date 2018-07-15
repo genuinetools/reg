@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"flag"
 	"html/template"
 	"net/http"
 	"os"
@@ -8,119 +10,107 @@ import (
 	"strings"
 	"time"
 
+	"github.com/genuinetools/pkg/cli"
 	"github.com/genuinetools/reg/clair"
 	"github.com/genuinetools/reg/registry"
 	"github.com/genuinetools/reg/repoutils"
+	"github.com/genuinetools/reg/version"
 	"github.com/gorilla/mux"
 	wordwrap "github.com/mitchellh/go-wordwrap"
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
-)
-
-const (
-	// VERSION is the binary version.
-	VERSION = "v0.2.0"
 )
 
 var (
-	updating = false
+	insecure    bool
+	forceNonSSL bool
+	skipPing    bool
+
+	interval time.Duration
+	timeout  time.Duration
+
+	username       string
+	password       string
+	registryServer string
+	clairServer    string
+
+	once bool
+
+	cert string
+	key  string
+	port string
+
+	debug bool
+
+	updating bool
 	r        *registry.Registry
 	cl       *clair.Clair
 	tmpl     *template.Template
 )
 
-// preload initializes any global options and configuration
-// before the main or sub commands are run.
-func preload(c *cli.Context) (err error) {
-	if c.GlobalBool("debug") {
-		logrus.SetLevel(logrus.DebugLevel)
-	}
-
-	return nil
-}
-
 func main() {
-	app := cli.NewApp()
-	app.Name = "reg-server"
-	app.Version = VERSION
-	app.Author = "The Genuinetools Authors"
-	app.Email = "no-reply@butts.com"
-	app.Usage = "Docker registry v2 static UI server."
-	app.Before = preload
-	app.Flags = []cli.Flag{
-		cli.BoolFlag{
-			Name:  "debug, d",
-			Usage: "run in debug mode",
-		},
-		cli.StringFlag{
-			Name:  "username, u",
-			Usage: "username for the registry",
-		},
-		cli.StringFlag{
-			Name:  "password, p",
-			Usage: "password for the registry",
-		},
-		cli.StringFlag{
-			Name:  "registry, r",
-			Usage: "URL to the private registry (ex. r.j3ss.co)",
-		},
-		cli.BoolFlag{
-			Name:  "insecure, k",
-			Usage: "do not verify tls certificates of registry",
-		},
-		cli.BoolFlag{
-			Name:  "once, o",
-			Usage: "generate an output once and then exit",
-		},
-		cli.StringFlag{
-			Name:  "port",
-			Value: "8080",
-			Usage: "port for server to run on",
-		},
-		cli.StringFlag{
-			Name:  "cert",
-			Usage: "path to ssl cert",
-		},
-		cli.StringFlag{
-			Name:  "key",
-			Usage: "path to ssl key",
-		},
-		cli.DurationFlag{
-			Name:  "interval",
-			Value: time.Hour,
-			Usage: "interval to generate new index.html's at",
-		},
-		cli.StringFlag{
-			Name:  "clair",
-			Usage: "url to clair instance",
-		},
-		cli.BoolFlag{
-			Name:  "skip-ping",
-			Usage: "skip pinging the registry while establishing connection",
-		},
-		cli.StringFlag{
-			Name:  "timeout",
-			Value: "1m",
-			Usage: "timeout for HTTP requests",
-		},
+	// Create a new cli program.
+	p := cli.NewProgram()
+	p.Name = "reg-server"
+	p.Description = "Docker registry v2 static UI server"
+
+	// Set the GitCommit and Version.
+	p.GitCommit = version.GITCOMMIT
+	p.Version = version.VERSION
+
+	// Setup the global flags.
+	p.FlagSet = flag.NewFlagSet("global", flag.ExitOnError)
+	p.FlagSet.BoolVar(&insecure, "insecure", false, "do not verify tls certificates")
+	p.FlagSet.BoolVar(&insecure, "k", false, "do not verify tls certificates")
+
+	p.FlagSet.BoolVar(&forceNonSSL, "force-non-ssl", false, "force allow use of non-ssl")
+	p.FlagSet.BoolVar(&forceNonSSL, "f", false, "force allow use of non-ssl")
+
+	p.FlagSet.BoolVar(&skipPing, "skip-ping", false, "skip pinging the registry while establishing connection")
+
+	p.FlagSet.DurationVar(&interval, "interval", time.Hour, "interval to generate new index.html's at")
+	p.FlagSet.DurationVar(&timeout, "timeout", time.Minute, "timeout for HTTP requests")
+
+	p.FlagSet.StringVar(&username, "username", "", "username for the registry")
+	p.FlagSet.StringVar(&username, "u", "", "username for the registry")
+
+	p.FlagSet.StringVar(&password, "password", "", "password for the registry")
+	p.FlagSet.StringVar(&password, "p", "", "password for the registry")
+
+	p.FlagSet.StringVar(&registryServer, "registry", "", "URL to the private registry (ex. r.j3ss.co)")
+	p.FlagSet.StringVar(&registryServer, "r", "", "URL to the private registry (ex. r.j3ss.co)")
+
+	p.FlagSet.StringVar(&clairServer, "clair", "", "url to clair instance")
+
+	p.FlagSet.StringVar(&cert, "cert", "", "path to ssl cert")
+	p.FlagSet.StringVar(&key, "key", "", "path to ssl key")
+	p.FlagSet.StringVar(&port, "port", "8080", "port for server to run on")
+
+	p.FlagSet.BoolVar(&once, "once", false, "generate an output once and then exit")
+
+	p.FlagSet.BoolVar(&debug, "d", false, "enable debug logging")
+
+	// Set the before function.
+	p.Before = func(ctx context.Context) error {
+		// Set the log level.
+		if debug {
+			logrus.SetLevel(logrus.DebugLevel)
+		}
+
+		return nil
 	}
-	app.Action = func(c *cli.Context) error {
-		auth, err := repoutils.GetAuthConfig(c.GlobalString("username"), c.GlobalString("password"), c.GlobalString("registry"))
+
+	// Set the main program action.
+	p.Action = func(ctx context.Context) error {
+		auth, err := repoutils.GetAuthConfig(username, password, registryServer)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		// Parse the timeout.
-		timeout, err := time.ParseDuration(c.GlobalString("timeout"))
-		if err != nil {
-			logrus.Fatalf("parsing %s as duration failed: %v", c.GlobalString("timeout"), err)
-		}
-
 		// Create the registry client.
 		r, err = registry.New(auth, registry.Opt{
-			Insecure: c.GlobalBool("insecure"),
-			Debug:    c.GlobalBool("debug"),
-			SkipPing: c.GlobalBool("skip-ping"),
+			Insecure: insecure,
+			Debug:    debug,
+			SkipPing: skipPing,
 			Timeout:  timeout,
 		})
 		if err != nil {
@@ -128,10 +118,10 @@ func main() {
 		}
 
 		// create a clair instance if needed
-		if c.GlobalString("clair") != "" {
-			cl, err = clair.New(c.String("clair"), clair.Opt{
-				Insecure: c.GlobalBool("insecure"),
-				Debug:    c.GlobalBool("debug"),
+		if len(clairServer) < 1 {
+			cl, err = clair.New(clairServer, clair.Opt{
+				Insecure: insecure,
+				Debug:    debug,
 				Timeout:  timeout,
 			})
 			if err != nil {
@@ -202,12 +192,12 @@ func main() {
 			logrus.Fatalf("Error creating index: %v", err)
 		}
 
-		if c.GlobalBool("once") {
+		if once {
 			logrus.Info("Output generated")
 			return nil
 		}
 
-		ticker := time.NewTicker(c.Duration("interval"))
+		ticker := time.NewTicker(interval)
 
 		go func() {
 			// create more indexes every X minutes based off interval
@@ -219,7 +209,7 @@ func main() {
 						updating = false
 					}
 				} else {
-					logrus.Warnf("skipping timer based static index update for %s", c.String("interval"))
+					logrus.Warnf("skipping timer based static index update for %s", interval.String())
 				}
 			}
 		}()
@@ -241,14 +231,13 @@ func main() {
 		mux.Handle("/", staticHandler)
 
 		// set up the server
-		port := c.String("port")
 		server := &http.Server{
 			Addr:    ":" + port,
 			Handler: mux,
 		}
 		logrus.Infof("Starting server on port %q", port)
-		if c.String("cert") != "" && c.String("key") != "" {
-			logrus.Fatal(server.ListenAndServeTLS(c.String("cert"), c.String("key")))
+		if len(cert) > 0 && len(key) > 0 {
+			logrus.Fatal(server.ListenAndServeTLS(cert, key))
 		} else {
 			logrus.Fatal(server.ListenAndServe())
 		}
@@ -256,7 +245,6 @@ func main() {
 		return nil
 	}
 
-	if err := app.Run(os.Args); err != nil {
-		logrus.Fatal(err)
-	}
+	// Run our program.
+	p.Run()
 }
