@@ -35,39 +35,34 @@ $ go get github.com/genuinetools/reg
 ## Usage
 
 ```console
-$ reg
-NAME:
-   reg - Docker registry v2 client.
+reg -  Docker registry v2 client.
 
-USAGE:
-   reg [global options] command [command options] [arguments...]
+Usage: reg <command>
 
-VERSION:
-   version v0.14.2, build 3b7dafb
+Flags:
 
-AUTHOR:
-   The Genuinetools Authors <no-reply@butts.com>
+  -d              enable debug logging (default: false)
+  -f              force allow use of non-ssl (default: false)
+  -force-non-ssl  force allow use of non-ssl (default: false)
+  -insecure       do not verify tls certificates (default: false)
+  -k              do not verify tls certificates (default: false)
+  -p              password for the registry (default: <none>)
+  -password       password for the registry (default: <none>)
+  -skip-ping      skip pinging the registry while establishing connection (default: false)
+  -timeout        timeout for HTTP requests (default: 1m0s)
+  -u              username for the registry (default: <none>)
+  -username       username for the registry (default: <none>)
 
-COMMANDS:
-     delete, rm       delete a specific reference of a repository
-     digest           get the digest
-     layer, download  download a layer for the specific reference of a repository
-     list, ls         list all repositories
-     manifest         get the json manifest for the specific reference of a repository
-     tags             get the tags for a repository
-     vulns            get a vulnerability report for the image from CoreOS Clair
-     help, h          Shows a list of commands or help for one command
+Commands:
 
-GLOBAL OPTIONS:
-   --debug, -d                 run in debug mode
-   --insecure, -k              do not verify tls certificates
-   --force-non-ssl, -f         force allow use of non-ssl
-   --username value, -u value  username for the registry
-   --password value, -p value  password for the registry
-   --timeout value             timeout for HTTP requests (default: "1m")
-   --skip-ping                 skip pinging the registry while establishing connection
-   --help, -h                  show help
-   --version, -v               print the version
+  digest    Get the digest for a repository.
+  layer     Download a layer for a repository.
+  ls        List all repositories.
+  manifest  Get the json manifest for a repository.
+  rm        Delete a specific reference of a repository.
+  tags      Get the tags for a repository.
+  vulns     Get a vulnerability report for a repository from a CoreOS Clair server.
+  version   Show the version information.
 ```
 
 **NOTE:** Be aware that `reg ls` doesn't work with `hub.docker.com` as it has a different API then the [OSS Docker Registry](https://github.com/docker/distribution)

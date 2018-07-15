@@ -138,6 +138,12 @@ func (p *Program) Run() {
 		}
 	}
 
+	// If we have commands but the user did not specify one, return the usage.
+	if len(p.Commands) > 1 && len(os.Args) < 2 {
+		p.usage(ctx)
+		os.Exit(1)
+	}
+
 	// Iterate over the commands in the program.
 	for _, command := range p.Commands {
 		if name := command.Name(); os.Args[1] == name {
