@@ -375,14 +375,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:fbae8ef8b678d7c5077984b305f19fc2c1f2bb9804e81578fbabf4d578a58bff"
-  name = "github.com/urfave/cli"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "8e01ec4cd3e2d84ab2fe90d8210528ffbb06d8ff"
-
-[[projects]]
-  branch = "master"
   digest = "1:3f3a05ae0b95893d90b9b3b5afdb79a9b3d96e4e36e099d841ae602e4aca0da8"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
@@ -510,7 +502,6 @@
     "github.com/opencontainers/go-digest",
     "github.com/peterhellberg/link",
     "github.com/sirupsen/logrus",
-    "github.com/urfave/cli",
     "google.golang.org/grpc",
   ]
   solver-name = "gps-cdcl"

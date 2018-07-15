@@ -57,10 +57,6 @@
   branch = "master"
 
 [[constraint]]
-  name = "github.com/urfave/cli"
-  branch = "master"
-
-[[constraint]]
   name = "github.com/opencontainers/go-digest"
   branch = "master"
 
