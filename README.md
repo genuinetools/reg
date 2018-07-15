@@ -26,13 +26,9 @@ Docker registry v2 command line client.
 
 For installation instructions from binaries please visit the [Releases Page](https://github.com/genuinetools/reg/releases).
 
-- **darwin** [386](https://github.com/genuinetools/reg/releases/download/v0.14.2/reg-darwin-386) / [amd64](https://github.com/genuinetools/reg/releases/download/v0.14.2/reg-darwin-amd64)
-- **linux** [386](https://github.com/genuinetools/reg/releases/download/v0.14.2/reg-linux-386) / [amd64](https://github.com/genuinetools/reg/releases/download/v0.14.2/reg-linux-amd64) / [arm](https://github.com/genuinetools/reg/releases/download/v0.14.2/reg-linux-arm) / [arm64](https://github.com/genuinetools/reg/releases/download/v0.14.2/reg-linux-arm64)
-- **windows** [386](https://github.com/genuinetools/reg/releases/download/v0.14.2/reg-windows-386) / [amd64](https://github.com/genuinetools/reg/releases/download/v0.14.2/reg-windows-amd64)
-
 #### Via Go
 
-```bash
+```console
 $ go get github.com/genuinetools/reg
 ```
 
@@ -73,9 +69,6 @@ GLOBAL OPTIONS:
    --help, -h                  show help
    --version, -v               print the version
 ```
-
-Note that the `--registry` can be set by an environment variable `REG_REGISTRY`, so you can set this in your shell login scripts.
-Specifying the registry on the command-line will override an environment variable setting.
 
 **NOTE:** Be aware that `reg ls` doesn't work with `hub.docker.com` as it has a different API then the [OSS Docker Registry](https://github.com/docker/distribution)
 
