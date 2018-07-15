@@ -131,7 +131,7 @@
     "registry/resumable",
   ]
   pruneopts = "NUT"
-  revision = "17dc10123f001d1481e4047de211c8aec7ed9d34"
+  revision = "492545e139e7461aac044149a931bb4b2dd48f75"
 
 [[projects]]
   branch = "master"

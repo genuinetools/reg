@@ -17,6 +17,7 @@ Docker registry v2 command line client.
    * [Download a Layer](README.md#download-a-layer)
    * [Delete an Image](README.md#delete-an-image)
    * [Vulnerability Reports](README.md#vulnerability-reports)
+   * [Running a Static UI Server for a Registry](README.md#running-a-static-ui-server-for-a-registry)
    * [Using Self-Signed Certs with a Registry](README.md#using-self-signed-certs-with-a-registry)
  * [Contributing](README.md#contributing)
 
@@ -183,9 +184,9 @@ Medium: 3
 High: 1
 ```
 
-### Running a static UI server for a Registry
+### Running a Static UI Server for a Registry
 
-The tool comes with a server which runs static UI for a docker registry. 
+The tool comes with a server which runs a static UI for a registry.
 It will run vulnerability scanning if you
 have a [CoreOS Clair](https://github.com/coreos/clair) server set up
 and pass the url with the `--clair` flag.
