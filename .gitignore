@@ -43,7 +43,6 @@ Icon
 .Trashes
 
 reg
-server/server
 testreg
 .certs
 cross/

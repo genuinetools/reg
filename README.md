@@ -35,6 +35,7 @@ $ go get github.com/genuinetools/reg
 ## Usage
 
 ```console
+$ reg -h
 reg -  Docker registry v2 client.
 
 Usage: reg <command>
@@ -60,6 +61,7 @@ Commands:
   ls        List all repositories.
   manifest  Get the json manifest for a repository.
   rm        Delete a specific reference of a repository.
+  server    Run a static UI server for a registry.
   tags      Get the tags for a repository.
   vulns     Get a vulnerability report for a repository from a CoreOS Clair server.
   version   Show the version information.
@@ -180,6 +182,52 @@ Low: 3
 Medium: 3
 High: 1
 ```
+
+### Running a static UI server for a Registry
+
+The tool comes with a server which runs static UI for a docker registry. 
+It will run vulnerability scanning if you
+have a [CoreOS Clair](https://github.com/coreos/clair) server set up
+and pass the url with the `--clair` flag.
+
+There is a demo at [r.j3ss.co](https://r.j3ss.co).
+
+**Usage:**
+
+```console
+$ reg server -h
+Usage: reg server [OPTIONS]
+
+Run a static UI server for a registry.
+
+Flags:
+
+  -cert           path to ssl cert (default: <none>)
+  -clair          url to clair instance (default: <none>)
+  -d              enable debug logging (default: false)
+  -f              force allow use of non-ssl (default: false)
+  -force-non-ssl  force allow use of non-ssl (default: false)
+  -insecure       do not verify tls certificates (default: false)
+  -interval       interval to generate new index.html's at (default: 1h0m0s)
+  -k              do not verify tls certificates (default: false)
+  -key            path to ssl key (default: <none>)
+  -once           generate an output once and then exit (default: false)
+  -p              password for the registry (default: <none>)
+  -password       password for the registry (default: <none>)
+  -port           port for server to run on (default: 8080)
+  -r              URL to the private registry (ex. r.j3ss.co) (default: <none>)
+  -registry       URL to the private registry (ex. r.j3ss.co) (default: <none>)
+  -skip-ping      skip pinging the registry while establishing connection (default: false)
+  -timeout        timeout for HTTP requests (default: 1m0s)
+  -u              username for the registry (default: <none>)
+  -username       username for the registry (default: <none>)
+```
+
+**Screenshots:**
+
+![home.png](server/home.png)
+
+![vuln.png](server/vuln.png)
 
 ### Using Self-Signed Certs with a Registry
 
