@@ -43,9 +43,6 @@ jobs:
           - cross/reg-linux-386
           - cross/reg-linux-386.md5
           - cross/reg-linux-386.sha256
-          - cross/reg-solaris-amd64
-          - cross/reg-solaris-amd64.md5
-          - cross/reg-solaris-amd64.sha256
           - cross/reg-windows-amd64
           - cross/reg-windows-amd64.md5
           - cross/reg-windows-amd64.sha256

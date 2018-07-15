@@ -3,11 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/genuinetools/reg/clair"
@@ -17,8 +19,10 @@ import (
 )
 
 type registryController struct {
-	reg *registry.Registry
-	cl  *clair.Clair
+	reg  *registry.Registry
+	cl   *clair.Clair
+	l    sync.Mutex
+	tmpl *template.Template
 }
 
 type v1Compatibility struct {
@@ -44,7 +48,9 @@ type AnalysisResult struct {
 }
 
 func (rc *registryController) repositories(staticDir string) error {
-	updating = true
+	rc.l.Lock()
+	defer rc.l.Unlock()
+
 	logrus.Info("fetching catalog")
 
 	result := AnalysisResult{
@@ -52,7 +58,7 @@ func (rc *registryController) repositories(staticDir string) error {
 		LastUpdated:    time.Now().Local().Format(time.RFC1123),
 	}
 
-	repoList, err := r.Catalog("")
+	repoList, err := rc.reg.Catalog("")
 	if err != nil {
 		return fmt.Errorf("getting catalog failed: %v", err)
 	}
@@ -67,7 +73,7 @@ func (rc *registryController) repositories(staticDir string) error {
 		result.Repositories = append(result.Repositories, r)
 	}
 
-	// parse & execute the template
+	// Parse & execute the template.
 	logrus.Info("executing the template repositories")
 
 	path := filepath.Join(staticDir, "index.html")
@@ -81,12 +87,11 @@ func (rc *registryController) repositories(staticDir string) error {
 	}
 	defer f.Close()
 
-	if err := tmpl.ExecuteTemplate(f, "repositories", result); err != nil {
+	if err := rc.tmpl.ExecuteTemplate(f, "repositories", result); err != nil {
 		f.Close()
 		return fmt.Errorf("execute template repositories failed: %v", err)
 	}
 
-	updating = false
 	return nil
 }
 
@@ -179,7 +184,7 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 		result.Repositories = append(result.Repositories, rp)
 	}
 
-	if err := tmpl.ExecuteTemplate(w, "tags", result); err != nil {
+	if err := rc.tmpl.ExecuteTemplate(w, "tags", result); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"func":   "tags",
 			"URL":    r.URL,
@@ -245,7 +250,7 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	if err := tmpl.ExecuteTemplate(w, "vulns", result); err != nil {
+	if err := rc.tmpl.ExecuteTemplate(w, "vulns", result); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"func":   "vulnerabilities",
 			"URL":    r.URL,

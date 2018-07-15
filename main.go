@@ -4,7 +4,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/genuinetools/pkg/cli"
@@ -43,6 +46,7 @@ func main() {
 		&listCommand{},
 		&manifestCommand{},
 		&removeCommand{},
+		&serverCommand{},
 		&tagsCommand{},
 		&vulnsCommand{},
 	}
@@ -69,6 +73,20 @@ func main() {
 
 	// Set the before function.
 	p.Before = func(ctx context.Context) error {
+		// On ^C, or SIGTERM handle exit.
+		signals := make(chan os.Signal, 0)
+		signal.Notify(signals, os.Interrupt)
+		signal.Notify(signals, syscall.SIGTERM)
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithCancel(ctx)
+		go func() {
+			for sig := range signals {
+				cancel()
+				logrus.Infof("Received %s, exiting.", sig.String())
+				os.Exit(0)
+			}
+		}()
+
 		// Set the log level.
 		if debug {
 			logrus.SetLevel(logrus.DebugLevel)

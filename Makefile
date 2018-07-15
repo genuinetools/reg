@@ -43,7 +43,7 @@ static: ## Builds a static executable
 				-tags "$(BUILDTAGS) static_build" \
 				${GO_LDFLAGS_STATIC} -o $(NAME) .
 
-all: clean build fmt lint test staticcheck vet install build-server ## Runs a clean, build, fmt, lint, test, staticcheck, vet and install
+all: clean build fmt lint test staticcheck vet install ## Runs a clean, build, fmt, lint, test, staticcheck, vet and install
 
 .PHONY: fmt
 fmt: ## Verifies all files have been `gofmt`ed
@@ -206,20 +206,6 @@ snakeoil: ## Update snakeoil certs for testing
 	go run /usr/local/go/src/crypto/tls/generate_cert.go --host localhost,127.0.0.1 --ca
 	mv $(CURDIR)/key.pem $(CURDIR)/testutils/snakeoil/key.pem
 	mv $(CURDIR)/cert.pem $(CURDIR)/testutils/snakeoil/cert.pem
-
-.PHONY: build-server
-build-server: $(NAME)-server ## Builds a dynamic executable for reg-server
-
-$(NAME)-server: $(wildcard */*.go) VERSION.txt
-	@echo "+ $@"
-	$(GO) build -tags "$(BUILDTAGS)" ${GO_LDFLAGS} -o $(NAME)-server ./server/...
-
-.PHONY: static-server
-static-server: ## Builds a static reg-server executable
-	@echo "+ $@"
-	CGO_ENABLED=0 $(GO) build \
-				-tags "$(BUILDTAGS) static_build" \
-				${GO_LDFLAGS_STATIC} -o $(NAME)-server ./server
 
 .PHONY: help
 help:

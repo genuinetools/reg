@@ -60,7 +60,7 @@ func (cmd *vulnsCommand) Run(ctx context.Context, args []string) error {
 		Insecure: insecure,
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("creation of clair client at %s failed: %v", cmd.clairServer, err)
 	}
 
 	// Get the vulnerability report.

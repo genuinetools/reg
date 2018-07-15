@@ -28,5 +28,10 @@ FROM scratch
 COPY --from=builder /usr/bin/reg /usr/bin/reg
 COPY --from=builder /etc/ssl/certs/ /etc/ssl/certs
 
+COPY server/static /src/static
+COPY server/templates /src/templates
+
+WORKDIR /src
+
 ENTRYPOINT [ "reg" ]
 CMD [ "--help" ]
