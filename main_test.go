@@ -109,9 +109,8 @@ func run(args ...string) (string, error) {
 	// always add trust insecure, and the registry
 	newargs := []string{args[0], "-d", "-k"}
 	if len(args) > 1 {
-		newargs = append(newargs, args[1:])
+		newargs = append(newargs, args[1:]...)
 	}
-	fmt.Printf("args: %#v\n", newargs)
 	cmd := exec.Command(prog, newargs...)
 	out, err := cmd.CombinedOutput()
 	return string(out), err
