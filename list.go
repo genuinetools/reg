@@ -1,80 +1,86 @@
 package main
 
 import (
+	"context"
+	"flag"
 	"fmt"
 	"os"
 	"sort"
 	"strings"
 	"sync"
 	"text/tabwriter"
-
-	"github.com/urfave/cli"
 )
 
-var listCommand = cli.Command{
-	Name:    "list",
-	Aliases: []string{"ls"},
-	Usage:   "list all repositories",
-	Action: func(c *cli.Context) error {
-		if len(c.Args()) < 1 {
-			return fmt.Errorf("pass the domain of the registry")
-		}
+const listHelp = `List all repositories.`
 
-		// Create the registry client.
-		r, err := createRegistryClient(c, c.Args().First())
-		if err != nil {
-			return err
-		}
+func (cmd *listCommand) Name() string      { return "ls" }
+func (cmd *listCommand) Args() string      { return "[OPTIONS] REGISTRY_DOMAIN" }
+func (cmd *listCommand) ShortHelp() string { return listHelp }
+func (cmd *listCommand) LongHelp() string  { return listHelp }
+func (cmd *listCommand) Hidden() bool      { return false }
 
-		// Get the repositories via catalog.
-		repos, err := r.Catalog("")
-		if err != nil {
-			return err
-		}
-		sort.Strings(repos)
+func (cmd *listCommand) Register(fs *flag.FlagSet) {}
 
-		fmt.Printf("Repositories for %s\n", r.Domain)
+type listCommand struct{}
 
-		var (
-			l        sync.Mutex
-			wg       sync.WaitGroup
-			repoTags = map[string][]string{}
-		)
+func (cmd *listCommand) Run(ctx context.Context, args []string) error {
+	if len(args) < 1 {
+		return fmt.Errorf("pass the domain of the registry")
+	}
 
-		wg.Add(len(repos))
-		for _, repo := range repos {
-			go func(repo string) {
-				// Get the tags.
-				tags, err := r.Tags(repo)
-				if err != nil {
-					fmt.Printf("Get tags of [%s] error: %s", repo, err)
-				}
-				// Sort the tags
-				sort.Strings(tags)
+	// Create the registry client.
+	r, err := createRegistryClient(args[0])
+	if err != nil {
+		return err
+	}
+	// Get the repositories via catalog.
+	repos, err := r.Catalog("")
+	if err != nil {
+		return err
+	}
+	sort.Strings(repos)
 
-				// Lock on the write to the map.
-				l.Lock()
-				repoTags[repo] = tags
-				l.Unlock()
+	fmt.Printf("Repositories for %s\n", r.Domain)
 
-				wg.Done()
-			}(repo)
-		}
-		wg.Wait()
+	var (
+		l        sync.Mutex
+		wg       sync.WaitGroup
+		repoTags = map[string][]string{}
+	)
 
-		// Setup the tab writer.
-		w := tabwriter.NewWriter(os.Stdout, 20, 1, 3, ' ', 0)
+	wg.Add(len(repos))
+	for _, repo := range repos {
+		go func(repo string) {
+			// Get the tags.
+			tags, err := r.Tags(repo)
+			if err != nil {
+				fmt.Printf("Get tags of [%s] error: %s", repo, err)
+			}
+			// Sort the tags
+			sort.Strings(tags)
 
-		// Print header.
-		fmt.Fprintln(w, "REPO\tTAGS")
+			// Lock on the write to the map.
+			l.Lock()
+			repoTags[repo] = tags
+			l.Unlock()
 
-		// Sort the repos.
-		for _, repo := range repos {
-			w.Write([]byte(fmt.Sprintf("%s\t%s\n", repo, strings.Join(repoTags[repo], ", "))))
-		}
+			wg.Done()
+		}(repo)
+	}
+	wg.Wait()
 
-		w.Flush()
+	// Setup the tab writer.
+	w := tabwriter.NewWriter(os.Stdout, 20, 1, 3, ' ', 0)
 
-		return nil
-	},
+	// Print header.
+	fmt.Fprintln(w, "REPO\tTAGS")
+
+	// Sort the repos.
+	for _, repo := range repos {
+		w.Write([]byte(fmt.Sprintf("%s\t%s\n", repo, strings.Join(repoTags[repo], ", "))))
+	}
+
+	w.Flush()
+
+	return nil
 }

@@ -1,6 +1,8 @@
 # reg
 
-[![Travis CI](https://travis-ci.org/genuinetools/reg.svg?branch=master)](https://travis-ci.org/genuinetools/reg)
+[![Travis CI](https://img.shields.io/travis/genuinetools/reg.svg?style=for-the-badge)](https://travis-ci.org/genuinetools/reg)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-5272B4.svg?style=for-the-badge)](https://godoc.org/github.com/genuinetools/reg)
+[![Github All Releases](https://img.shields.io/github/downloads/genuinetools/reg/total.svg?style=for-the-badge)](https://github.com/genuinetools/reg/releases)
 
 Docker registry v2 command line client.
 
@@ -21,6 +23,8 @@ Docker registry v2 command line client.
 ## Installation
 
 #### Binaries
+
+For installation instructions from binaries please visit the [Releases Page](https://github.com/genuinetools/reg/releases).
 
 - **darwin** [386](https://github.com/genuinetools/reg/releases/download/v0.14.2/reg-darwin-386) / [amd64](https://github.com/genuinetools/reg/releases/download/v0.14.2/reg-darwin-amd64)
 - **linux** [386](https://github.com/genuinetools/reg/releases/download/v0.14.2/reg-linux-386) / [amd64](https://github.com/genuinetools/reg/releases/download/v0.14.2/reg-linux-amd64) / [arm](https://github.com/genuinetools/reg/releases/download/v0.14.2/reg-linux-arm) / [arm64](https://github.com/genuinetools/reg/releases/download/v0.14.2/reg-linux-arm64)

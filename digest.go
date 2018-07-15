@@ -1,39 +1,48 @@
 package main
 
 import (
+	"context"
+	"flag"
 	"fmt"
 
 	"github.com/genuinetools/reg/registry"
-	"github.com/urfave/cli"
 )
 
-var digestCommand = cli.Command{
-	Name:  "digest",
-	Usage: "get the digest",
-	Action: func(c *cli.Context) error {
-		if len(c.Args()) < 1 {
-			return fmt.Errorf("pass the name of the repository")
-		}
+const digestHelp = `Get the digest for a repository.`
 
-		image, err := registry.ParseImage(c.Args().First())
-		if err != nil {
-			return err
-		}
+func (cmd *digestCommand) Name() string      { return "digest" }
+func (cmd *digestCommand) Args() string      { return "[OPTIONS] NAME[:TAG]" }
+func (cmd *digestCommand) ShortHelp() string { return digestHelp }
+func (cmd *digestCommand) LongHelp() string  { return digestHelp }
+func (cmd *digestCommand) Hidden() bool      { return false }
 
-		// Create the registry client.
-		r, err := createRegistryClient(c, image.Domain)
-		if err != nil {
-			return err
-		}
+func (cmd *digestCommand) Register(fs *flag.FlagSet) {}
 
-		// Get the digest.
-		digest, err := r.Digest(image)
-		if err != nil {
-			return err
-		}
+type digestCommand struct{}
 
-		fmt.Println(digest.String())
+func (cmd *digestCommand) Run(ctx context.Context, args []string) error {
+	if len(args) < 1 {
+		return fmt.Errorf("pass the name of the repository")
+	}
 
-		return nil
-	},
+	image, err := registry.ParseImage(args[0])
+	if err != nil {
+		return err
+	}
+
+	// Create the registry client.
+	r, err := createRegistryClient(image.Domain)
+	if err != nil {
+		return err
+	}
+
+	// Get the digest.
+	digest, err := r.Digest(image)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(digest.String())
+
+	return nil
 }

@@ -1,64 +1,71 @@
 package main
 
 import (
+	"context"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 
 	"github.com/genuinetools/reg/registry"
-	"github.com/urfave/cli"
 )
 
-var layerCommand = cli.Command{
-	Name:    "layer",
-	Aliases: []string{"download"},
-	Usage:   "download a layer for the specific reference of a repository",
-	Flags: []cli.Flag{
-		cli.StringFlag{
-			Name:  "output, o",
-			Usage: "output file, default to stdout",
-		},
-	},
-	Action: func(c *cli.Context) error {
-		if len(c.Args()) < 1 {
-			return fmt.Errorf("pass the name of the repository")
-		}
+const layerHelp = `Download a layer for a repository.`
 
-		image, err := registry.ParseImage(c.Args().First())
-		if err != nil {
-			return err
-		}
+func (cmd *layerCommand) Name() string      { return "layer" }
+func (cmd *layerCommand) Args() string      { return "[OPTIONS] NAME[:TAG|@DIGEST]" }
+func (cmd *layerCommand) ShortHelp() string { return layerHelp }
+func (cmd *layerCommand) LongHelp() string  { return layerHelp }
+func (cmd *layerCommand) Hidden() bool      { return false }
 
-		// Create the registry client.
-		r, err := createRegistryClient(c, image.Domain)
-		if err != nil {
-			return err
-		}
+func (cmd *layerCommand) Register(fs *flag.FlagSet) {
+	fs.StringVar(&cmd.output, "output", "", "output file, defaults to stdout")
+	fs.StringVar(&cmd.output, "o", "", "output file, defaults to stdout")
+}
 
-		// Get the digest.
-		digest, err := r.Digest(image)
-		if err != nil {
-			return err
-		}
+type layerCommand struct {
+	output string
+}
 
-		// Download the layer.
-		layer, err := r.DownloadLayer(image.Path, digest)
-		if err != nil {
-			return err
-		}
-		defer layer.Close()
+func (cmd *layerCommand) Run(ctx context.Context, args []string) error {
+	if len(args) < 1 {
+		return fmt.Errorf("pass the name of the repository")
+	}
 
-		b, err := ioutil.ReadAll(layer)
-		if err != nil {
-			return err
-		}
+	image, err := registry.ParseImage(args[0])
+	if err != nil {
+		return err
+	}
 
-		if c.String("output") != "" {
-			return ioutil.WriteFile(c.String("output"), b, 0644)
-		}
+	// Create the registry client.
+	r, err := createRegistryClient(image.Domain)
+	if err != nil {
+		return err
+	}
 
-		fmt.Fprint(os.Stdout, string(b))
+	// Get the digest.
+	digest, err := r.Digest(image)
+	if err != nil {
+		return err
+	}
 
-		return nil
-	},
+	// Download the layer.
+	layer, err := r.DownloadLayer(image.Path, digest)
+	if err != nil {
+		return err
+	}
+	defer layer.Close()
+
+	b, err := ioutil.ReadAll(layer)
+	if err != nil {
+		return err
+	}
+
+	if len(cmd.output) > 0 {
+		return ioutil.WriteFile(cmd.output, b, 0644)
+	}
+
+	fmt.Fprint(os.Stdout, string(b))
+
+	return nil
 }

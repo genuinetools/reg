@@ -46,7 +46,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:72dac224fa5dd9b1d9f8c46e29e09d36795f69bdb58e0819202ed455495fa260"
+  digest = "1:5ec21a936ab720c1b8c2c99936145b84325e874baa931cdf764a2eded70d8fd8"
   name = "github.com/coreos/clair"
   packages = [
     "api/v3/clairpb",
@@ -54,7 +54,7 @@
     "ext/versionfmt",
   ]
   pruneopts = ""
-  revision = "158bb31b77159f8628186f6113f53e2dcb273189"
+  revision = "9a9b1f7a13fa1cb796fe6dfb45ed241f39ce9f01"
 
 [[projects]]
   branch = "master"
@@ -95,7 +95,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:05c805e26044b46bcfeb5c9dcfdf6bc60589d2c66483ddd828ae1219c876af0e"
+  digest = "1:05ba5fe7a103a0cdb94d0310ab50aaac47a2ccb98baa210c72f4f317e7a72830"
   name = "github.com/docker/docker"
   packages = [
     "api",
@@ -131,7 +131,7 @@
     "registry/resumable",
   ]
   pruneopts = ""
-  revision = "a2a1d04bcae54129b5c4ddad4e4f68458fb5ef3d"
+  revision = "17dc10123f001d1481e4047de211c8aec7ed9d34"
 
 [[projects]]
   branch = "master"
@@ -189,12 +189,20 @@
   revision = "aabc10ec26b754e797f9028f4589c5b7bd90dc20"
 
 [[projects]]
-  digest = "1:602c5827bcd5eca47c041a39aff7b626dda114da57a0334a9230bdc5cf8ed3ed"
+  branch = "master"
+  digest = "1:4edb8bcf6d6f1e8e8b5832406517dd187f5b79d8c620d627d39d5f2fef548bf2"
+  name = "github.com/genuinetools/pkg"
+  packages = ["cli"]
+  pruneopts = ""
+  revision = "cd7da1bd30dc725ffb0bababc615633f23654e0c"
+
+[[projects]]
+  digest = "1:4af93c2cfd4bb238817e74254c231b568d06bbfe508507198eb0f6487b83c46c"
   name = "github.com/gogo/protobuf"
   packages = ["proto"]
   pruneopts = ""
-  revision = "1adfc126b41513cc696b209667c8656ea7aac67c"
-  version = "v1.0.0"
+  revision = "7d68e886eac4f7e34d0d82241a6273d6c304c5cf"
+  version = "v1.1.0"
 
 [[projects]]
   digest = "1:b1d3041d568e065ab4d76f7477844458e9209c0bb241eaccdc0770bf0a13b120"
@@ -402,14 +410,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:880f5ae3ffdd8741fe179f0f70b46df57fcdd746f3a0e9d0e189bb6a241535e4"
+  digest = "1:a8944db88149e7ecbea4b760c625b9ccf455fceae21387bc8890c3589d28b623"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = ""
-  revision = "1b2967e3c290b7c545b3db0deeda16e9be4f98a2"
+  revision = "ac767d655b305d4e9612f5f6e33120b9176c4ad4"
 
 [[projects]]
   digest = "1:af9bfca4298ef7502c52b1459df274eed401a4f5498b900e9a92d28d3d87ac5a"
@@ -495,6 +503,7 @@
     "github.com/docker/docker/client",
     "github.com/docker/docker/pkg/jsonmessage",
     "github.com/docker/docker/pkg/term",
+    "github.com/genuinetools/pkg/cli",
     "github.com/google/go-cmp/cmp",
     "github.com/gorilla/mux",
     "github.com/mitchellh/go-wordwrap",
