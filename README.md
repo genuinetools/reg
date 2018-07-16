@@ -191,6 +191,14 @@ It will run vulnerability scanning if you
 have a [CoreOS Clair](https://github.com/coreos/clair) server set up
 and pass the url with the `--clair` flag.
 
+The server will generate the static assets and you can exit after with the
+`--once` flag. By default it will run in a daemon mode and generate the
+`index.html` and serve it as a static asset but the tags pages will be loaded
+dynamically. This is so that vulnerability scanning can be done on the fly.
+
+_However_, if you run with `--once` you will still get the static tags assets
+as well.
+
 There is a demo at [r.j3ss.co](https://r.j3ss.co).
 
 **Usage:**
