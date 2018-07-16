@@ -77,8 +77,7 @@ func main() {
 		signals := make(chan os.Signal, 0)
 		signal.Notify(signals, os.Interrupt)
 		signal.Notify(signals, syscall.SIGTERM)
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithCancel(ctx)
+		_, cancel := context.WithCancel(ctx)
 		go func() {
 			for sig := range signals {
 				cancel()

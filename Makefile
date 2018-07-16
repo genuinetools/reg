@@ -32,12 +32,12 @@ GOOSARCHES = $(shell cat .goosarch)
 .PHONY: build
 build: $(NAME) ## Builds a dynamic executable or package
 
-$(NAME): $(wildcard *.go) $(wildcard */*.go) VERSION.txt
+$(NAME): generated-assets $(wildcard *.go) $(wildcard */*.go) VERSION.txt
 	@echo "+ $@"
 	$(GO) build -tags "$(BUILDTAGS)" ${GO_LDFLAGS} -o $(NAME) .
 
 .PHONY: static
-static: ## Builds a static executable
+static: generated-assets ## Builds a static executable
 	@echo "+ $@"
 	CGO_ENABLED=0 $(GO) build \
 				-tags "$(BUILDTAGS) static_build" \
@@ -53,10 +53,10 @@ fmt: ## Verifies all files have been `gofmt`ed
 .PHONY: lint
 lint: ## Verifies `golint` passes
 	@echo "+ $@"
-	@golint ./... | grep -v '.pb.go:' | grep -v vendor | tee /dev/stderr
+	@golint ./... | grep -v '.pb.go:' | grep -v vendor | grep -v internal | tee /dev/stderr
 
 .PHONY: test
-test: ## Runs the go tests
+test: generated-assets ## Runs the go tests
 	@echo "+ $@"
 	@$(GO) test -v -tags "$(BUILDTAGS) cgo" $(shell $(GO) list ./... | grep -v vendor)
 
@@ -71,7 +71,7 @@ staticcheck: ## Verifies `staticcheck` passes
 	@staticcheck $(shell $(GO) list ./... | grep -v vendor) | grep -v '.pb.go:' | tee /dev/stderr
 
 .PHONY: cover
-cover: ## Runs go test with coverage
+cover: generated-assets ## Runs go test with coverage
 	@echo "" > coverage.txt
 	@for d in $(shell $(GO) list ./... | grep -v vendor); do \
 		$(GO) test -race -coverprofile=profile.out -covermode=atomic "$$d"; \
@@ -82,7 +82,7 @@ cover: ## Runs go test with coverage
 	done;
 
 .PHONY: install
-install: ## Installs the executable or package
+install: generated-assets ## Installs the executable or package
 	@echo "+ $@"
 	$(GO) install -a -tags "$(BUILDTAGS)" ${GO_LDFLAGS} .
 
@@ -97,7 +97,7 @@ sha256sum $(BUILDDIR)/$(1)/$(2)/$(NAME) > $(BUILDDIR)/$(1)/$(2)/$(NAME).sha256;
 endef
 
 .PHONY: cross
-cross: *.go VERSION.txt ## Builds the cross-compiled binaries, creating a clean directory structure (eg. GOOS/GOARCH/binary)
+cross: generated-assets *.go VERSION.txt ## Builds the cross-compiled binaries, creating a clean directory structure (eg. GOOS/GOARCH/binary)
 	@echo "+ $@"
 	$(foreach GOOSARCH,$(GOOSARCHES), $(call buildpretty,$(subst /,,$(dir $(GOOSARCH))),$(notdir $(GOOSARCH))))
 
@@ -111,7 +111,7 @@ sha256sum $(BUILDDIR)/$(NAME)-$(1)-$(2) > $(BUILDDIR)/$(NAME)-$(1)-$(2).sha256;
 endef
 
 .PHONY: release
-release: *.go VERSION.txt ## Builds the cross-compiled binaries, naming them in such a way for release (eg. binary-GOOS-GOARCH)
+release: generated-assets *.go VERSION.txt ## Builds the cross-compiled binaries, naming them in such a way for release (eg. binary-GOOS-GOARCH)
 	@echo "+ $@"
 	$(foreach GOOSARCH,$(GOOSARCHES), $(call buildrelease,$(subst /,,$(dir $(GOOSARCH))),$(notdir $(GOOSARCH))))
 
@@ -139,11 +139,31 @@ AUTHORS:
 	@$(file >>$@,# For how it is generated, see `make AUTHORS`.)
 	@echo "$(shell git log --format='\n%aN <%aE>' | LC_ALL=C.UTF-8 sort -uf)" >> $@
 
+SERVER_ASSETS_DIR := $(CURDIR)/server
+BINDATA_DIR := $(CURDIR)/internal/binutils
+
+.PHONY: generated-assets
+generated-assets: $(BINDATA_DIR)/templates.go $(BINDATA_DIR)/templates.go
+
+$(BINDATA_DIR):
+	@mkdir -p $@
+
+$(BINDATA_DIR)/templates.go: $(BINDATA_DIR) $(wildcard *.go) $(wildcard server/templates/*)
+	@$(GO) get -u github.com/jteeuwen/go-bindata/... # update go-bindata tool
+	go-bindata -pkg binutils -prefix "$(SERVER_ASSETS_DIR)" -o $@ $(SERVER_ASSETS_DIR)/templates
+	gofmt -s -w $@
+
+$(BINDATA_DIR)/static.go: $(BINDATA_DIR) $(wildcard *.go) $(wildcard server/static/*)
+	@$(GO) get -u github.com/jteeuwen/go-bindata/... # update go-bindata tool
+	go-bindata -pkg binutils -prefix "$(SERVER_ASSETS_DIR)" -o $@ $(SERVER_ASSETS_DIR)/static
+	gofmt -s -w $@
+
 .PHONY: clean
 clean: ## Cleanup any build binaries or packages
 	@echo "+ $@"
 	$(RM) $(NAME)
 	$(RM) -r $(BUILDDIR)
+	$(RM) -r $(BINDATA_DIR)
 	sudo $(RM) -r $(CURDIR)/.certs
 
 # set the graph driver as the current graphdriver if not set
