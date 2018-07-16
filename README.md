@@ -4,7 +4,7 @@
 [![GoDoc](https://img.shields.io/badge/godoc-reference-5272B4.svg?style=for-the-badge)](https://godoc.org/github.com/genuinetools/reg)
 [![Github All Releases](https://img.shields.io/github/downloads/genuinetools/reg/total.svg?style=for-the-badge)](https://github.com/genuinetools/reg/releases)
 
-Docker registry v2 command line client and listing generator with security checks.
+Docker registry v2 command line client and repo listing generator with security checks.
 
  * [Installation](README.md#installation)
       * [Binaries](README.md#binaries)
