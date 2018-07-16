@@ -53,7 +53,7 @@ func (rc *registryController) repositories(staticDir string, generateTagsFiles b
 	rc.l.Lock()
 	defer rc.l.Unlock()
 
-	logrus.Info("fetching catalog")
+	logrus.Infof("fetching catalog for %s...", rc.reg.Domain)
 
 	result := AnalysisResult{
 		RegistryDomain: rc.reg.Domain,
@@ -62,7 +62,7 @@ func (rc *registryController) repositories(staticDir string, generateTagsFiles b
 
 	repoList, err := rc.reg.Catalog("")
 	if err != nil {
-		return fmt.Errorf("getting catalog failed: %v", err)
+		return fmt.Errorf("getting catalog for %s failed: %v", rc.reg.Domain, err)
 	}
 
 	for _, repo := range repoList {
@@ -75,18 +75,22 @@ func (rc *registryController) repositories(staticDir string, generateTagsFiles b
 		result.Repositories = append(result.Repositories, r)
 
 		if generateTagsFiles {
-			// Parse and execute the tags templates.
 			logrus.Infof("generating static tags page for repo %s", repo)
+
+			// Parse and execute the tags templates.
 			b, err := rc.generateTagsTemplate(repo)
 			if err != nil {
 				logrus.Warnf("generating tags tamplate for repo %q failed: %v", repo, err)
 			}
+			// Create the directory for the static tags files.
 			tagsDir := filepath.Join(staticDir, "repo", repo, "tags")
-			if err := os.MkdirAll(tagsDir, 0644); err != nil {
+			if err := os.MkdirAll(tagsDir, 0755); err != nil {
 				return err
 			}
+
+			// Write the tags file.
 			tagsFile := filepath.Join(tagsDir, "index.html")
-			if err := ioutil.WriteFile(tagsFile, b, 0644); err != nil {
+			if err := ioutil.WriteFile(tagsFile, b, 0755); err != nil {
 				logrus.Warnf("writing tags tamplate for repo %s to %sfailed: %v", repo, tagsFile, err)
 			}
 		}
@@ -95,10 +99,13 @@ func (rc *registryController) repositories(staticDir string, generateTagsFiles b
 	// Parse & execute the template.
 	logrus.Info("executing the template repositories")
 
-	path := filepath.Join(staticDir, "index.html")
-	if err := os.MkdirAll(filepath.Dir(path), 0644); err != nil {
+	// Create the static directory.
+	if err := os.MkdirAll(staticDir, 0755); err != nil {
 		return err
 	}
+
+	// Creating the index file.
+	path := filepath.Join(staticDir, "index.html")
 	logrus.Debugf("creating/opening file %s", path)
 	f, err := os.Create(path)
 	if err != nil {
@@ -106,6 +113,7 @@ func (rc *registryController) repositories(staticDir string, generateTagsFiles b
 	}
 	defer f.Close()
 
+	// Execute the template on the index.html file.
 	if err := rc.tmpl.ExecuteTemplate(f, "repositories", result); err != nil {
 		f.Close()
 		return fmt.Errorf("execute template repositories failed: %v", err)
@@ -121,6 +129,7 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 		"method": r.Method,
 	}).Info("fetching tags")
 
+	// Parse the query variables.
 	vars := mux.Vars(r)
 	repo, err := url.QueryUnescape(vars["repo"])
 	if err != nil || repo == "" {
@@ -129,6 +138,7 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Generate the tags template.
 	b, err := rc.generateTagsTemplate(repo)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -142,10 +152,12 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	fmt.Fprint(w, b)
+	// Write the template.
+	fmt.Fprint(w, string(b))
 }
 
 func (rc *registryController) generateTagsTemplate(repo string) ([]byte, error) {
+	// Get the tags from the server.
 	tags, err := rc.reg.Tags(repo)
 	if err != nil {
 		return nil, fmt.Errorf("getting tags for %s failed: %v", repo, err)
@@ -154,7 +166,7 @@ func (rc *registryController) generateTagsTemplate(repo string) ([]byte, error) 
 	// Error out if there are no tags / images
 	// (the above err != nil does not error out when nothing has been found)
 	if len(tags) == 0 {
-		return nil, fmt.Errorf("No tags found for repo: %s", repo)
+		return nil, fmt.Errorf("no tags found for repo: %s", repo)
 	}
 
 	result := AnalysisResult{
@@ -196,6 +208,7 @@ func (rc *registryController) generateTagsTemplate(repo string) ([]byte, error) 
 		result.Repositories = append(result.Repositories, rp)
 	}
 
+	// Execute the template.
 	var buf bytes.Buffer
 	if err := rc.tmpl.ExecuteTemplate(&buf, "tags", result); err != nil {
 		return nil, fmt.Errorf("template rendering failed: %v", err)
@@ -211,6 +224,7 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 		"method": r.Method,
 	}).Info("fetching vulnerabilities")
 
+	// Parse the query variables.
 	vars := mux.Vars(r)
 	repo, err := url.QueryUnescape(vars["repo"])
 	tag := vars["tag"]
@@ -259,6 +273,7 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Execute the template.
 	if err := rc.tmpl.ExecuteTemplate(w, "vulns", result); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"func":   "vulnerabilities",
