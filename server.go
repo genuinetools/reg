@@ -156,9 +156,13 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 	mux.HandleFunc("/repo/{repo}/tags/", rc.tagsHandler)
 	mux.HandleFunc("/repo/{repo}/tag/{tag}", rc.vulnerabilitiesHandler)
 	mux.HandleFunc("/repo/{repo}/tag/{tag}/", rc.vulnerabilitiesHandler)
-	mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns", rc.vulnerabilitiesHandler)
-	mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns/", rc.vulnerabilitiesHandler)
-	mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns.json", rc.vulnerabilitiesHandler)
+
+	// Add the vulns endpoints if we have a client for a clair server.
+	if rc.cl != nil {
+		mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns", rc.vulnerabilitiesHandler)
+		mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns/", rc.vulnerabilitiesHandler)
+		mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns.json", rc.vulnerabilitiesHandler)
+	}
 
 	// Serve the static assets.
 	staticHandler := http.FileServer(http.Dir(staticDir))

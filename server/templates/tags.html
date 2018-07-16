@@ -20,7 +20,7 @@
                 <th>Name</th>
                 <th>Tag</th>
                 <th>Created</th>
-                <th>Vulnerabilities</th>
+                {{if .HasVulns}}<th>Vulnerabilities</th>{{end}}
             </tr>
             {{ range $key, $value := .Repositories }}
             <tr>
@@ -37,11 +37,13 @@
                 <td align="right" nowrap>
                     {{ $value.Created.Format "02 Jan, 2006 15:04:05 UTC" }}
                 </td>
+                {{if .HasVulns}}
                 <td align="right" nowrap>
                     <a href="/repo/{{ $value.Name | urlquery }}/tag/{{ $value.Tag }}/vulns" id="{{ $value.Name }}:{{ $value.Tag }}">
                       <div class="signal"></div>
                     </a>
                 </td>
+                {{end}}
             </tr>
             {{ end }}
         </table>
@@ -52,6 +54,7 @@
         <p>Last Updated: {{ .LastUpdated }}</p>
     </div><!--/.footer-->
     <script src="/static/js/scripts.js"></script>
+    {{if .HasVulns}}
     <script type="text/javascript">
       var ajaxCalls = [
         {{ range $key, $value := .Repositories }}
@@ -64,6 +67,7 @@
         });
       };
     </script>
+    {{end}}
     <script>
 (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),

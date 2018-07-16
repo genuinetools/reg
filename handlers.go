@@ -47,6 +47,7 @@ type AnalysisResult struct {
 	RegistryDomain string       `json:"registryDomain"`
 	Name           string       `json:"name"`
 	LastUpdated    string       `json:"lastUpdated"`
+	HasVulns       bool         `json:"hasVulns"`
 }
 
 func (rc *registryController) repositories(staticDir string, generateTagsFiles bool) error {
@@ -65,6 +66,7 @@ func (rc *registryController) repositories(staticDir string, generateTagsFiles b
 		return fmt.Errorf("getting catalog for %s failed: %v", rc.reg.Domain, err)
 	}
 
+	var wg sync.WaitGroup
 	for _, repo := range repoList {
 		repoURI := fmt.Sprintf("%s/%s", rc.reg.Domain, repo)
 		r := Repository{
@@ -74,28 +76,36 @@ func (rc *registryController) repositories(staticDir string, generateTagsFiles b
 
 		result.Repositories = append(result.Repositories, r)
 
-		if generateTagsFiles {
-			// TODO(jessfraz): make this a go routine with a wait group.
+		if !generateTagsFiles {
+			// Continue early because we don't need to generate the tags pages.
+			continue
+		}
+
+		// Generate the tags pages in a go routine.
+		wg.Add(1)
+		go func(repo string) {
+			defer wg.Done()
 			logrus.Infof("generating static tags page for repo %s", repo)
 
 			// Parse and execute the tags templates.
 			b, err := rc.generateTagsTemplate(repo)
 			if err != nil {
-				logrus.Warnf("generating tags tamplate for repo %q failed: %v", repo, err)
+				logrus.Warnf("generating tags template for repo %q failed: %v", repo, err)
 			}
 			// Create the directory for the static tags files.
 			tagsDir := filepath.Join(staticDir, "repo", repo, "tags")
 			if err := os.MkdirAll(tagsDir, 0755); err != nil {
-				return err
+				logrus.Warn(err)
 			}
 
 			// Write the tags file.
 			tagsFile := filepath.Join(tagsDir, "index.html")
 			if err := ioutil.WriteFile(tagsFile, b, 0755); err != nil {
-				logrus.Warnf("writing tags tamplate for repo %s to %sfailed: %v", repo, tagsFile, err)
+				logrus.Warnf("writing tags template for repo %s to %sfailed: %v", repo, tagsFile, err)
 			}
-		}
+		}(repo)
 	}
+	wg.Wait()
 
 	// Parse & execute the template.
 	logrus.Info("executing the template repositories")
@@ -174,6 +184,7 @@ func (rc *registryController) generateTagsTemplate(repo string) ([]byte, error) 
 		RegistryDomain: rc.reg.Domain,
 		LastUpdated:    time.Now().Local().Format(time.RFC1123),
 		Name:           repo,
+		HasVulns:       rc.cl != nil, // if we have a clair client we can return vulns
 	}
 
 	for _, tag := range tags {
@@ -242,19 +253,15 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	result := clair.VulnerabilityReport{}
-
-	if rc.cl != nil {
-		result, err = rc.cl.Vulnerabilities(rc.reg, repo, tag)
-		if err != nil {
-			logrus.WithFields(logrus.Fields{
-				"func":   "vulnerabilities",
-				"URL":    r.URL,
-				"method": r.Method,
-			}).Errorf("vulnerability scanning for %s:%s failed: %v", repo, tag, err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+	result, err := rc.cl.Vulnerabilities(rc.reg, repo, tag)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"func":   "vulnerabilities",
+			"URL":    r.URL,
+			"method": r.Method,
+		}).Errorf("vulnerability scanning for %s:%s failed: %v", repo, tag, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	if strings.HasSuffix(r.URL.String(), ".json") {
