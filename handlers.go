@@ -21,10 +21,11 @@ import (
 )
 
 type registryController struct {
-	reg  *registry.Registry
-	cl   *clair.Clair
-	l    sync.Mutex
-	tmpl *template.Template
+	reg      *registry.Registry
+	cl       *clair.Clair
+	interval time.Duration
+	l        sync.Mutex
+	tmpl     *template.Template
 }
 
 type v1Compatibility struct {
@@ -48,6 +49,7 @@ type AnalysisResult struct {
 	Name           string       `json:"name"`
 	LastUpdated    string       `json:"lastUpdated"`
 	HasVulns       bool         `json:"hasVulns"`
+	UpdateInterval time.Duration
 }
 
 func (rc *registryController) repositories(staticDir string, generateTagsFiles bool) error {
@@ -59,6 +61,7 @@ func (rc *registryController) repositories(staticDir string, generateTagsFiles b
 	result := AnalysisResult{
 		RegistryDomain: rc.reg.Domain,
 		LastUpdated:    time.Now().Local().Format(time.RFC1123),
+		UpdateInterval: rc.interval,
 	}
 
 	repoList, err := rc.reg.Catalog("")
@@ -185,6 +188,7 @@ func (rc *registryController) generateTagsTemplate(repo string, hasVulns bool) (
 	result := AnalysisResult{
 		RegistryDomain: rc.reg.Domain,
 		LastUpdated:    time.Now().Local().Format(time.RFC1123),
+		UpdateInterval: rc.interval,
 		Name:           repo,
 		HasVulns:       hasVulns, // if we have a clair client we can return vulns
 	}

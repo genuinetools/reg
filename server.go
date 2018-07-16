@@ -142,7 +142,8 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 		return nil
 	}
 
-	ticker := time.NewTicker(cmd.interval)
+	rc.interval = cmd.interval
+	ticker := time.NewTicker(rc.interval)
 	go func() {
 		// Create more indexes every X minutes based off interval.
 		for range ticker.C {
