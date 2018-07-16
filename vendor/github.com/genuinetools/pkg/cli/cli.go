@@ -47,7 +47,8 @@ type Program struct {
 	After func(context.Context) error
 
 	// Action is the function to execute when no subcommands are specified.
-	Action func(context.Context) error
+	// It gives the user back the arguments after the flags have been parsed.
+	Action func(context.Context, []string) error
 }
 
 // Command defines the interface for each command in a program.
@@ -83,70 +84,69 @@ func (p *Program) Run() {
 	ctx := context.WithValue(context.Background(), GitCommitKey, p.GitCommit)
 	ctx = context.WithValue(ctx, VersionKey, p.Version)
 
+	// Pass the os.Args through so we can more easily unit test.
+	printUsage, err := p.run(ctx, os.Args)
+	if err == nil && !printUsage {
+		return
+	}
+
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+	}
+	if printUsage {
+		if err != nil {
+			// Print an extra new line to seperate from the usage output.
+			fmt.Fprintln(os.Stderr)
+		}
+		p.usage(ctx)
+	}
+	os.Exit(1)
+}
+
+func (p *Program) run(ctx context.Context, args []string) (bool, error) {
 	// Append the version command to the list of commands by default.
 	p.Commands = append(p.Commands, &versionCommand{})
 
 	// TODO(jessfraz): Find a better way to tell that they passed -h through as a flag.
-	if len(os.Args) > 1 &&
-		(strings.Contains(strings.ToLower(os.Args[1]), "help") ||
-			strings.ToLower(os.Args[1]) == "-h") {
-		p.usage(ctx)
-		os.Exit(1)
+	if len(args) > 1 &&
+		(strings.Contains(strings.ToLower(args[1]), "help") ||
+			strings.ToLower(args[1]) == "-h") ||
+		args == nil || len(args) < 1 {
+		return true, nil
 	}
 
-	// Set the default action to print the usage if it is undefined.
-	if p.Action == nil {
-		p.Action = p.usage
+	// If we do not have an action set and we have no commands, print the usage
+	// and exit.
+	if p.Action == nil && len(p.Commands) < 2 {
+		return true, nil
 	}
 
-	// If we are not running commands then automatically run the main action of
-	// the program instead.
-	if len(p.Commands) <= 1 {
-		// Set the default flagset if our flagset is undefined.
-		if p.FlagSet == nil {
-			p.FlagSet = defaultFlagSet(p.Name)
-		}
-
-		// Override the usage text to something nicer.
-		p.FlagSet.Usage = func() {
-			p.usage(ctx)
-		}
-
-		// Parse the flags the user gave us.
-		if err := p.FlagSet.Parse(os.Args[1:]); err != nil {
-			p.usage(ctx)
-			os.Exit(1)
-		}
-
-		// Run the main action _if_ we are not in the loop for the version command
-		// that is added by default.
-		if p.FlagSet.NArg() < 1 || p.FlagSet.Arg(0) != "version" {
-			if p.Before != nil {
-				if err := p.Before(ctx); err != nil {
-					fmt.Fprintf(os.Stderr, "%v\n", err)
-					os.Exit(1)
-				}
-			}
-
-			if err := p.Action(ctx); err != nil {
-				fmt.Fprintf(os.Stderr, "%v\n", err)
-				os.Exit(1)
-			}
-
-			// Done.
-			return
-		}
+	// Check if the command exists.
+	var commandExists bool
+	if len(args) > 1 && in(args[1], p.Commands) {
+		commandExists = true
 	}
 
-	// If we have commands but the user did not specify one, return the usage.
-	if len(p.Commands) > 1 && len(os.Args) < 2 {
-		p.usage(ctx)
-		os.Exit(1)
+	// If we are not running a commands we know, then automatically
+	// run the main action of the program instead.
+	// Also enter this loop if we weren't passed any arguments.
+	if p.Action != nil &&
+		(len(args) < 2 || !commandExists) {
+		return p.runAction(ctx, args)
+	}
+
+	// Return early if we didn't enter the single action logic and
+	// the command does not exist or we were passed no commands.
+	if len(args) < 2 {
+		return true, nil
+	}
+	if !commandExists {
+		return true, fmt.Errorf("%s: no such command", args[1])
 	}
 
 	// Iterate over the commands in the program.
 	for _, command := range p.Commands {
-		if name := command.Name(); os.Args[1] == name {
+		if args[1] == command.Name() {
 			// Set the default flagset if our flagset is undefined.
 			if p.FlagSet == nil {
 				p.FlagSet = defaultFlagSet(p.Name)
@@ -159,47 +159,81 @@ func (p *Program) Run() {
 			p.resetCommandUsage(command)
 
 			// Parse the flags the user gave us.
-			if err := p.FlagSet.Parse(os.Args[2:]); err != nil {
-				p.FlagSet.Usage()
-				os.Exit(1)
+			if err := p.FlagSet.Parse(args[2:]); err != nil {
+				return false, err
 			}
 
 			if p.Before != nil {
 				if err := p.Before(ctx); err != nil {
-					fmt.Fprintf(os.Stderr, "%v\n", err)
-					os.Exit(1)
+					return false, err
 				}
 			}
 
 			// Run the command with the context and post-flag-processing args.
 			if err := command.Run(ctx, p.FlagSet.Args()); err != nil {
-				fmt.Fprintf(os.Stderr, "%v\n", err)
-
 				if p.After != nil {
-					if err := p.After(ctx); err != nil {
-						fmt.Fprintf(os.Stderr, "%v\n", err)
-					}
+					p.After(ctx)
 				}
 
-				os.Exit(1)
+				return false, err
 			}
 
 			// Run the after function.
 			if p.After != nil {
 				if err := p.After(ctx); err != nil {
-					fmt.Fprintf(os.Stderr, "%v\n", err)
-					os.Exit(1)
+					return false, err
 				}
 			}
-
-			// Done.
-			return
 		}
 	}
 
-	fmt.Fprintf(os.Stderr, "%s: no such command\n\n", os.Args[1])
-	p.usage(ctx)
-	os.Exit(1)
+	// Done.
+	return false, nil
+}
+
+func (p *Program) runAction(ctx context.Context, args []string) (bool, error) {
+	// Set the default flagset if our flagset is undefined.
+	if p.FlagSet == nil {
+		p.FlagSet = defaultFlagSet(p.Name)
+	}
+
+	// Override the usage text to something nicer.
+	p.FlagSet.Usage = func() {
+		p.usage(ctx)
+	}
+
+	// Parse the flags the user gave us.
+	if err := p.FlagSet.Parse(args[1:]); err != nil {
+		return true, nil
+	}
+
+	// Run the main action _if_ we are not in the loop for the version command
+	// that is added by default.
+	if p.Before != nil {
+		if err := p.Before(ctx); err != nil {
+			return false, err
+		}
+	}
+
+	// Run the action with the context and post-flag-processing args.
+	if err := p.Action(ctx, p.FlagSet.Args()); err != nil {
+		// Run the after function.
+		if p.After != nil {
+			p.After(ctx)
+		}
+
+		return false, err
+	}
+
+	// Run the after function.
+	if p.After != nil {
+		if err := p.After(ctx); err != nil {
+			return false, err
+		}
+	}
+
+	// Done.
+	return false, nil
 }
 
 func (p *Program) usage(ctx context.Context) error {
@@ -272,4 +306,13 @@ func resetFlagUsage(fs *flag.FlagSet) {
 func defaultFlagSet(n string) *flag.FlagSet {
 	// Create the default flagset with a debug flag.
 	return flag.NewFlagSet(n, flag.ExitOnError)
+}
+
+func in(a string, c []Command) bool {
+	for _, b := range c {
+		if b.Name() == a {
+			return true
+		}
+	}
+	return false
 }

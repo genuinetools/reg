@@ -99,6 +99,20 @@ alpha
 hardened
 latest
 stable
+
+# or for an offical image
+$ reg tags debian
+6
+6.0
+6.0.10
+6.0.8
+6.0.9
+7
+7-slim
+7.10
+7.11
+7.11-slim
+...
 ```
 
 ### Get a Manifest

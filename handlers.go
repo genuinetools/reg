@@ -59,6 +59,7 @@ func (rc *registryController) repositories(staticDir string, generateTagsFiles b
 	result := AnalysisResult{
 		RegistryDomain: rc.reg.Domain,
 		LastUpdated:    time.Now().Local().Format(time.RFC1123),
+		HasVulns:       rc.cl != nil,
 	}
 
 	repoList, err := rc.reg.Catalog("")

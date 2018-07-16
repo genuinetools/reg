@@ -65,7 +65,7 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 	}
 
 	// Create a clair client if the user passed in a server address.
-	if len(cmd.clairServer) < 1 {
+	if len(cmd.clairServer) > 0 {
 		rc.cl, err = clair.New(cmd.clairServer, clair.Opt{
 			Insecure: insecure,
 			Debug:    debug,
@@ -74,6 +74,8 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 		if err != nil {
 			return fmt.Errorf("creation of clair client at %s failed: %v", cmd.clairServer, err)
 		}
+	} else {
+		rc.cl = nil
 	}
 
 	// Get the path to the static directory.
@@ -159,6 +161,7 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 
 	// Add the vulns endpoints if we have a client for a clair server.
 	if rc.cl != nil {
+		logrus.Infof("adding clair handlers...")
 		mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns", rc.vulnerabilitiesHandler)
 		mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns/", rc.vulnerabilitiesHandler)
 		mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns.json", rc.vulnerabilitiesHandler)
