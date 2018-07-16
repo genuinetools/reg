@@ -272,10 +272,16 @@ func (p *Program) resetCommandUsage(command Command) {
 	}
 }
 
+type mflag struct {
+	name     string
+	defValue string
+}
+
 func resetFlagUsage(fs *flag.FlagSet) {
 	var (
 		hasFlags   bool
 		flagBlock  bytes.Buffer
+		flagMap    = map[string]mflag{}
 		flagWriter = tabwriter.NewWriter(&flagBlock, 0, 4, 2, ' ', 0)
 	)
 
@@ -291,12 +297,39 @@ func resetFlagUsage(fs *flag.FlagSet) {
 
 		// Add a double dash if the name is only one character long.
 		name := f.Name
-		if len(f.Name) > 1 {
+		if len(name) > 1 {
 			name = "-" + name
 		}
 
-		fmt.Fprintf(flagWriter, "\t-%s\t%s (default: %s)\n", f.Name, f.Usage, defValue)
+		// Try and find duplicates (or the shortcode flags and combine them.
+		// Like: -, --password
+		v, ok := flagMap[f.Usage]
+		if !ok {
+			flagMap[f.Usage] = mflag{
+				name:     name,
+				defValue: defValue,
+			}
+
+			// Return here.
+			return
+		}
+
+		if len(v.name) <= 2 {
+			// We already had the shortcode, let's append.
+			v.name = fmt.Sprintf("%s, -%s", v.name, name)
+		} else {
+			v.name = fmt.Sprintf("%s, -%s", name, v.name)
+		}
+
+		flagMap[f.Usage] = mflag{
+			name:     v.name,
+			defValue: defValue,
+		}
 	})
+
+	for desc, fm := range flagMap {
+		fmt.Fprintf(flagWriter, "\t-%s\t%s (default: %s)\n", fm.name, desc, fm.defValue)
+	}
 
 	flagWriter.Flush()
 
