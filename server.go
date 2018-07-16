@@ -127,7 +127,7 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 
 	// Create the initial index.
 	logrus.Info("creating initial static index")
-	if err := rc.repositories(staticDir); err != nil {
+	if err := rc.repositories(staticDir, true); err != nil {
 		return fmt.Errorf("creating index failed: %v", err)
 	}
 
@@ -141,7 +141,7 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 		// Create more indexes every X minutes based off interval.
 		for range ticker.C {
 			logrus.Info("creating timer based static index")
-			if err := rc.repositories(staticDir); err != nil {
+			if err := rc.repositories(staticDir, false); err != nil {
 				logrus.Warnf("creating static index failed: %v", err)
 			}
 		}
@@ -152,7 +152,6 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 	mux.UseEncodedPath()
 
 	// Static files handler.
-	staticHandler := http.FileServer(http.Dir(staticDir))
 	mux.HandleFunc("/repo/{repo}/tags", rc.tagsHandler)
 	mux.HandleFunc("/repo/{repo}/tags/", rc.tagsHandler)
 	mux.HandleFunc("/repo/{repo}/tag/{tag}", rc.vulnerabilitiesHandler)
@@ -160,6 +159,9 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 	mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns", rc.vulnerabilitiesHandler)
 	mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns/", rc.vulnerabilitiesHandler)
 	mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns.json", rc.vulnerabilitiesHandler)
+
+	// Serve the static assets.
+	staticHandler := http.FileServer(http.Dir(staticDir))
 	mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", staticHandler))
 	mux.Handle("/", staticHandler)
 
