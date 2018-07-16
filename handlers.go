@@ -59,7 +59,6 @@ func (rc *registryController) repositories(staticDir string, generateTagsFiles b
 	result := AnalysisResult{
 		RegistryDomain: rc.reg.Domain,
 		LastUpdated:    time.Now().Local().Format(time.RFC1123),
-		HasVulns:       rc.cl != nil,
 	}
 
 	repoList, err := rc.reg.Catalog("")
@@ -89,7 +88,9 @@ func (rc *registryController) repositories(staticDir string, generateTagsFiles b
 			logrus.Infof("generating static tags page for repo %s", repo)
 
 			// Parse and execute the tags templates.
-			b, err := rc.generateTagsTemplate(repo)
+			// If we are generating the tags files, disable vulnerability links in the
+			// templates since they won't go anywhere without a server side component.
+			b, err := rc.generateTagsTemplate(repo, false)
 			if err != nil {
 				logrus.Warnf("generating tags template for repo %q failed: %v", repo, err)
 			}
@@ -151,7 +152,7 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	// Generate the tags template.
-	b, err := rc.generateTagsTemplate(repo)
+	b, err := rc.generateTagsTemplate(repo, rc.cl != nil)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"func":   "tags",
@@ -168,7 +169,7 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 	fmt.Fprint(w, string(b))
 }
 
-func (rc *registryController) generateTagsTemplate(repo string) ([]byte, error) {
+func (rc *registryController) generateTagsTemplate(repo string, hasVulns bool) ([]byte, error) {
 	// Get the tags from the server.
 	tags, err := rc.reg.Tags(repo)
 	if err != nil {
@@ -185,7 +186,7 @@ func (rc *registryController) generateTagsTemplate(repo string) ([]byte, error) 
 		RegistryDomain: rc.reg.Domain,
 		LastUpdated:    time.Now().Local().Format(time.RFC1123),
 		Name:           repo,
-		HasVulns:       rc.cl != nil, // if we have a clair client we can return vulns
+		HasVulns:       hasVulns, // if we have a clair client we can return vulns
 	}
 
 	for _, tag := range tags {
