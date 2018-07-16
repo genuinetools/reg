@@ -224,6 +224,7 @@ Flags:
   -u, --username       username for the registry (default: <none>)
   --cert               path to ssl cert (default: <none>)
   --clair              url to clair instance (default: <none>)
+  --asset-path         Path to assets and templates (default: <none>)
   -d                   enable debug logging (default: false)
   -k, --insecure       do not verify tls certificates (default: false)
   -f, --force-non-ssl  force allow use of non-ssl (default: false)

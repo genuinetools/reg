@@ -36,6 +36,7 @@ func (cmd *serverCommand) Register(fs *flag.FlagSet) {
 	fs.StringVar(&cmd.cert, "cert", "", "path to ssl cert")
 	fs.StringVar(&cmd.key, "key", "", "path to ssl key")
 	fs.StringVar(&cmd.port, "port", "8080", "port for server to run on")
+	fs.StringVar(&cmd.assetPath, "asset-path", "", "Path to assets and templates")
 
 	fs.BoolVar(&cmd.once, "once", false, "generate an output once and then exit")
 }
@@ -47,9 +48,10 @@ type serverCommand struct {
 
 	once bool
 
-	cert string
-	key  string
-	port string
+	cert      string
+	key       string
+	port      string
+	assetPath string
 }
 
 func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
@@ -77,15 +79,17 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 	} else {
 		rc.cl = nil
 	}
-
-	// Get the path to the static directory.
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
+	// Get the path to the asset directory.
+	assetDir := cmd.assetPath
+	if len(cmd.assetPath) <= 0 {
+		assetDir, err = os.Getwd()
+		if err != nil {
+			return err
+		}
 	}
-	staticDir := filepath.Join(wd, "static")
-	templateDir := filepath.Join(staticDir, "../templates")
 
+	staticDir := filepath.Join(assetDir, "static")
+	templateDir := filepath.Join(assetDir, "templates")
 	// Make sure all the paths exist.
 	tmplPaths := []string{
 		staticDir,
