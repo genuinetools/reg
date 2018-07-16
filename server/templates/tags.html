@@ -37,7 +37,7 @@
                 <td align="right" nowrap>
                     {{ $value.Created.Format "02 Jan, 2006 15:04:05 UTC" }}
                 </td>
-                {{if .HasVulns}}
+                {{if $.HasVulns}}
                 <td align="right" nowrap>
                     <a href="/repo/{{ $value.Name | urlquery }}/tag/{{ $value.Tag }}/vulns" id="{{ $value.Name }}:{{ $value.Tag }}">
                       <div class="signal"></div>
@@ -50,7 +50,8 @@
     </div>
 
     <div class="footer">
-        <a href="https://twitter.com/jessfraz">@jessfraz</a>
+        <p>Made with <code><3</code> by <a href="https://github.com/jessfraz">@jessfraz</a></p>
+        <p>Checkout the source code at: <a href="https://github.com/genuinetools/reg">github.com/genuinetools/reg</a></p>
         <p>Last Updated: {{ .LastUpdated }}</p>
     </div><!--/.footer-->
     <script src="/static/js/scripts.js"></script>
