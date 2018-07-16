@@ -43,17 +43,13 @@ Usage: reg <command>
 
 Flags:
 
-  -d              enable debug logging (default: false)
-  -f              force allow use of non-ssl (default: false)
-  -force-non-ssl  force allow use of non-ssl (default: false)
-  -insecure       do not verify tls certificates (default: false)
-  -k              do not verify tls certificates (default: false)
-  -p              password for the registry (default: <none>)
-  -password       password for the registry (default: <none>)
-  -skip-ping      skip pinging the registry while establishing connection (default: false)
-  -timeout        timeout for HTTP requests (default: 1m0s)
-  -u              username for the registry (default: <none>)
-  -username       username for the registry (default: <none>)
+  -d                   enable debug logging (default: false)
+  -f, --force-non-ssl  force allow use of non-ssl (default: false)
+  -k, --insecure       do not verify tls certificates (default: false)
+  -p, --password       password for the registry (default: <none>)
+  --skip-ping          skip pinging the registry while establishing connection (default: false)
+  --timeout            timeout for HTTP requests (default: 1m0s)
+  -u, --username       username for the registry (default: <none>)
 
 Commands:
 
@@ -225,25 +221,20 @@ Run a static UI server for a registry.
 
 Flags:
 
-  -cert           path to ssl cert (default: <none>)
-  -clair          url to clair instance (default: <none>)
-  -d              enable debug logging (default: false)
-  -f              force allow use of non-ssl (default: false)
-  -force-non-ssl  force allow use of non-ssl (default: false)
-  -insecure       do not verify tls certificates (default: false)
-  -interval       interval to generate new index.html's at (default: 1h0m0s)
-  -k              do not verify tls certificates (default: false)
-  -key            path to ssl key (default: <none>)
-  -once           generate an output once and then exit (default: false)
-  -p              password for the registry (default: <none>)
-  -password       password for the registry (default: <none>)
-  -port           port for server to run on (default: 8080)
-  -r              URL to the private registry (ex. r.j3ss.co) (default: <none>)
-  -registry       URL to the private registry (ex. r.j3ss.co) (default: <none>)
-  -skip-ping      skip pinging the registry while establishing connection (default: false)
-  -timeout        timeout for HTTP requests (default: 1m0s)
-  -u              username for the registry (default: <none>)
-  -username       username for the registry (default: <none>)
+  --interval           interval to generate new index.html's at (default: 1h0m0s)
+  -p, --password       password for the registry (default: <none>)
+  --skip-ping          skip pinging the registry while establishing connection (default: false)
+  -u, --username       username for the registry (default: <none>)
+  --cert               path to ssl cert (default: <none>)
+  --clair              url to clair instance (default: <none>)
+  -d                   enable debug logging (default: false)
+  -k, --insecure       do not verify tls certificates (default: false)
+  -f, --force-non-ssl  force allow use of non-ssl (default: false)
+  --once               generate an output once and then exit (default: false)
+  --port               port for server to run on (default: 8080)
+  --key                path to ssl key (default: <none>)
+  -r, --registry       URL to the private registry (ex. r.j3ss.co) (default: <none>)
+  --timeout            timeout for HTTP requests (default: 1m0s)
 ```
 
 **Screenshots:**
