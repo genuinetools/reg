@@ -25,14 +25,14 @@
             {{ range $key, $value := .Repositories }}
             <tr>
                 <td valign="left" nowrap>
-                    <a href="/repo/{{ $value.Name | urlquery }}/tag/{{ $value.Tag }}/vulns">
+                    {{if $.HasVulns}}<a href="/repo/{{ $value.Name | urlquery }}/tag/{{ $value.Tag }}/vulns">{{end}}
                     {{ $value.Name }}
-                    </a>
+                    {{if $.HasVulns}}</a>{{end}}
                 </td>
                 <td align="right" nowrap>
-                    <a href="/repo/{{ $value.Name | urlquery }}/tag/{{ $value.Tag }}/vulns">
+                    {{if $.HasVulns}}<a href="/repo/{{ $value.Name | urlquery }}/tag/{{ $value.Tag }}/vulns">{{end}}
                     {{ $value.Tag }}
-                    </a>
+                    {{if $.HasVulns}}</a>{{end}}
                 </td>
                 <td align="right" nowrap>
                     {{ $value.Created.Format "02 Jan, 2006 15:04:05 UTC" }}

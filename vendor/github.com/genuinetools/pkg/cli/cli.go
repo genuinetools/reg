@@ -289,6 +289,12 @@ func resetFlagUsage(fs *flag.FlagSet) {
 			defValue = "<none>"
 		}
 
+		// Add a double dash if the name is only one character long.
+		name := f.Name
+		if len(f.Name) > 1 {
+			name = "-" + name
+		}
+
 		fmt.Fprintf(flagWriter, "\t-%s\t%s (default: %s)\n", f.Name, f.Usage, defValue)
 	})
 
