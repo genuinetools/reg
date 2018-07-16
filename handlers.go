@@ -75,6 +75,7 @@ func (rc *registryController) repositories(staticDir string, generateTagsFiles b
 		result.Repositories = append(result.Repositories, r)
 
 		if generateTagsFiles {
+			// TODO(jessfraz): make this a go routine with a wait group.
 			logrus.Infof("generating static tags page for repo %s", repo)
 
 			// Parse and execute the tags templates.
