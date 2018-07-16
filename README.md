@@ -4,7 +4,7 @@
 [![GoDoc](https://img.shields.io/badge/godoc-reference-5272B4.svg?style=for-the-badge)](https://godoc.org/github.com/genuinetools/reg)
 [![Github All Releases](https://img.shields.io/github/downloads/genuinetools/reg/total.svg?style=for-the-badge)](https://github.com/genuinetools/reg/releases)
 
-Docker registry v2 command line client.
+Docker registry v2 command line client and listing generator with security checks.
 
  * [Installation](README.md#installation)
       * [Binaries](README.md#binaries)
@@ -194,20 +194,17 @@ Medium: 3
 High: 1
 ```
 
-### Running a Static UI Server for a Registry
+### Generating Static Website for a Registry
 
-The tool comes with a server which runs a static UI for a registry.
+`reg` bundles HTTP server that periodically generates static website
+with list of registry images and serves it to the web.
+
 It will run vulnerability scanning if you
 have a [CoreOS Clair](https://github.com/coreos/clair) server set up
 and pass the url with the `--clair` flag.
 
-The server will generate the static assets and you can exit after with the
-`--once` flag. By default it will run in a daemon mode and generate the
-`index.html` and serve it as a static asset but the tags pages will be loaded
-dynamically. This is so that vulnerability scanning can be done on the fly.
-
-_However_, if you run with `--once` you will still get the static tags assets
-as well.
+It is possible to run `reg server` just as one time static generator.
+`--once` flag makes `server` exit after it builds HTML listing.
 
 There is a demo at [r.j3ss.co](https://r.j3ss.co).
 
