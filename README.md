@@ -196,15 +196,15 @@ High: 1
 
 ### Generating Static Website for a Registry
 
-`reg` bundles HTTP server that periodically generates static website
-with list of registry images and serves it to the web.
+`reg` bundles a HTTP server that periodically generates a static website
+with a list of registry images and serves it to the web.
 
 It will run vulnerability scanning if you
 have a [CoreOS Clair](https://github.com/coreos/clair) server set up
 and pass the url with the `--clair` flag.
 
-It is possible to run `reg server` just as one time static generator.
-`--once` flag makes `server` exit after it builds HTML listing.
+It is possible to run `reg server` just as a one time static generator.
+`--once` flag makes the `server` command exit after it builds the HTML listing.
 
 There is a demo at [r.j3ss.co](https://r.j3ss.co).
 
