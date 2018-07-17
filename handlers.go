@@ -21,11 +21,12 @@ import (
 )
 
 type registryController struct {
-	reg      *registry.Registry
-	cl       *clair.Clair
-	interval time.Duration
-	l        sync.Mutex
-	tmpl     *template.Template
+	reg          *registry.Registry
+	cl           *clair.Clair
+	interval     time.Duration
+	l            sync.Mutex
+	tmpl         *template.Template
+	generateOnly bool
 }
 
 type v1Compatibility struct {
@@ -52,7 +53,7 @@ type AnalysisResult struct {
 	UpdateInterval time.Duration
 }
 
-func (rc *registryController) repositories(staticDir string, generateTagsFiles bool) error {
+func (rc *registryController) repositories(staticDir string) error {
 	rc.l.Lock()
 	defer rc.l.Unlock()
 
@@ -79,7 +80,7 @@ func (rc *registryController) repositories(staticDir string, generateTagsFiles b
 
 		result.Repositories = append(result.Repositories, r)
 
-		if !generateTagsFiles {
+		if !rc.generateOnly {
 			// Continue early because we don't need to generate the tags pages.
 			continue
 		}

@@ -38,7 +38,7 @@ func (cmd *serverCommand) Register(fs *flag.FlagSet) {
 	fs.StringVar(&cmd.port, "port", "8080", "port for server to run on")
 	fs.StringVar(&cmd.assetPath, "asset-path", "", "Path to assets and templates")
 
-	fs.BoolVar(&cmd.once, "once", false, "generate an output once and then exit")
+	fs.BoolVar(&cmd.generateAndExit, "once", false, "generate the templates once and then exit")
 }
 
 type serverCommand struct {
@@ -46,7 +46,7 @@ type serverCommand struct {
 	registryServer string
 	clairServer    string
 
-	once bool
+	generateAndExit bool
 
 	cert      string
 	key       string
@@ -63,7 +63,8 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 
 	// Create the registry controller for the handlers.
 	rc := registryController{
-		reg: r,
+		reg:          r,
+		generateOnly: cmd.generateAndExit,
 	}
 
 	// Create a clair client if the user passed in a server address.
@@ -133,11 +134,11 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 
 	// Create the initial index.
 	logrus.Info("creating initial static index")
-	if err := rc.repositories(staticDir, true); err != nil {
+	if err := rc.repositories(staticDir); err != nil {
 		return fmt.Errorf("creating index failed: %v", err)
 	}
 
-	if cmd.once {
+	if cmd.generateAndExit {
 		logrus.Info("output generated, exiting...")
 		return nil
 	}
@@ -148,7 +149,7 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 		// Create more indexes every X minutes based off interval.
 		for range ticker.C {
 			logrus.Info("creating timer based static index")
-			if err := rc.repositories(staticDir, false); err != nil {
+			if err := rc.repositories(staticDir); err != nil {
 				logrus.Warnf("creating static index failed: %v", err)
 			}
 		}
