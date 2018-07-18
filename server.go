@@ -35,6 +35,7 @@ func (cmd *serverCommand) Register(fs *flag.FlagSet) {
 
 	fs.StringVar(&cmd.cert, "cert", "", "path to ssl cert")
 	fs.StringVar(&cmd.key, "key", "", "path to ssl key")
+	fs.StringVar(&cmd.listenAddress, "listen-address", "", "address to listen on")
 	fs.StringVar(&cmd.port, "port", "8080", "port for server to run on")
 	fs.StringVar(&cmd.assetPath, "asset-path", "", "Path to assets and templates")
 
@@ -48,10 +49,11 @@ type serverCommand struct {
 
 	generateAndExit bool
 
-	cert      string
-	key       string
-	port      string
-	assetPath string
+	cert          string
+	key           string
+	listenAddress string
+	port          string
+	assetPath     string
 }
 
 func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
@@ -180,7 +182,7 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 
 	// Set up the server.
 	server := &http.Server{
-		Addr:    ":" + cmd.port,
+		Addr:    cmd.listenAddress + ":" + cmd.port,
 		Handler: mux,
 	}
 	logrus.Infof("Starting server on port %q", cmd.port)

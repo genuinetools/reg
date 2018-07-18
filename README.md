@@ -219,6 +219,7 @@ Run a static UI server for a registry.
 Flags:
 
   -u, --username       username for the registry (default: <none>)
+  --listen-address     address to listen on (default: <none>)
   --asset-path         Path to assets and templates (default: <none>)
   -f, --force-non-ssl  force allow use of non-ssl (default: false)
   --once               generate the templates once and then exit (default: false)
