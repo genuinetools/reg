@@ -13,11 +13,14 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"strconv"
+	"math"
 
 	"github.com/genuinetools/reg/clair"
 	"github.com/genuinetools/reg/registry"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
+	"github.com/knopka/go-pagination-bootstrap"
 )
 
 type registryController struct {
@@ -94,7 +97,7 @@ func (rc *registryController) repositories(staticDir string) error {
 			// Parse and execute the tags templates.
 			// If we are generating the tags files, disable vulnerability links in the
 			// templates since they won't go anywhere without a server side component.
-			b, err := rc.generateTagsTemplate(repo, false)
+			b, err := rc.generateTagsTemplate(repo, false, nil)
 			if err != nil {
 				logrus.Warnf("generating tags template for repo %q failed: %v", repo, err)
 			}
@@ -154,9 +157,12 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 		fmt.Fprint(w, "Empty repo")
 		return
 	}
+	
+	// Get info from http request and pass it to generateTagsTemplate
+	u:= r.URL	
 
 	// Generate the tags template.
-	b, err := rc.generateTagsTemplate(repo, rc.cl != nil)
+	b, err := rc.generateTagsTemplate(repo, rc.cl != nil, u)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"func":   "tags",
@@ -173,7 +179,7 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 	fmt.Fprint(w, string(b))
 }
 
-func (rc *registryController) generateTagsTemplate(repo string, hasVulns bool) ([]byte, error) {
+func (rc *registryController) generateTagsTemplate(repo string, hasVulns bool, u *url.URL) ([]byte, error) {
 	// Get the tags from the server.
 	tags, err := rc.reg.Tags(repo)
 	if err != nil {
@@ -193,8 +199,37 @@ func (rc *registryController) generateTagsTemplate(repo string, hasVulns bool) (
 		Name:           repo,
 		HasVulns:       hasVulns, // if we have a clair client we can return vulns
 	}
+	
+	// Get query parameter
+	q := u.Query()
+	
+	// for pagination
+	var curpage int = 1
+	var perpage int = 50
+	var high_q int
+	
+	if len(q["page"]) != 0 {
+		curpage, err = strconv.Atoi(q["page"][0])
+		if err != nil {
+			fmt.Println("Error")
+		}
+	}
+	// no need pagination if amount of tags less then perpage
+	if len(tags) <= perpage {
+		perpage = len(tags)
+	}
 
-	for _, tag := range tags {
+	if curpage == int(math.Ceil(float64(len(tags)) / float64(perpage))) {
+		high_q = len(tags)
+	} else {
+		high_q = perpage*curpage
+	}
+
+	low_q  := perpage*(curpage-1)
+
+	pager := pagination.New(len(tags), perpage, curpage, u.EscapedPath())	
+
+	for _, tag := range tags[low_q:high_q] {
 		// get the manifest
 		m1, err := rc.reg.ManifestV1(repo, tag)
 		if err != nil {
@@ -226,10 +261,15 @@ func (rc *registryController) generateTagsTemplate(repo string, hasVulns bool) (
 
 		result.Repositories = append(result.Repositories, rp)
 	}
+	
+    varmap := map[string]interface{}{
+       "result": result,
+       "pager":  pager,
+    }	
 
 	// Execute the template.
 	var buf bytes.Buffer
-	if err := rc.tmpl.ExecuteTemplate(&buf, "tags", result); err != nil {
+	if err := rc.tmpl.ExecuteTemplate(&buf, "tags", varmap); err != nil {
 		return nil, fmt.Errorf("template rendering failed: %v", err)
 	}
 

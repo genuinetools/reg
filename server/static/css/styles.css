@@ -238,6 +238,29 @@ tr.parent a {
 }
 
 /*------------------------------------*\
+    Pagination
+\*------------------------------------*/
+.pagination {
+    display: inline-block;
+}
+
+.pagination a {
+	font-size: small;
+    color: black;
+    float: left;
+    padding: 8px 16px;
+    text-decoration: none;
+    transition: background-color .3s;
+}
+
+.pagination a.active {
+    background-color: #B5D1B6;
+    color: white;
+}
+
+.pagination a:hover:not(.active) {background-color: #ddd;}
+
+/*------------------------------------*\
     Footer
 \*------------------------------------*/
 .footer {
