@@ -204,9 +204,9 @@ func (rc *registryController) generateTagsTemplate(repo string, hasVulns bool, u
 	q := u.Query()
 	
 	// for pagination
-	var curpage int = 1
-	var perpage int = 50
-	var high_q int
+	var curpage = 1
+	var perpage = 50
+	var highQ int
 	
 	if len(q["page"]) != 0 {
 		curpage, err = strconv.Atoi(q["page"][0])
@@ -220,16 +220,16 @@ func (rc *registryController) generateTagsTemplate(repo string, hasVulns bool, u
 	}
 
 	if curpage == int(math.Ceil(float64(len(tags)) / float64(perpage))) {
-		high_q = len(tags)
+		highQ = len(tags)
 	} else {
-		high_q = perpage*curpage
+		highQ = perpage*curpage
 	}
 
-	low_q  := perpage*(curpage-1)
+	lowQ  := perpage*(curpage-1)
 
 	pager := pagination.New(len(tags), perpage, curpage, u.EscapedPath())	
 
-	for _, tag := range tags[low_q:high_q] {
+	for _, tag := range tags[lowQ:highQ] {
 		// get the manifest
 		m1, err := rc.reg.ManifestV1(repo, tag)
 		if err != nil {
