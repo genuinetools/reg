@@ -255,7 +255,7 @@ trusted ca-certificates on Linux.
 
 Make sure you have the package `ca-certificates` installed.
 
-Copy the public half of your CA certificate (the one user to sign the CSR) into
+Copy the public half of your CA certificate (the one used to sign the CSR) into
 the CA certificate directory (as root):
 
 ```console
