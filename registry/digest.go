@@ -35,5 +35,5 @@ func (r *Registry) Digest(image Image) (digest.Digest, error) {
 		return "", fmt.Errorf("Got status code: %d", resp.StatusCode)
 	}
 
-	return digest.FromString(resp.Header.Get("Docker-Content-Digest")), nil
+	return digest.Parse(resp.Header.Get("Docker-Content-Digest"))
 }
