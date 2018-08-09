@@ -19,7 +19,7 @@ func (c *Clair) Vulnerabilities(r *registry.Registry, repo, tag string) (Vulnera
 		VulnsBySeverity: make(map[string][]Vulnerability),
 	}
 
-	filteredLayers, err := c.getFilteredLayers(r, repo, tag)
+	filteredLayers, err := c.getLayers(r, repo, tag, true)
 	if err != nil {
 		return report, fmt.Errorf("getting filtered layers failed: %v", err)
 	}
@@ -83,20 +83,20 @@ func (c *Clair) VulnerabilitiesV3(r *registry.Registry, repo, tag string) (Vulne
 		VulnsBySeverity: make(map[string][]Vulnerability),
 	}
 
-	filteredLayers, err := c.getFilteredLayers(r, repo, tag)
+	layers, err := c.getLayers(r, repo, tag, false)
 	if err != nil {
 		return report, fmt.Errorf("getting filtered layers failed: %v", err)
 	}
 
-	if len(filteredLayers) == 0 {
-		fmt.Printf("No need to analyse image %s:%s as there is no non-emtpy layer", repo, tag)
+	if len(layers) == 0 {
+		fmt.Printf("No need to analyse image %s:%s as there is no non-empty layer", repo, tag)
 		return report, nil
 	}
 
 	clairLayers := []*clairpb.PostAncestryRequest_PostLayer{}
-	for i := len(filteredLayers) - 1; i >= 0; i-- {
+	for i := len(layers) - 1; i >= 0; i-- {
 		// Form the clair layer.
-		l, err := c.NewClairV3Layer(r, repo, filteredLayers[i])
+		l, err := c.NewClairV3Layer(r, repo, layers[i])
 		if err != nil {
 			return report, err
 		}
@@ -106,12 +106,12 @@ func (c *Clair) VulnerabilitiesV3(r *registry.Registry, repo, tag string) (Vulne
 	}
 
 	// Post the ancestry.
-	if err := c.PostAncestry(filteredLayers[0].Digest.String(), clairLayers); err != nil {
+	if err := c.PostAncestry(layers[0].Digest.String(), clairLayers); err != nil {
 		return report, fmt.Errorf("posting ancestry failed: %v", err)
 	}
 
 	// Get the ancestry.
-	vl, err := c.GetAncestry(filteredLayers[0].Digest.String(), true, true)
+	vl, err := c.GetAncestry(layers[0].Digest.String(), true, true)
 	if err != nil {
 		return report, err
 	}
