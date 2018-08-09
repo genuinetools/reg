@@ -42,6 +42,7 @@ func (c *Clair) PostAncestry(name string, layers []*clairpb.PostAncestryRequest_
 	resp, err := client.PostAncestry(context.Background(), &clairpb.PostAncestryRequest{
 		AncestryName: name,
 		Layers:       layers,
+		Format:       "Docker",
 	})
 	if err != nil {
 		return err
