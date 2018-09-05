@@ -36,6 +36,7 @@ var (
 			password: "testing",
 		},
 	}
+	registryHelper *testutils.RegistryHelper
 )
 
 func init() {
@@ -79,6 +80,11 @@ func TestMain(m *testing.M) {
 		if err != nil {
 			testutils.RemoveContainer(dcli, dbID, clairID, regID)
 			panic(fmt.Errorf("starting registry container %s failed: %v", regConfig.config, err))
+		}
+
+		registryHelper, err = testutils.NewRegistryHelper(dcli, regConfig.username, regConfig.password, domain)
+		if err != nil {
+			panic(fmt.Errorf("creating registry helper %s failed: %v", regConfig.config, err))
 		}
 
 		flag.Parse()
