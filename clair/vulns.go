@@ -42,6 +42,8 @@ func (c *Clair) Vulnerabilities(r *registry.Registry, repo, tag string) (Vulnera
 		}
 	}
 
+	report.Name = filteredLayers[0].Digest.String()
+
 	vl, err := c.GetLayer(filteredLayers[0].Digest.String(), true, true)
 	if err != nil {
 		return report, err
@@ -92,6 +94,8 @@ func (c *Clair) VulnerabilitiesV3(r *registry.Registry, repo, tag string) (Vulne
 		fmt.Printf("No need to analyse image %s:%s as there is no non-empty layer", repo, tag)
 		return report, nil
 	}
+
+	report.Name = layers[0].Digest.String()
 
 	clairLayers := []*clairpb.PostAncestryRequest_PostLayer{}
 	for i := len(layers) - 1; i >= 0; i-- {
