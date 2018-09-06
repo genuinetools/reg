@@ -58,6 +58,7 @@ type Vulnerability struct {
 
 // VulnerabilityReport represents the result of a vulnerability scan of a repo.
 type VulnerabilityReport struct {
+	Name            string
 	RegistryURL     string
 	Repo            string
 	Tag             string
