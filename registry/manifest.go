@@ -23,7 +23,7 @@ func (r *Registry) Manifest(repository, ref string) (distribution.Manifest, erro
 		return nil, err
 	}
 
-	req.Header.Add("Accept", fmt.Sprintf("%s,%s;q=0.9", schema2.MediaTypeManifest, manifestlist.MediaTypeManifestList))
+	req.Header.Add("Accept", fmt.Sprintf("%s;q=0.9", schema2.MediaTypeManifest))
 
 	resp, err := r.Client.Do(req)
 	if err != nil {
