@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/genuinetools/reg/clair"
+	"github.com/genuinetools/reg/internal/binutils"
 	"github.com/gorilla/mux"
 	wordwrap "github.com/mitchellh/go-wordwrap"
 	"github.com/sirupsen/logrus"
@@ -95,7 +96,6 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 	templateDir := filepath.Join(assetDir, "templates")
 	// Make sure all the paths exist.
 	tmplPaths := []string{
-		staticDir,
 		filepath.Join(templateDir, "vulns.html"),
 		filepath.Join(templateDir, "repositories.html"),
 		filepath.Join(templateDir, "tags.html"),
@@ -132,7 +132,7 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 		},
 	}
 
-	rc.tmpl = template.Must(template.New("").Funcs(funcMap).ParseGlob(templateDir + "/*.html"))
+	rc.tmpl = template.Must(template.New("").Funcs(funcMap).Parse(templateDir + "/*.html"))
 
 	// Create the initial index.
 	logrus.Info("creating initial static index")
@@ -176,7 +176,7 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 	}
 
 	// Serve the static assets.
-	staticHandler := http.FileServer(http.Dir(staticDir))
+	staticHandler := http.FileServer(binutils.Assets)
 	mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", staticHandler))
 	mux.Handle("/", staticHandler)
 

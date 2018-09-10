@@ -30,6 +30,7 @@ var (
 	debug bool
 )
 
+//go:generate go run internal/binutils/generate.go
 func main() {
 	// Create a new cli program.
 	p := cli.NewProgram()

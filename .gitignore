@@ -46,7 +46,6 @@ reg
 testreg
 .certs
 cross/
-internal/
 server/static/index.html
 server/static/repo/
 
