@@ -115,7 +115,7 @@ func (c *Clair) VulnerabilitiesV3(r *registry.Registry, repo, tag string) (Vulne
 	}
 
 	// Get the ancestry.
-	vl, err := c.GetAncestry(layers[0].Digest.String(), true, true)
+	vl, err := c.GetAncestry(layers[0].Digest.String())
 	if err != nil {
 		return report, err
 	}
