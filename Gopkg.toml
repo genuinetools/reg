@@ -63,3 +63,11 @@
 [[override]]
   name = "github.com/prometheus/client_golang"
   branch = "master"
+
+[[constraint]]
+  name = "github.com/shurcooL/vfsgen"
+  branch = "master"
+
+[[constraint]]
+  name = "github.com/shurcooL/httpfs"
+  branch = "master"

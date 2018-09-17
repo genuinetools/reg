@@ -26,7 +26,7 @@ func (cmd *versionCommand) Run(ctx context.Context, args []string) error {
  go version  : %s
  go compiler : %s
  platform    : %s/%s
-`, "ship", ctx.Value(VersionKey).(string), ctx.Value(GitCommitKey).(string),
+`, ctx.Value(NameKey).(string), ctx.Value(VersionKey).(string), ctx.Value(GitCommitKey).(string),
 		runtime.Version(), runtime.Compiler, runtime.GOOS, runtime.GOARCH)
 	return nil
 }

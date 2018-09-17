@@ -12,9 +12,11 @@ import (
 	"time"
 
 	"github.com/genuinetools/reg/clair"
-	"github.com/genuinetools/reg/internal/binutils"
+	"github.com/genuinetools/reg/internal/binutils/static"
+	"github.com/genuinetools/reg/internal/binutils/templates"
 	"github.com/gorilla/mux"
 	wordwrap "github.com/mitchellh/go-wordwrap"
+	"github.com/shurcooL/httpfs/html/vfstemplate"
 	"github.com/sirupsen/logrus"
 )
 
@@ -93,18 +95,6 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 	}
 
 	staticDir := filepath.Join(assetDir, "static")
-	templateDir := filepath.Join(assetDir, "templates")
-	// Make sure all the paths exist.
-	tmplPaths := []string{
-		filepath.Join(templateDir, "vulns.html"),
-		filepath.Join(templateDir, "repositories.html"),
-		filepath.Join(templateDir, "tags.html"),
-	}
-	for _, path := range tmplPaths {
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			return fmt.Errorf("template %s not found", path)
-		}
-	}
 
 	funcMap := template.FuncMap{
 		"trim": func(s string) string {
@@ -132,7 +122,8 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 		},
 	}
 
-	rc.tmpl = template.Must(template.New("").Funcs(funcMap).Parse(templateDir + "/*.html"))
+	rc.tmpl = template.New("").Funcs(funcMap)
+	rc.tmpl = template.Must(vfstemplate.ParseGlob(templates.Assets, rc.tmpl, "*.html"))
 
 	// Create the initial index.
 	logrus.Info("creating initial static index")
@@ -176,7 +167,7 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 	}
 
 	// Serve the static assets.
-	staticHandler := http.FileServer(binutils.Assets)
+	staticHandler := http.FileServer(static.Assets)
 	mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", staticHandler))
 	mux.Handle("/", staticHandler)
 

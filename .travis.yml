@@ -11,7 +11,7 @@ jobs:
   include:
     - script:
         - make fmt lint staticcheck vet install
-        - DOCKER_API_VERSION=1.37 make dind dtest
+        - DOCKER_API_VERSION=1.38 make dind dtest
     - stage: Build Release
       script:
         - make release
