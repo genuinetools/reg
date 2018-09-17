@@ -260,15 +260,31 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	result, err := rc.cl.Vulnerabilities(rc.reg, repo, tag)
+	image, err := registry.ParseImage(repo + ":" + tag)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"func":   "vulnerabilities",
 			"URL":    r.URL,
 			"method": r.Method,
-		}).Errorf("vulnerability scanning for %s:%s failed: %v", repo, tag, err)
+		}).Errorf("parsing image %s:%s failed: %v", repo, tag, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	// Get the vulnerability report.
+	result, err := rc.cl.VulnerabilitiesV3(rc.reg, image.Path, image.Reference())
+	if err != nil {
+		// Fallback to Clair v2 API.
+		result, err = rc.cl.Vulnerabilities(rc.reg, image.Path, image.Reference())
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"func":   "vulnerabilities",
+				"URL":    r.URL,
+				"method": r.Method,
+			}).Errorf("vulnerability scanning for %s:%s failed: %v", repo, tag, err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 
 	if strings.HasSuffix(r.URL.String(), ".json") {

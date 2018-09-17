@@ -35,7 +35,15 @@ func (c *Clair) GetAncestry(name string) (*clairpb.GetAncestryResponse_Ancestry,
 func (c *Clair) PostAncestry(name string, layers []*clairpb.PostAncestryRequest_PostLayer) error {
 	c.Logf("clair.ancestry.post name=%s", name)
 
+	if c.grpcConn == nil {
+		return errors.New("grpcConn cannot be nil")
+	}
+
 	client := clairpb.NewAncestryServiceClient(c.grpcConn)
+
+	if client == nil {
+		return errors.New("could not establish connection to grpc clair api")
+	}
 
 	resp, err := client.PostAncestry(context.Background(), &clairpb.PostAncestryRequest{
 		AncestryName: name,
