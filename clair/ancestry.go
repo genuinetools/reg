@@ -14,9 +14,7 @@ func (c *Clair) GetAncestry(name string, features, vulnerabilities bool) (*clair
 	client := clairpb.NewAncestryServiceClient(c.grpcConn)
 
 	resp, err := client.GetAncestry(context.Background(), &clairpb.GetAncestryRequest{
-		AncestryName:        name,
-		WithVulnerabilities: vulnerabilities,
-		WithFeatures:        features,
+		AncestryName: name,
 	})
 	if err != nil {
 		return nil, err
