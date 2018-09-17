@@ -7,16 +7,14 @@ import (
 	"github.com/coreos/clair/api/v3/clairpb"
 )
 
-// GetAncestry displays an ancestry and optionally all of its features and vulnerabilities.
-func (c *Clair) GetAncestry(name string, features, vulnerabilities bool) (*clairpb.GetAncestryResponse_Ancestry, error) {
+// GetAncestry displays an ancestry and all of its features and vulnerabilities.
+func (c *Clair) GetAncestry(name string) (*clairpb.GetAncestryResponse_Ancestry, error) {
 	c.Logf("clair.ancestry.get name=%s", name)
 
 	client := clairpb.NewAncestryServiceClient(c.grpcConn)
 
 	resp, err := client.GetAncestry(context.Background(), &clairpb.GetAncestryRequest{
-		AncestryName:        name,
-		WithVulnerabilities: vulnerabilities,
-		WithFeatures:        features,
+		AncestryName: name,
 	})
 	if err != nil {
 		return nil, err

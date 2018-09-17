@@ -28,10 +28,6 @@ var _ status.Status
 var _ = runtime.String
 var _ = utilities.NewDoubleArray
 
-var (
-	filter_AncestryService_GetAncestry_0 = &utilities.DoubleArray{Encoding: map[string]int{"ancestry_name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
-)
-
 func request_AncestryService_GetAncestry_0(ctx context.Context, marshaler runtime.Marshaler, client AncestryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetAncestryRequest
 	var metadata runtime.ServerMetadata
@@ -52,10 +48,6 @@ func request_AncestryService_GetAncestry_0(ctx context.Context, marshaler runtim
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "ancestry_name", err)
-	}
-
-	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_AncestryService_GetAncestry_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := client.GetAncestry(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -136,6 +128,15 @@ func request_NotificationService_MarkNotificationAsRead_0(ctx context.Context, m
 	}
 
 	msg, err := client.MarkNotificationAsRead(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func request_StatusService_GetStatus_0(ctx context.Context, marshaler runtime.Marshaler, client StatusServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetStatusRequest
+	var metadata runtime.ServerMetadata
+
+	msg, err := client.GetStatus(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
@@ -360,4 +361,82 @@ var (
 	forward_NotificationService_GetNotification_0 = runtime.ForwardResponseMessage
 
 	forward_NotificationService_MarkNotificationAsRead_0 = runtime.ForwardResponseMessage
+)
+
+// RegisterStatusServiceHandlerFromEndpoint is same as RegisterStatusServiceHandler but
+// automatically dials to "endpoint" and closes the connection when "ctx" gets done.
+func RegisterStatusServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+	conn, err := grpc.Dial(endpoint, opts...)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			if cerr := conn.Close(); cerr != nil {
+				grpclog.Printf("Failed to close conn to %s: %v", endpoint, cerr)
+			}
+			return
+		}
+		go func() {
+			<-ctx.Done()
+			if cerr := conn.Close(); cerr != nil {
+				grpclog.Printf("Failed to close conn to %s: %v", endpoint, cerr)
+			}
+		}()
+	}()
+
+	return RegisterStatusServiceHandler(ctx, mux, conn)
+}
+
+// RegisterStatusServiceHandler registers the http handlers for service StatusService to "mux".
+// The handlers forward requests to the grpc endpoint over "conn".
+func RegisterStatusServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterStatusServiceHandlerClient(ctx, mux, NewStatusServiceClient(conn))
+}
+
+// RegisterStatusServiceHandler registers the http handlers for service StatusService to "mux".
+// The handlers forward requests to the grpc endpoint over the given implementation of "StatusServiceClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "StatusServiceClient"
+// doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
+// "StatusServiceClient" to call the correct interceptors.
+func RegisterStatusServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client StatusServiceClient) error {
+
+	mux.Handle("GET", pattern_StatusService_GetStatus_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		if cn, ok := w.(http.CloseNotifier); ok {
+			go func(done <-chan struct{}, closed <-chan bool) {
+				select {
+				case <-done:
+				case <-closed:
+					cancel()
+				}
+			}(ctx.Done(), cn.CloseNotify())
+		}
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_StatusService_GetStatus_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_StatusService_GetStatus_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	return nil
+}
+
+var (
+	pattern_StatusService_GetStatus_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"status"}, ""))
+)
+
+var (
+	forward_StatusService_GetStatus_0 = runtime.ForwardResponseMessage
 )

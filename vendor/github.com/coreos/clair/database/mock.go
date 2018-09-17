@@ -14,39 +14,40 @@
 
 package database
 
-import "time"
+import (
+	"time"
+
+	"github.com/coreos/clair/pkg/pagination"
+)
 
 // MockSession implements Session and enables overriding each available method.
 // The default behavior of each method is to simply panic.
 type MockSession struct {
 	FctCommit                           func() error
 	FctRollback                         func() error
-	FctUpsertAncestry                   func(Ancestry, []NamespacedFeature, Processors) error
-	FctFindAncestry                     func(name string) (Ancestry, Processors, bool, error)
-	FctFindAncestryFeatures             func(name string) (AncestryWithFeatures, bool, error)
+	FctUpsertAncestry                   func(Ancestry) error
+	FctFindAncestry                     func(name string) (Ancestry, bool, error)
 	FctFindAffectedNamespacedFeatures   func(features []NamespacedFeature) ([]NullableAffectedNamespacedFeature, error)
 	FctPersistNamespaces                func([]Namespace) error
 	FctPersistFeatures                  func([]Feature) error
 	FctPersistNamespacedFeatures        func([]NamespacedFeature) error
 	FctCacheAffectedNamespacedFeatures  func([]NamespacedFeature) error
-	FctPersistLayer                     func(Layer) error
-	FctPersistLayerContent              func(hash string, namespaces []Namespace, features []Feature, processedBy Processors) error
-	FctFindLayer                        func(name string) (Layer, Processors, bool, error)
-	FctFindLayerWithContent             func(name string) (LayerWithContent, bool, error)
+	FctPersistLayer                     func(hash string, namespaces []Namespace, features []Feature, processedBy Processors) error
+	FctFindLayer                        func(name string) (Layer, bool, error)
 	FctInsertVulnerabilities            func([]VulnerabilityWithAffected) error
 	FctFindVulnerabilities              func([]VulnerabilityID) ([]NullableVulnerability, error)
 	FctDeleteVulnerabilities            func([]VulnerabilityID) error
 	FctInsertVulnerabilityNotifications func([]VulnerabilityNotification) error
 	FctFindNewNotification              func(lastNotified time.Time) (NotificationHook, bool, error)
-	FctFindVulnerabilityNotification    func(name string, limit int, oldPage PageNumber, newPage PageNumber) (
+	FctFindVulnerabilityNotification    func(name string, limit int, oldPage pagination.Token, newPage pagination.Token) (
 		vuln VulnerabilityNotificationWithVulnerable, ok bool, err error)
-	FctMarkNotificationNotified func(name string) error
-	FctDeleteNotification       func(name string) error
-	FctUpdateKeyValue           func(key, value string) error
-	FctFindKeyValue             func(key string) (string, bool, error)
-	FctLock                     func(name string, owner string, duration time.Duration, renew bool) (bool, time.Time, error)
-	FctUnlock                   func(name, owner string) error
-	FctFindLock                 func(name string) (string, time.Time, bool, error)
+	FctMarkNotificationAsRead func(name string) error
+	FctDeleteNotification     func(name string) error
+	FctUpdateKeyValue         func(key, value string) error
+	FctFindKeyValue           func(key string) (string, bool, error)
+	FctLock                   func(name string, owner string, duration time.Duration, renew bool) (bool, time.Time, error)
+	FctUnlock                 func(name, owner string) error
+	FctFindLock               func(name string) (string, time.Time, bool, error)
 }
 
 func (ms *MockSession) Commit() error {
@@ -63,23 +64,16 @@ func (ms *MockSession) Rollback() error {
 	panic("required mock function not implemented")
 }
 
-func (ms *MockSession) UpsertAncestry(ancestry Ancestry, features []NamespacedFeature, processedBy Processors) error {
+func (ms *MockSession) UpsertAncestry(ancestry Ancestry) error {
 	if ms.FctUpsertAncestry != nil {
-		return ms.FctUpsertAncestry(ancestry, features, processedBy)
+		return ms.FctUpsertAncestry(ancestry)
 	}
 	panic("required mock function not implemented")
 }
 
-func (ms *MockSession) FindAncestry(name string) (Ancestry, Processors, bool, error) {
+func (ms *MockSession) FindAncestry(name string) (Ancestry, bool, error) {
 	if ms.FctFindAncestry != nil {
 		return ms.FctFindAncestry(name)
-	}
-	panic("required mock function not implemented")
-}
-
-func (ms *MockSession) FindAncestryFeatures(name string) (AncestryWithFeatures, bool, error) {
-	if ms.FctFindAncestryFeatures != nil {
-		return ms.FctFindAncestryFeatures(name)
 	}
 	panic("required mock function not implemented")
 }
@@ -119,30 +113,16 @@ func (ms *MockSession) CacheAffectedNamespacedFeatures(namespacedFeatures []Name
 	panic("required mock function not implemented")
 }
 
-func (ms *MockSession) PersistLayer(layer Layer) error {
+func (ms *MockSession) PersistLayer(hash string, namespaces []Namespace, features []Feature, processedBy Processors) error {
 	if ms.FctPersistLayer != nil {
-		return ms.FctPersistLayer(layer)
+		return ms.FctPersistLayer(hash, namespaces, features, processedBy)
 	}
 	panic("required mock function not implemented")
 }
 
-func (ms *MockSession) PersistLayerContent(hash string, namespaces []Namespace, features []Feature, processedBy Processors) error {
-	if ms.FctPersistLayerContent != nil {
-		return ms.FctPersistLayerContent(hash, namespaces, features, processedBy)
-	}
-	panic("required mock function not implemented")
-}
-
-func (ms *MockSession) FindLayer(name string) (Layer, Processors, bool, error) {
+func (ms *MockSession) FindLayer(name string) (Layer, bool, error) {
 	if ms.FctFindLayer != nil {
 		return ms.FctFindLayer(name)
-	}
-	panic("required mock function not implemented")
-}
-
-func (ms *MockSession) FindLayerWithContent(name string) (LayerWithContent, bool, error) {
-	if ms.FctFindLayerWithContent != nil {
-		return ms.FctFindLayerWithContent(name)
 	}
 	panic("required mock function not implemented")
 }
@@ -182,7 +162,7 @@ func (ms *MockSession) FindNewNotification(lastNotified time.Time) (Notification
 	panic("required mock function not implemented")
 }
 
-func (ms *MockSession) FindVulnerabilityNotification(name string, limit int, oldPage PageNumber, newPage PageNumber) (
+func (ms *MockSession) FindVulnerabilityNotification(name string, limit int, oldPage pagination.Token, newPage pagination.Token) (
 	VulnerabilityNotificationWithVulnerable, bool, error) {
 	if ms.FctFindVulnerabilityNotification != nil {
 		return ms.FctFindVulnerabilityNotification(name, limit, oldPage, newPage)
@@ -190,9 +170,9 @@ func (ms *MockSession) FindVulnerabilityNotification(name string, limit int, old
 	panic("required mock function not implemented")
 }
 
-func (ms *MockSession) MarkNotificationNotified(name string) error {
-	if ms.FctMarkNotificationNotified != nil {
-		return ms.FctMarkNotificationNotified(name)
+func (ms *MockSession) MarkNotificationAsRead(name string) error {
+	if ms.FctMarkNotificationAsRead != nil {
+		return ms.FctMarkNotificationAsRead(name)
 	}
 	panic("required mock function not implemented")
 }
