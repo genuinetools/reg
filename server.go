@@ -167,8 +167,9 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 	}
 
 	// Serve the static assets.
-	staticHandler := http.FileServer(static.Assets)
-	mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", staticHandler))
+	staticAssetsHandler := http.FileServer(static.Assets)
+	mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", staticAssetsHandler))
+	staticHandler := http.FileServer(http.Dir(staticDir))
 	mux.Handle("/", staticHandler)
 
 	// Set up the server.
