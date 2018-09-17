@@ -7,9 +7,17 @@ import (
 	"github.com/coreos/clair/api/v3/clairpb"
 )
 
+var (
+	ErrNilGRPCConn = errors.New("grpcConn cannot be nil")
+)
+
 // GetAncestry displays an ancestry and all of its features and vulnerabilities.
 func (c *Clair) GetAncestry(name string) (*clairpb.GetAncestryResponse_Ancestry, error) {
 	c.Logf("clair.ancestry.get name=%s", name)
+
+	if c.grpcConn == nil {
+		return nil, ErrNilGRPCConn
+	}
 
 	client := clairpb.NewAncestryServiceClient(c.grpcConn)
 
@@ -36,14 +44,10 @@ func (c *Clair) PostAncestry(name string, layers []*clairpb.PostAncestryRequest_
 	c.Logf("clair.ancestry.post name=%s", name)
 
 	if c.grpcConn == nil {
-		return errors.New("grpcConn cannot be nil")
+		return ErrNilGRPCConn
 	}
 
 	client := clairpb.NewAncestryServiceClient(c.grpcConn)
-
-	if client == nil {
-		return errors.New("could not establish connection to grpc clair api")
-	}
 
 	resp, err := client.PostAncestry(context.Background(), &clairpb.PostAncestryRequest{
 		AncestryName: name,
