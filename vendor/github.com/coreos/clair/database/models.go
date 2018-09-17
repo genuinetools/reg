@@ -18,9 +18,11 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"time"
+
+	"github.com/coreos/clair/pkg/pagination"
 )
 
-// Processors are extentions to scan layer's content.
+// Processors are extentions to scan a layer's content.
 type Processors struct {
 	Listers   []string
 	Detectors []string
@@ -29,34 +31,38 @@ type Processors struct {
 // Ancestry is a manifest that keeps all layers in an image in order.
 type Ancestry struct {
 	Name string
+	// ProcessedBy contains the processors that are used when computing the
+	// content of this ancestry.
+	ProcessedBy Processors
 	// Layers should be ordered and i_th layer is the parent of i+1_th layer in
 	// the slice.
-	Layers []Layer
+	Layers []AncestryLayer
 }
 
-// AncestryWithFeatures is an ancestry with namespaced features detected in the
-// ancestry, which is processed by `ProcessedBy`.
-type AncestryWithFeatures struct {
-	Ancestry
+// AncestryLayer is a layer with all detected namespaced features.
+type AncestryLayer struct {
+	LayerMetadata
 
-	ProcessedBy Processors
-	Features    []NamespacedFeature
+	// DetectedFeatures are the features introduced by this layer when it was
+	// processed.
+	DetectedFeatures []NamespacedFeature
 }
 
-// Layer corresponds to a layer in an image processed by `ProcessedBy`.
-type Layer struct {
+// LayerMetadata contains the metadata of a layer.
+type LayerMetadata struct {
 	// Hash is content hash of the layer.
 	Hash string
+	// ProcessedBy contains the processors that processed this layer.
+	ProcessedBy Processors
 }
 
-// LayerWithContent is a layer with its detected namespaces and features by
+// Layer is a layer with its detected namespaces and features by
 // ProcessedBy.
-type LayerWithContent struct {
-	Layer
+type Layer struct {
+	LayerMetadata
 
-	ProcessedBy Processors
-	Namespaces  []Namespace
-	Features    []Feature
+	Namespaces []Namespace
+	Features   []Feature
 }
 
 // Namespace is the contextual information around features.
@@ -159,8 +165,8 @@ type PagedVulnerableAncestries struct {
 	Affected map[int]string
 
 	Limit   int
-	Current PageNumber
-	Next    PageNumber
+	Current pagination.Token
+	Next    pagination.Token
 
 	// End signals the end of the pages.
 	End bool
@@ -195,9 +201,7 @@ type VulnerabilityNotificationWithVulnerable struct {
 	New *PagedVulnerableAncestries
 }
 
-// PageNumber is used to do pagination.
-type PageNumber string
-
+// MetadataMap is for storing the metadata returned by vulnerability database.
 type MetadataMap map[string]interface{}
 
 // NullableAffectedNamespacedFeature is an affectednamespacedfeature with
