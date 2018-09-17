@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	// ErrNilGRPCConn holds the error for when the grpc connection is nil.
 	ErrNilGRPCConn = errors.New("grpcConn cannot be nil")
 )
 
