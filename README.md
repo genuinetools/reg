@@ -228,6 +228,7 @@ Flags:
   -u, --username       username for the registry (default: <none>)
   --listen-address     address to listen on (default: <none>)
   --asset-path         Path to assets and templates (default: <none>)
+  --config             Path to config file (default: <none>)
   -f, --force-non-ssl  force allow use of non-ssl (default: false)
   --once               generate the templates once and then exit (default: false)
   --skip-ping          skip pinging the registry while establishing connection (default: false)
@@ -242,6 +243,9 @@ Flags:
   --interval           interval to generate new index.html's at (default: 1h0m0s)
   -p, --password       password for the registry (default: <none>)
 ```
+
+Alternatively you can provide configuration to `reg server` via a file passed to
+`reg server` via as `--config`. See also config.yml.example in this repository.
 
 **Screenshots:**
 

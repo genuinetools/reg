@@ -1,0 +1,37 @@
+### Reg Server Settings
+
+## Path to server TLS certificate:
+# cert:
+## Path to server TLS key:
+# key:
+## Address to listen on:
+# listen-address: 0.0.0.0
+## Port to listen on:
+# port: 8080
+## Path Assets are stored under:
+# asset-path: /var/lib/reg
+## Generate static website and exit:
+# once: false
+## Refresh interval:
+# interval: 1h0m0s
+## Debug output
+# debug: false
+## Skip initial ping
+# skip-ping: false
+## Timeout
+# timeout: 1m0s
+
+
+### Registry and Clair Server Settings
+## Registry Server:
+# registry: r.j3ss.co
+## Username to authenticate against registry server
+# username:
+## Password to authenticate against registry server
+# password:
+## If true, do not verify TLS certificates
+# insecure: false
+## Force allow use of non-TLS connections
+# force-nonssl: false
+## Clair Server:
+# clair:

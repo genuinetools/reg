@@ -4,7 +4,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"html/template"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -29,39 +31,76 @@ func (cmd *serverCommand) LongHelp() string  { return serverHelp }
 func (cmd *serverCommand) Hidden() bool      { return false }
 
 func (cmd *serverCommand) Register(fs *flag.FlagSet) {
-	fs.DurationVar(&cmd.interval, "interval", time.Hour, "interval to generate new index.html's at")
+	fs.DurationVar(&cmd.Interval, "interval", time.Hour, "interval to generate new index.html's at")
 
-	fs.StringVar(&cmd.registryServer, "registry", "", "URL to the private registry (ex. r.j3ss.co)")
-	fs.StringVar(&cmd.registryServer, "r", "", "URL to the private registry (ex. r.j3ss.co)")
+	fs.StringVar(&cmd.RegistryServer, "registry", "", "URL to the private registry (ex. r.j3ss.co)")
+	fs.StringVar(&cmd.RegistryServer, "r", "", "URL to the private registry (ex. r.j3ss.co)")
 
-	fs.StringVar(&cmd.clairServer, "clair", "", "url to clair instance")
+	fs.StringVar(&cmd.ClairServer, "clair", "", "url to clair instance")
 
-	fs.StringVar(&cmd.cert, "cert", "", "path to ssl cert")
-	fs.StringVar(&cmd.key, "key", "", "path to ssl key")
-	fs.StringVar(&cmd.listenAddress, "listen-address", "", "address to listen on")
-	fs.StringVar(&cmd.port, "port", "8080", "port for server to run on")
-	fs.StringVar(&cmd.assetPath, "asset-path", "", "Path to assets and templates")
+	fs.StringVar(&cmd.Cert, "cert", "", "path to ssl cert")
+	fs.StringVar(&cmd.Key, "key", "", "path to ssl key")
+	fs.StringVar(&cmd.ListenAddress, "listen-address", "", "address to listen on")
+	fs.StringVar(&cmd.Port, "port", "8080", "port for server to run on")
 
-	fs.BoolVar(&cmd.generateAndExit, "once", false, "generate the templates once and then exit")
+	fs.StringVar(&cmd.AssetPath, "asset-path", "", "Path to assets and templates")
+	fs.StringVar(&cmd.configPath, "config", "", "Path to config file")
+
+	fs.BoolVar(&cmd.GenerateAndExit, "once", false, "generate the templates once and then exit")
 }
 
 type serverCommand struct {
-	interval       time.Duration
-	registryServer string
-	clairServer    string
+	Interval        time.Duration `yaml:"interval"`
+	RegistryServer  string        `yaml:"registry"`
+	ClairServer     string        `yaml:"clair"`
+	GenerateAndExit bool          `yaml:"once"`
+	Cert            string        `yaml:"cert"`
+	Key             string        `yaml:"key"`
+	ListenAddress   string        `yaml:"listen-address"`
+	Port            string        `yaml:"port"`
+	AssetPath       string        `yaml:"asset-path"`
+	configPath      string
 
-	generateAndExit bool
-
-	cert          string
-	key           string
-	listenAddress string
-	port          string
-	assetPath     string
+	Password    string        `yaml:"password"`
+	Username    string        `yaml:"username"`
+	Insecure    bool          `yaml:"insecure"`
+	Debug       bool          `yaml:"debug"`
+	SkipPing    bool          `yaml:"skip-ping"`
+	ForceNonSSL bool          `yaml:"force-nonssl"`
+	Timeout     time.Duration `yaml:"timeout"`
 }
 
 func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 	// Create the registry client.
-	r, err := createRegistryClient(ctx, cmd.registryServer)
+	if len(cmd.configPath) > 0 {
+		config, err := ioutil.ReadFile(cmd.configPath)
+		if err != nil {
+			return err
+		}
+		yaml.Unmarshal(config, cmd)
+		if err != nil {
+			return err
+		}
+		if len(cmd.Username) > 0 {
+			username = cmd.Username
+		}
+		if len(cmd.Password) > 0 {
+			password = cmd.Password
+		}
+		if cmd.Debug {
+			debug = cmd.Debug
+		}
+		if cmd.Insecure {
+			insecure = cmd.Insecure
+		}
+		if cmd.SkipPing {
+			skipPing = cmd.SkipPing
+		}
+		if cmd.Timeout != 0 {
+			timeout = cmd.Timeout
+		}
+	}
+	r, err := createRegistryClient(ctx, cmd.RegistryServer)
 	if err != nil {
 		return err
 	}
@@ -69,25 +108,25 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 	// Create the registry controller for the handlers.
 	rc := registryController{
 		reg:          r,
-		generateOnly: cmd.generateAndExit,
+		generateOnly: cmd.GenerateAndExit,
 	}
 
 	// Create a clair client if the user passed in a server address.
-	if len(cmd.clairServer) > 0 {
-		rc.cl, err = clair.New(cmd.clairServer, clair.Opt{
+	if len(cmd.ClairServer) > 0 {
+		rc.cl, err = clair.New(cmd.ClairServer, clair.Opt{
 			Insecure: insecure,
 			Debug:    debug,
 			Timeout:  timeout,
 		})
 		if err != nil {
-			return fmt.Errorf("creation of clair client at %s failed: %v", cmd.clairServer, err)
+			return fmt.Errorf("creation of clair client at %s failed: %v", cmd.ClairServer, err)
 		}
 	} else {
 		rc.cl = nil
 	}
 	// Get the path to the asset directory.
-	assetDir := cmd.assetPath
-	if len(cmd.assetPath) <= 0 {
+	assetDir := cmd.AssetPath
+	if len(cmd.AssetPath) <= 0 {
 		assetDir, err = os.Getwd()
 		if err != nil {
 			return err
@@ -131,12 +170,12 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 		return fmt.Errorf("creating index failed: %v", err)
 	}
 
-	if cmd.generateAndExit {
+	if cmd.GenerateAndExit {
 		logrus.Info("output generated, exiting...")
 		return nil
 	}
 
-	rc.interval = cmd.interval
+	rc.interval = cmd.Interval
 	ticker := time.NewTicker(rc.interval)
 	go func() {
 		// Create more indexes every X minutes based off interval.
@@ -174,12 +213,12 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 
 	// Set up the server.
 	server := &http.Server{
-		Addr:    cmd.listenAddress + ":" + cmd.port,
+		Addr:    cmd.ListenAddress + ":" + cmd.Port,
 		Handler: mux,
 	}
-	logrus.Infof("Starting server on port %q", cmd.port)
-	if len(cmd.cert) > 0 && len(cmd.key) > 0 {
-		return server.ListenAndServeTLS(cmd.cert, cmd.key)
+	logrus.Infof("Starting server on port %q", cmd.Port)
+	if len(cmd.Cert) > 0 && len(cmd.Key) > 0 {
+		return server.ListenAndServeTLS(cmd.Cert, cmd.Key)
 	}
 	return server.ListenAndServe()
 }
