@@ -115,6 +115,7 @@ func createRegistryClient(domain string) (*registry.Registry, error) {
 		Insecure: insecure,
 		Debug:    debug,
 		SkipPing: skipPing,
+		NonSSL:   forceNonSSL,
 		Timeout:  timeout,
 	})
 }
