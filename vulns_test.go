@@ -12,7 +12,8 @@ func TestVulns(t *testing.T) {
 		t.Fatalf("output: %s, error: %v", out, err)
 	}
 
-	expected := `clair.clair resp.Status=200 OK`
+	expected := `clair.clair resp.Status=200 OK
+No vulnerabilies found.`
 	if !strings.HasSuffix(strings.TrimSpace(out), expected) {
 		t.Fatalf("expected: %s\ngot: %s", expected, out)
 	}

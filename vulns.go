@@ -87,6 +87,11 @@ func (cmd *vulnsCommand) Run(ctx context.Context, args []string) error {
 		}
 	}
 
+	if len(report.VulnsBySeverity) < 1 {
+		fmt.Println("No vulnerabilies found.")
+		return nil
+	}
+
 	// Print summary and count.
 	for sev, vulns := range report.VulnsBySeverity {
 		fmt.Printf("%s: %d\n", sev, len(vulns))
