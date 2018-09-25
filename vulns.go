@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/genuinetools/reg/clair"
 	"github.com/genuinetools/reg/registry"
@@ -20,7 +21,7 @@ func (cmd *vulnsCommand) LongHelp() string  { return vulnsHelp }
 func (cmd *vulnsCommand) Hidden() bool      { return false }
 
 func (cmd *vulnsCommand) Register(fs *flag.FlagSet) {
-	fs.StringVar(&cmd.clairServer, "clair", "", "url to clair instance")
+	fs.StringVar(&cmd.clairServer, "clair", os.Getenv("CLAIR_URL"), "url to clair instance (or env var CLAIR_URL)")
 	fs.IntVar(&cmd.fixableThreshold, "fixable-threshhold", 0, "number of fixable issues permitted")
 }
 
