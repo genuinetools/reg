@@ -42,7 +42,7 @@
   name = "github.com/containerd/continuity"
   packages = ["pathdriver"]
   pruneopts = "NUT"
-  revision = "c2ac4ecc959316e616c37fd95143e972811bd12e"
+  revision = "7f53d412b9eb1cbf744c2063185d703a0ee34700"
 
 [[projects]]
   branch = "master"
@@ -55,7 +55,7 @@
     "pkg/pagination",
   ]
   pruneopts = "NUT"
-  revision = "d0a3fe9206309b34e562887f886d908f51e0821a"
+  revision = "44ae4bc9590a8f881ce6ffd42cc24973a328fa2a"
 
 [[projects]]
   branch = "master"
@@ -67,7 +67,7 @@
     "opts",
   ]
   pruneopts = "NUT"
-  revision = "b4180e8757e9d5f9b38813e10c4f4a1c0f6643b5"
+  revision = "54c19e67f69ce1d20ec46d090654326079287a0f"
 
 [[projects]]
   branch = "master"
@@ -92,7 +92,7 @@
     "registry/storage/cache/memory",
   ]
   pruneopts = "NUT"
-  revision = "b089e91688254eb5aef187f188c8ee0ebe4e4675"
+  revision = "16128bbac47f75050e82f7e91b04df33775e0c23"
 
 [[projects]]
   branch = "master"
@@ -132,7 +132,7 @@
     "registry/resumable",
   ]
   pruneopts = "NUT"
-  revision = "ed392603acbf7849aa68d760c67d9c645ac035d8"
+  revision = "a9c061deec0f8d452e4feb7258046d5e32a1143b"
 
 [[projects]]
   branch = "master"
@@ -140,7 +140,7 @@
   name = "github.com/docker/docker-ce"
   packages = ["components/cli/cli/config"]
   pruneopts = "NUT"
-  revision = "d156a93844295ae887439d37031e71737db7b5e0"
+  revision = "f53bd8bb8e43cb690048cd88d2ee41d39adaece3"
 
 [[projects]]
   digest = "1:8866486038791fe65ea1abf660041423954b1f3fb99ea6a0ad8424422e943458"
@@ -332,7 +332,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cfa8aa49949ef9e612512736234abd8023cffd7bc76865afcfeec9846b246daf"
+  digest = "1:3b374d4b78e68dbab0cc07ce56e75d8b267ce1ac1de6c7b610191789abd3fee1"
   name = "github.com/prometheus/client_golang"
   packages = [
     "prometheus",
@@ -340,7 +340,7 @@
     "prometheus/promhttp",
   ]
   pruneopts = "NUT"
-  revision = "e637cec7d9c8990247098639ebc6d43dd34ddd49"
+  revision = "f69c853d21c15596929fa9126ba211247e7dca95"
 
 [[projects]]
   branch = "master"
@@ -364,7 +364,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6621142cd60b7150ab66f38ff36303ca55843dc5a635c1f9a28f95ecddab72b4"
+  digest = "1:26a2f5e891cc4d2321f18a0caa84c8e788663c17bed6a487f3cbe2c4295292d0"
   name = "github.com/prometheus/procfs"
   packages = [
     ".",
@@ -373,7 +373,7 @@
     "xfs",
   ]
   pruneopts = "NUT"
-  revision = "05ee40e3a273f7245e8777337fc7b46e533a9a92"
+  revision = "418d78d0b9a7b7de3a6bbc8a23def624cc977bb2"
 
 [[projects]]
   branch = "master"
@@ -428,18 +428,18 @@
     "trace",
   ]
   pruneopts = "NUT"
-  revision = "26e67e76b6c3f6ce91f7c52def5af501b4e0f3a2"
+  revision = "f04abc6bdfa7a0171a8a0c9fd2ada9391044d056"
 
 [[projects]]
   branch = "master"
-  digest = "1:581828cee9f0d31195c1ae52ea8935dfaec395cee6c23adc02109b892b391c2e"
+  digest = "1:16c7423676f53021ecdec1e73a3c69f50e11c5b4988388940e7cb1634276755d"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "NUT"
-  revision = "d0be0721c37eeb5299f245a996a483160fc36940"
+  revision = "b09afc3d579e346c4a7e4705953acaf6f9e551bd"
 
 [[projects]]
   digest = "1:e7071ed636b5422cc51c0e3a6cebc229d6c9fffc528814b519a980641422d619"
@@ -466,14 +466,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:42448f154e7d40907ae03cbdf99dbcfa3feb927c4521e0f01c52c6142e4891d5"
+  digest = "1:ec1919b8b80839559effbe3eabcebf92238d12d3dd9182e51deb5da3ed12e5e9"
   name = "google.golang.org/genproto"
   packages = [
     "googleapis/api/annotations",
     "googleapis/rpc/status",
   ]
   pruneopts = "NUT"
-  revision = "4b56f30a1fd96a133a036b62cdd2a249883dd89b"
+  revision = "221a8d4f74948678f06caaa13c9d41d22e069ae8"
 
 [[projects]]
   digest = "1:5b805b8e03b29399b344655cac16873f026e54dc0a7c17b381f6f4d4c7b6d741"
