@@ -4,7 +4,13 @@ PKG := github.com/genuinetools/$(NAME)
 
 CGO_ENABLED := 0
 
+# Set any default go build tags.
+BUILDTAGS :=
+
 include basic.mk
+
+.PHONY: prebuild
+prebuild:
 
 # Set the graph driver as the current graphdriver if not set.
 DOCKER_GRAPHDRIVER := $(if $(DOCKER_GRAPHDRIVER),$(DOCKER_GRAPHDRIVER),$(shell docker info 2>&1 | grep "Storage Driver" | sed 's/.*: //'))
