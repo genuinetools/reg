@@ -25,6 +25,18 @@ GO := go
 # List the GOOS and GOARCH to build
 GOOSARCHES = $(shell cat .goosarch)
 
+# Set the graph driver as the current graphdriver if not set.
+DOCKER_GRAPHDRIVER := $(if $(DOCKER_GRAPHDRIVER),$(DOCKER_GRAPHDRIVER),$(shell docker info 2>&1 | grep "Storage Driver" | sed 's/.*: //'))
+export DOCKER_GRAPHDRIVER
+
+# If this session isn't interactive, then we don't want to allocate a
+# TTY, which would fail, but if it is interactive, we do want to attach
+# so that the user can send e.g. ^C through.
+INTERACTIVE := $(shell [ -t 0 ] && echo 1 || echo 0)
+ifeq ($(INTERACTIVE), 1)
+	DOCKER_FLAGS += -t
+endif
+
 .PHONY: build
 build: prebuild $(NAME) ## Builds a dynamic executable or package.
 
