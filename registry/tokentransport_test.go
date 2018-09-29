@@ -24,7 +24,7 @@ func TestErrBasicAuth(t *testing.T) {
 		Password:      "ss3j",
 		ServerAddress: ts.URL,
 	}
-	r, err := New(authConfig, Opt{Insecure: true, Debug: true})
+	r, err := New(authConfig.ServerAddress, authConfig, Opt{Insecure: true, Debug: true})
 	if err != nil {
 		t.Fatalf("expected no error creating client, got %v", err)
 	}

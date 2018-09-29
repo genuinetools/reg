@@ -24,6 +24,7 @@ var (
 
 	timeout time.Duration
 
+	authURL string
 	username string
 	password string
 
@@ -64,6 +65,8 @@ func main() {
 
 	p.FlagSet.DurationVar(&timeout, "timeout", time.Minute, "timeout for HTTP requests")
 
+	p.FlagSet.StringVar(&authURL, "auth-url", "", "alternate URL for registry authentication (ex. auth.docker.io)")
+
 	p.FlagSet.StringVar(&username, "username", "", "username for the registry")
 	p.FlagSet.StringVar(&username, "u", "", "username for the registry")
 
@@ -100,7 +103,12 @@ func main() {
 }
 
 func createRegistryClient(domain string) (*registry.Registry, error) {
-	auth, err := repoutils.GetAuthConfig(username, password, domain)
+	// Use the auth-url domain if provided
+	authDomain := authURL
+	if authDomain == "" {
+		authDomain = domain
+	}
+	auth, err := repoutils.GetAuthConfig(username, password, authDomain)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +119,7 @@ func createRegistryClient(domain string) (*registry.Registry, error) {
 	}
 
 	// Create the registry client.
-	return registry.New(auth, registry.Opt{
+	return registry.New(domain, auth, registry.Opt{
 		Insecure: insecure,
 		Debug:    debug,
 		SkipPing: skipPing,

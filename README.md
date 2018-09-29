@@ -43,6 +43,7 @@ Usage: reg <command>
 
 Flags:
 
+  --auth-url           alternate URL for registry authentication (ex. auth.docker.io) (default: <none>)
   -d                   enable debug logging (default: false)
   -f, --force-non-ssl  force allow use of non-ssl (default: false)
   -k, --insecure       do not verify tls certificates (default: false)

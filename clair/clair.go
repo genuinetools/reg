@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// Clair defines the client for retriving information from the clair API.
+// Clair defines the client for retrieving information from the clair API.
 type Clair struct {
 	URL      string
 	Client   *http.Client
@@ -81,7 +81,7 @@ func New(url string, opt Opt) (*Clair, error) {
 	return registry, nil
 }
 
-// url returns a clair URL with the passed arguements concatenated.
+// url returns a clair URL with the passed arguments concatenated.
 func (c *Clair) url(pathTemplate string, args ...interface{}) string {
 	pathSuffix := fmt.Sprintf(pathTemplate, args...)
 	url := fmt.Sprintf("%s%s", c.URL, pathSuffix)
