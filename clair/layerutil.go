@@ -52,7 +52,7 @@ func (c *Clair) NewClairV3Layer(r *registry.Registry, image string, fsLayer dist
 	}, nil
 }
 
-func (c *Clair) getLayers(r *registry.Registry, repo, tag string, filterEmpty bool) (map[int]distribution.Descriptor, error) {
+func (c *Clair) getLayers(r *registry.Registry, repo, tag string, filterEmpty bool) (map[int]distribution.Descriptor, string, error) {
 	ok := true
 	// Get the manifest to pass to clair.
 	mf, err := r.ManifestV2(repo, tag)
@@ -73,12 +73,12 @@ func (c *Clair) getLayers(r *registry.Registry, repo, tag string, filterEmpty bo
 			}
 		}
 
-		return filteredLayers, nil
+		return filteredLayers, mf.Config.Digest.String(), nil
 	}
 
 	m, err := r.ManifestV1(repo, tag)
 	if err != nil {
-		return nil, fmt.Errorf("getting the v1 manifest for %s:%s failed: %v", repo, tag, err)
+		return nil, "", fmt.Errorf("getting the v1 manifest for %s:%s failed: %v", repo, tag, err)
 	}
 
 	for i := 0; i < len(m.FSLayers); i++ {
@@ -91,5 +91,5 @@ func (c *Clair) getLayers(r *registry.Registry, repo, tag string, filterEmpty bo
 		}
 	}
 
-	return filteredLayers, nil
+	return filteredLayers, filteredLayers[0].Digest.String(), nil
 }
