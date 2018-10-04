@@ -39,7 +39,7 @@
                 </td>
                 {{if $.HasVulns}}
                 <td align="right" nowrap>
-                    <a href="/repo/{{ $value.Name | urlquery }}/tag/{{ $value.Tag }}/vulns" id="{{ .RegistryDomain }}{{ $value.Name }}:{{ $value.Tag }}">
+                    <a href="/repo/{{ $value.Name | urlquery }}/tag/{{ $value.Tag }}/vulns" id="{{ .RegistryDomain }}{{ $value.Name | urlquery }}:{{ $value.Tag }}">
                       <div class="signal"></div>
                     </a>
                 </td>
