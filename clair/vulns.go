@@ -19,7 +19,7 @@ func (c *Clair) Vulnerabilities(r *registry.Registry, repo, tag string) (Vulnera
 		VulnsBySeverity: make(map[string][]Vulnerability),
 	}
 
-	filteredLayers, reportName, err := c.getLayers(r, repo, tag, true)
+	filteredLayers, _, err := c.getLayers(r, repo, tag, true)
 	if err != nil {
 		return report, fmt.Errorf("getting filtered layers failed: %v", err)
 	}
@@ -42,9 +42,9 @@ func (c *Clair) Vulnerabilities(r *registry.Registry, repo, tag string) (Vulnera
 		}
 	}
 
-	report.Name = reportName
+	report.Name = filteredLayers[0].Digest.String()
 
-	vl, err := c.GetLayer(reportName, true, true)
+	vl, err := c.GetLayer(filteredLayers[0].Digest.String(), true, true)
 	if err != nil {
 		return report, err
 	}
