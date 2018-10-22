@@ -19,7 +19,7 @@ func (c *Clair) Vulnerabilities(r *registry.Registry, repo, tag string) (Vulnera
 		VulnsBySeverity: make(map[string][]Vulnerability),
 	}
 
-	filteredLayers, err := c.getLayers(r, repo, tag, true)
+	filteredLayers, _, err := c.getLayers(r, repo, tag, true)
 	if err != nil {
 		return report, fmt.Errorf("getting filtered layers failed: %v", err)
 	}
@@ -85,7 +85,7 @@ func (c *Clair) VulnerabilitiesV3(r *registry.Registry, repo, tag string) (Vulne
 		VulnsBySeverity: make(map[string][]Vulnerability),
 	}
 
-	layers, err := c.getLayers(r, repo, tag, false)
+	layers, reportName, err := c.getLayers(r, repo, tag, false)
 	if err != nil {
 		return report, fmt.Errorf("getting filtered layers failed: %v", err)
 	}
@@ -95,7 +95,7 @@ func (c *Clair) VulnerabilitiesV3(r *registry.Registry, repo, tag string) (Vulne
 		return report, nil
 	}
 
-	report.Name = layers[0].Digest.String()
+	report.Name = reportName
 
 	clairLayers := []*clairpb.PostAncestryRequest_PostLayer{}
 	for i := len(layers) - 1; i >= 0; i-- {
@@ -110,12 +110,12 @@ func (c *Clair) VulnerabilitiesV3(r *registry.Registry, repo, tag string) (Vulne
 	}
 
 	// Post the ancestry.
-	if err := c.PostAncestry(layers[0].Digest.String(), clairLayers); err != nil {
+	if err := c.PostAncestry(reportName, clairLayers); err != nil {
 		return report, fmt.Errorf("posting ancestry failed: %v", err)
 	}
 
 	// Get the ancestry.
-	vl, err := c.GetAncestry(layers[0].Digest.String())
+	vl, err := c.GetAncestry(reportName)
 	if err != nil {
 		return report, err
 	}
