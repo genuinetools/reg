@@ -51,7 +51,7 @@ func (r *Registry) ManifestList(repository, ref string) (manifestlist.ManifestLi
 	r.Logf("registry.manifests uri=%s repository=%s ref=%s", uri, repository, ref)
 
 	var m manifestlist.ManifestList
-	if _, err := r.getJSON(uri, &m, true); err != nil {
+	if _, err := r.getJSON(uri, &m); err != nil {
 		r.Logf("registry.manifests response=%v", m)
 		return m, err
 	}
@@ -65,7 +65,7 @@ func (r *Registry) ManifestV2(repository, ref string) (schema2.Manifest, error) 
 	r.Logf("registry.manifests uri=%s repository=%s ref=%s", uri, repository, ref)
 
 	var m schema2.Manifest
-	if _, err := r.getJSON(uri, &m, true); err != nil {
+	if _, err := r.getJSON(uri, &m); err != nil {
 		r.Logf("registry.manifests response=%v", m)
 		return m, err
 	}
@@ -79,7 +79,7 @@ func (r *Registry) ManifestV1(repository, ref string) (schema1.SignedManifest, e
 	r.Logf("registry.manifests uri=%s repository=%s ref=%s", uri, repository, ref)
 
 	var m schema1.SignedManifest
-	if _, err := r.getJSON(uri, &m, false); err != nil {
+	if _, err := r.getJSON(uri, &m); err != nil {
 		r.Logf("registry.manifests response=%v", m)
 		return m, err
 	}
