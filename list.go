@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -36,6 +37,9 @@ func (cmd *listCommand) Run(ctx context.Context, args []string) error {
 	// Get the repositories via catalog.
 	repos, err := r.Catalog("")
 	if err != nil {
+		if _, ok := err.(*json.SyntaxError); ok {
+			return fmt.Errorf("Domain %s is not a valid registry", r.Domain)
+		}
 		return err
 	}
 	sort.Strings(repos)
