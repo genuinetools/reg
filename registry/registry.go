@@ -15,7 +15,7 @@ import (
 	"github.com/docker/docker/api/types"
 )
 
-// Registry defines the client for retriving information from the registry API.
+// Registry defines the client for retrieving information from the registry API.
 type Registry struct {
 	URL      string
 	Domain   string
@@ -50,7 +50,7 @@ type Opt struct {
 }
 
 // New creates a new Registry struct with the given URL and credentials.
-func New(auth types.AuthConfig, opt Opt) (*Registry, error) {
+func New(domain string, auth types.AuthConfig, opt Opt) (*Registry, error) {
 	transport := http.DefaultTransport
 
 	if opt.Insecure {
@@ -61,11 +61,12 @@ func New(auth types.AuthConfig, opt Opt) (*Registry, error) {
 		}
 	}
 
-	return newFromTransport(auth, transport, opt)
+	return newFromTransport(domain, auth, transport, opt)
 }
 
-func newFromTransport(auth types.AuthConfig, transport http.RoundTripper, opt Opt) (*Registry, error) {
-	url := strings.TrimSuffix(auth.ServerAddress, "/")
+func newFromTransport(domain string, auth types.AuthConfig, transport http.RoundTripper, opt Opt) (*Registry, error) {
+	url := strings.TrimSuffix(domain, "/")
+	authURL := strings.TrimSuffix(auth.ServerAddress, "/")
 
 	if !reProtocol.MatchString(url) {
 		if !opt.NonSSL {
@@ -73,6 +74,9 @@ func newFromTransport(auth types.AuthConfig, transport http.RoundTripper, opt Op
 		} else {
 			url = "http://" + url
 		}
+	}
+	if !reProtocol.MatchString(authURL) {
+		authURL = "https://" + authURL
 	}
 
 	tokenTransport := &TokenTransport{
@@ -82,7 +86,7 @@ func newFromTransport(auth types.AuthConfig, transport http.RoundTripper, opt Op
 	}
 	basicAuthTransport := &BasicTransport{
 		Transport: tokenTransport,
-		URL:       url,
+		URL:       authURL,
 		Username:  auth.Username,
 		Password:  auth.Password,
 	}

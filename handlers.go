@@ -43,7 +43,7 @@ type Repository struct {
 	VulnerabilityReport clair.VulnerabilityReport `json:"vulnerability"`
 }
 
-// A AnalysisResult holds all vulnerabilities of a scan
+// An AnalysisResult holds all vulnerabilities of a scan
 type AnalysisResult struct {
 	Repositories   []Repository `json:"repositories"`
 	RegistryDomain string       `json:"registryDomain"`

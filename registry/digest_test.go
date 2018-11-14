@@ -12,7 +12,7 @@ func TestDigestFromDockerHub(t *testing.T) {
 		t.Fatalf("Could not get auth config: %s", err)
 	}
 
-	r, err := New(auth, Opt{})
+	r, err := New(auth.ServerAddress, auth, Opt{})
 	if err != nil {
 		t.Fatalf("Could not create registry instance: %s", err)
 	}
@@ -33,7 +33,7 @@ func TestDigestFromGCR(t *testing.T) {
 		t.Fatalf("Could not get auth config: %s", err)
 	}
 
-	r, err := New(auth, Opt{})
+	r, err := New(auth.ServerAddress, auth, Opt{})
 	if err != nil {
 		t.Fatalf("Could not create registry instance: %s", err)
 	}
