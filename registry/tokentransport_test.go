@@ -25,7 +25,7 @@ func TestErrBasicAuth(t *testing.T) {
 		Password:      "ss3j",
 		ServerAddress: ts.URL,
 	}
-	r, err := New(authConfig.ServerAddress, authConfig, Opt{Insecure: true, Debug: true})
+	r, err := New(authConfig, Opt{Insecure: true, Debug: true})
 	if err != nil {
 		t.Fatalf("expected no error creating client, got %v", err)
 	}
@@ -78,7 +78,7 @@ func TestBothTokenAndAccessTokenWork(t *testing.T) {
 			ServerAddress: ts.URL,
 		}
 		authConfig.Email = "me@email.com"
-		r, err := New(ts.URL, authConfig, Opt{Insecure: true, Debug: true})
+		r, err := New(authConfig, Opt{Insecure: true, Debug: true})
 		if err != nil {
 			t.Fatalf("expected no error creating client, got %v", err)
 		}

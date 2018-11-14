@@ -103,7 +103,7 @@ func main() {
 }
 
 func createRegistryClient(domain string) (*registry.Registry, error) {
-	// Use the auth-url domain if provided
+	// Use the auth-url domain if provided.
 	authDomain := authURL
 	if authDomain == "" {
 		authDomain = domain
@@ -119,7 +119,8 @@ func createRegistryClient(domain string) (*registry.Registry, error) {
 	}
 
 	// Create the registry client.
-	return registry.New(domain, auth, registry.Opt{
+	return registry.New(auth, registry.Opt{
+		Domain:   domain,
 		Insecure: insecure,
 		Debug:    debug,
 		SkipPing: skipPing,

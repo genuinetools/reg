@@ -41,6 +41,7 @@ func Log(format string, args ...interface{}) {
 
 // Opt holds the options for a new registry.
 type Opt struct {
+	Domain   string
 	Insecure bool
 	Debug    bool
 	SkipPing bool
@@ -50,7 +51,7 @@ type Opt struct {
 }
 
 // New creates a new Registry struct with the given URL and credentials.
-func New(domain string, auth types.AuthConfig, opt Opt) (*Registry, error) {
+func New(auth types.AuthConfig, opt Opt) (*Registry, error) {
 	transport := http.DefaultTransport
 
 	if opt.Insecure {
@@ -61,11 +62,14 @@ func New(domain string, auth types.AuthConfig, opt Opt) (*Registry, error) {
 		}
 	}
 
-	return newFromTransport(domain, auth, transport, opt)
+	return newFromTransport(auth, transport, opt)
 }
 
-func newFromTransport(domain string, auth types.AuthConfig, transport http.RoundTripper, opt Opt) (*Registry, error) {
-	url := strings.TrimSuffix(domain, "/")
+func newFromTransport(auth types.AuthConfig, transport http.RoundTripper, opt Opt) (*Registry, error) {
+	if len(opt.Domain) < 1 {
+		opt.Domain = auth.ServerAddress
+	}
+	url := strings.TrimSuffix(opt.Domain, "/")
 	authURL := strings.TrimSuffix(auth.ServerAddress, "/")
 
 	if !reProtocol.MatchString(url) {
@@ -75,8 +79,13 @@ func newFromTransport(domain string, auth types.AuthConfig, transport http.Round
 			url = "http://" + url
 		}
 	}
+
 	if !reProtocol.MatchString(authURL) {
-		authURL = "https://" + authURL
+		if !opt.NonSSL {
+			authURL = "https://" + authURL
+		} else {
+			authURL = "http://" + authURL
+		}
 	}
 
 	tokenTransport := &TokenTransport{
