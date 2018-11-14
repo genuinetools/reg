@@ -40,7 +40,18 @@ func (t *TokenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 type authToken struct {
-	Token string `json:"token"`
+	Token       string `json:"token"`
+	AccessToken string `json:"access_token"`
+}
+
+func (t authToken) String() (string, error) {
+	if t.Token != "" {
+		return t.Token, nil
+	}
+	if t.AccessToken != "" {
+		return t.AccessToken, nil
+	}
+	return "", errors.New("auth token cannot be empty")
 }
 
 func (t *TokenTransport) authAndRetry(authService *authService, req *http.Request) (*http.Response, error) {
@@ -81,7 +92,8 @@ func (t *TokenTransport) auth(authService *authService) (string, *http.Response,
 		return "", nil, err
 	}
 
-	return authToken.Token, nil, nil
+	token, err := authToken.String()
+	return token, nil, err
 }
 
 func (t *TokenTransport) retry(req *http.Request, token string) (*http.Response, error) {
@@ -187,11 +199,7 @@ func (r *Registry) Token(url string) (string, error) {
 		return "", err
 	}
 
-	if authToken.Token == "" {
-		return "", errors.New("Auth token cannot be empty")
-	}
-
-	return authToken.Token, nil
+	return authToken.String()
 }
 
 // Headers returns the authorization headers for a specific uri.
