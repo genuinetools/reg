@@ -24,7 +24,7 @@ var (
 
 	timeout time.Duration
 
-	authURL string
+	authURL  string
 	username string
 	password string
 
