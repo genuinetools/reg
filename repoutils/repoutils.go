@@ -56,19 +56,24 @@ func GetAuthConfig(username, password, registry string) (types.AuthConfig, error
 	if registry != "" {
 		// try with the user input
 		if creds, ok := authConfigs[registry]; ok {
+			fixAuthConfig(&creds, registry)
 			return creds, nil
 		}
 
 		// remove https:// from user input and try again
 		if strings.HasPrefix(registry, "https://") {
-			if creds, ok := authConfigs[strings.TrimPrefix(registry, "https://")]; ok {
+			registryCleaned := strings.TrimPrefix(registry, "https://")
+			if creds, ok := authConfigs[registryCleaned]; ok {
+				fixAuthConfig(&creds, registryCleaned)
 				return creds, nil
 			}
 		}
 
 		// remove http:// from user input and try again
 		if strings.HasPrefix(registry, "http://") {
-			if creds, ok := authConfigs[strings.TrimPrefix(registry, "http://")]; ok {
+			registryCleaned := strings.TrimPrefix(registry, "http://")
+			if creds, ok := authConfigs[registryCleaned]; ok {
+				fixAuthConfig(&creds, registryCleaned)
 				return creds, nil
 			}
 		}
@@ -76,7 +81,9 @@ func GetAuthConfig(username, password, registry string) (types.AuthConfig, error
 		// add https:// to user input and try again
 		// see https://github.com/genuinetools/reg/issues/32
 		if !strings.HasPrefix(registry, "https://") && !strings.HasPrefix(registry, "http://") {
-			if creds, ok := authConfigs["https://"+registry]; ok {
+			registryCleaned := "https://" + registry
+			if creds, ok := authConfigs[registryCleaned]; ok {
+				fixAuthConfig(&creds, registryCleaned)
 				return creds, nil
 			}
 		}
@@ -100,6 +107,16 @@ func GetAuthConfig(username, password, registry string) (types.AuthConfig, error
 	// We should never get here.
 	fmt.Println("Not using any authentication")
 	return types.AuthConfig{}, nil
+}
+
+// fixAuthConfig overwrites the AuthConfig's ServerAddress field with the
+// registry value if ServerAddress is empty. For example, config.Load() will
+// return AuthConfigs with empty ServerAddresses if the configuration file
+// contains only an "credsHelper" object.
+func fixAuthConfig(creds *types.AuthConfig, registry string) {
+	if creds.ServerAddress == "" {
+		creds.ServerAddress = registry
+	}
 }
 
 // GetRepoAndRef parses the repo name and reference.
