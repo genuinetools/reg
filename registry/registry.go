@@ -44,6 +44,7 @@ type Opt struct {
 	Insecure bool
 	Debug    bool
 	SkipPing bool
+	NonSSL   bool
 	Timeout  time.Duration
 	Headers  map[string]string
 }
@@ -67,7 +68,11 @@ func newFromTransport(auth types.AuthConfig, transport http.RoundTripper, opt Op
 	url := strings.TrimSuffix(auth.ServerAddress, "/")
 
 	if !reProtocol.MatchString(url) {
-		url = "https://" + url
+		if !opt.NonSSL {
+			url = "https://" + url
+		} else {
+			url = "http://" + url
+		}
 	}
 
 	tokenTransport := &TokenTransport{
