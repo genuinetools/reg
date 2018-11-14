@@ -260,7 +260,7 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	image, err := registry.ParseImage(repo + ":" + tag)
+	image, err := registry.ParseImage(rc.reg.Domain + "/" + repo + ":" + tag)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"func":   "vulnerabilities",

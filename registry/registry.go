@@ -44,6 +44,7 @@ type Opt struct {
 	Insecure bool
 	Debug    bool
 	SkipPing bool
+	NonSSL   bool
 	Timeout  time.Duration
 	Headers  map[string]string
 }
@@ -68,7 +69,11 @@ func newFromTransport(domain string, auth types.AuthConfig, transport http.Round
 	authURL := strings.TrimSuffix(auth.ServerAddress, "/")
 
 	if !reProtocol.MatchString(url) {
-		url = "https://" + url
+		if !opt.NonSSL {
+			url = "https://" + url
+		} else {
+			url = "http://" + url
+		}
 	}
 	if !reProtocol.MatchString(authURL) {
 		authURL = "https://" + authURL
@@ -128,14 +133,19 @@ func (r *Registry) url(pathTemplate string, args ...interface{}) string {
 	return url
 }
 
-func (r *Registry) getJSON(url string, response interface{}, addV2Header bool) (http.Header, error) {
+func (r *Registry) getJSON(url string, response interface{}) (http.Header, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
-	if addV2Header {
-		req.Header.Add("Accept", fmt.Sprintf("%s,%s;q=0.9", schema2.MediaTypeManifest, manifestlist.MediaTypeManifestList))
+
+	switch response.(type) {
+	case *schema2.Manifest:
+		req.Header.Add("Accept", fmt.Sprintf("%s;q=0.9", schema2.MediaTypeManifest))
+	case *manifestlist.ManifestList:
+		req.Header.Add("Accept", fmt.Sprintf("%s;q=0.9", manifestlist.MediaTypeManifestList))
 	}
+
 	resp, err := r.Client.Do(req)
 	if err != nil {
 		return nil, err

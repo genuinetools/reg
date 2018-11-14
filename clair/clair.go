@@ -81,6 +81,11 @@ func New(url string, opt Opt) (*Clair, error) {
 	return registry, nil
 }
 
+// Close closes the gRPC connection
+func (c *Clair) Close() error {
+	return c.grpcConn.Close()
+}
+
 // url returns a clair URL with the passed arguments concatenated.
 func (c *Clair) url(pathTemplate string, args ...interface{}) string {
 	pathSuffix := fmt.Sprintf(pathTemplate, args...)
