@@ -3,6 +3,7 @@ package registry
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +12,11 @@ import (
 	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/distribution/manifest/schema2"
+)
+
+var (
+	// ErrUnexpectedSchemaVersion a specific schema version was requested, but was not returned
+	ErrUnexpectedSchemaVersion = errors.New("recieved a different schema version than expected")
 )
 
 // Manifest returns the manifest for a specific repository:tag.
@@ -70,6 +76,10 @@ func (r *Registry) ManifestV2(repository, ref string) (schema2.Manifest, error) 
 		return m, err
 	}
 
+	if m.Versioned.SchemaVersion != 2 {
+		return m, ErrUnexpectedSchemaVersion
+	}
+
 	return m, nil
 }
 
@@ -82,6 +92,10 @@ func (r *Registry) ManifestV1(repository, ref string) (schema1.SignedManifest, e
 	if _, err := r.getJSON(uri, &m); err != nil {
 		r.Logf("registry.manifests response=%v", m)
 		return m, err
+	}
+
+	if m.Versioned.SchemaVersion != 1 {
+		return m, ErrUnexpectedSchemaVersion
 	}
 
 	return m, nil
