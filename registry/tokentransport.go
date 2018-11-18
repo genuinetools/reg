@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
@@ -55,7 +56,7 @@ func (t authToken) String() (string, error) {
 }
 
 func (t *TokenTransport) authAndRetry(authService *authService, req *http.Request) (*http.Response, error) {
-	token, authResp, err := t.auth(authService)
+	token, authResp, err := t.auth(req.Context(), authService)
 	if err != nil {
 		return authResp, err
 	}
@@ -67,7 +68,7 @@ func (t *TokenTransport) authAndRetry(authService *authService, req *http.Reques
 	return response, err
 }
 
-func (t *TokenTransport) auth(authService *authService) (string, *http.Response, error) {
+func (t *TokenTransport) auth(ctx context.Context, authService *authService) (string, *http.Response, error) {
 	authReq, err := authService.Request(t.Username, t.Password)
 	if err != nil {
 		return "", nil, err
@@ -77,7 +78,7 @@ func (t *TokenTransport) auth(authService *authService) (string, *http.Response,
 		Transport: t.Transport,
 	}
 
-	resp, err := c.Do(authReq)
+	resp, err := c.Do(authReq.WithContext(ctx))
 	if err != nil {
 		return "", nil, err
 	}
