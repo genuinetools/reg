@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -10,6 +11,7 @@ import (
 )
 
 func TestErrBasicAuth(t *testing.T) {
+	ctx := context.Background()
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
 			w.Header().Set("www-authenticate", `Basic realm="Registry Realm",service="Docker registry"`)
@@ -25,11 +27,11 @@ func TestErrBasicAuth(t *testing.T) {
 		Password:      "ss3j",
 		ServerAddress: ts.URL,
 	}
-	r, err := New(authConfig, Opt{Insecure: true, Debug: true})
+	r, err := New(ctx, authConfig, Opt{Insecure: true, Debug: true})
 	if err != nil {
 		t.Fatalf("expected no error creating client, got %v", err)
 	}
-	token, err := r.Token(ts.URL)
+	token, err := r.Token(ctx, ts.URL)
 	if err != ErrBasicAuth {
 		t.Fatalf("expected ErrBasicAuth getting token, got %v", err)
 	}
@@ -71,6 +73,7 @@ func TestBothTokenAndAccessTokenWork(t *testing.T) {
 	defer ts.Close()
 
 	for _, which := range []string{"token", "accesstoken"} {
+		ctx := context.Background()
 		authURI = ts.URL + "/oauth2/" + which + "?service=my.endpoint.here"
 		authConfig := types.AuthConfig{
 			Username:      "abc",
@@ -78,11 +81,11 @@ func TestBothTokenAndAccessTokenWork(t *testing.T) {
 			ServerAddress: ts.URL,
 		}
 		authConfig.Email = "me@email.com"
-		r, err := New(authConfig, Opt{Insecure: true, Debug: true})
+		r, err := New(ctx, authConfig, Opt{Insecure: true, Debug: true})
 		if err != nil {
 			t.Fatalf("expected no error creating client, got %v", err)
 		}
-		token, err := r.Token(ts.URL)
+		token, err := r.Token(ctx, ts.URL)
 		if err != nil {
 			t.Fatalf("err getting token from url: %v err: %v", ts.URL, err)
 		}

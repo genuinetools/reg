@@ -32,7 +32,7 @@ func (c *Clair) Vulnerabilities(ctx context.Context, r *registry.Registry, repo,
 
 	for i := len(filteredLayers) - 1; i >= 0; i-- {
 		// Form the clair layer.
-		l, err := c.NewClairLayer(r, repo, filteredLayers, i)
+		l, err := c.NewClairLayer(ctx, r, repo, filteredLayers, i)
 		if err != nil {
 			return report, err
 		}
@@ -101,7 +101,7 @@ func (c *Clair) VulnerabilitiesV3(ctx context.Context, r *registry.Registry, rep
 	clairLayers := []*clairpb.PostAncestryRequest_PostLayer{}
 	for i := len(layers) - 1; i >= 0; i-- {
 		// Form the clair layer.
-		l, err := c.NewClairV3Layer(r, repo, layers[i])
+		l, err := c.NewClairV3Layer(ctx, r, repo, layers[i])
 		if err != nil {
 			return report, err
 		}

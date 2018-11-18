@@ -138,7 +138,7 @@ func isTokenDemand(resp *http.Response) (*authService, error) {
 
 // Token returns the required token for the specific resource url. If the registry requires basic authentication, this
 // function returns ErrBasicAuth.
-func (r *Registry) Token(url string) (string, error) {
+func (r *Registry) Token(ctx context.Context, url string) (string, error) {
 	r.Logf("registry.token url=%s", url)
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -158,7 +158,7 @@ func (r *Registry) Token(url string) (string, error) {
 		}
 	}
 
-	resp, err := client.Do(req)
+	resp, err := client.Do(req.WithContext(ctx))
 	if err != nil {
 		return "", err
 	}
@@ -185,7 +185,7 @@ func (r *Registry) Token(url string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	resp, err = http.DefaultClient.Do(authReq)
+	resp, err = http.DefaultClient.Do(authReq.WithContext(ctx))
 	if err != nil {
 		return "", err
 	}
@@ -204,9 +204,9 @@ func (r *Registry) Token(url string) (string, error) {
 }
 
 // Headers returns the authorization headers for a specific uri.
-func (r *Registry) Headers(uri string) (map[string]string, error) {
+func (r *Registry) Headers(ctx context.Context, uri string) (map[string]string, error) {
 	// Get the token.
-	token, err := r.Token(uri)
+	token, err := r.Token(ctx, uri)
 	if err != nil {
 		if err == ErrBasicAuth {
 			// If we couldn't get a token because the server requires basic auth, just return basic auth headers.
