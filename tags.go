@@ -33,12 +33,12 @@ func (cmd *tagsCommand) Run(ctx context.Context, args []string) error {
 	}
 
 	// Create the registry client.
-	r, err := createRegistryClient(image.Domain)
+	r, err := createRegistryClient(ctx, image.Domain)
 	if err != nil {
 		return err
 	}
 
-	tags, err := r.Tags(image.Path)
+	tags, err := r.Tags(ctx, image.Path)
 	if err != nil {
 		return err
 	}

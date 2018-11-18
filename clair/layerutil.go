@@ -1,6 +1,7 @@
 package clair
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -52,10 +53,10 @@ func (c *Clair) NewClairV3Layer(r *registry.Registry, image string, fsLayer dist
 	}, nil
 }
 
-func (c *Clair) getLayers(r *registry.Registry, repo, tag string, filterEmpty bool) (map[int]distribution.Descriptor, string, error) {
+func (c *Clair) getLayers(ctx context.Context, r *registry.Registry, repo, tag string, filterEmpty bool) (map[int]distribution.Descriptor, string, error) {
 	ok := true
 	// Get the manifest to pass to clair.
-	mf, err := r.ManifestV2(repo, tag)
+	mf, err := r.ManifestV2(ctx, repo, tag)
 	if err != nil {
 		ok = false
 		c.Logf("couldn't retrieve manifest v2, falling back to v1")
@@ -76,7 +77,7 @@ func (c *Clair) getLayers(r *registry.Registry, repo, tag string, filterEmpty bo
 		return filteredLayers, mf.Config.Digest.String(), nil
 	}
 
-	m, err := r.ManifestV1(repo, tag)
+	m, err := r.ManifestV1(ctx, repo, tag)
 	if err != nil {
 		return nil, "", fmt.Errorf("getting the v1 manifest for %s:%s failed: %v", repo, tag, err)
 	}

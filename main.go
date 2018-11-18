@@ -102,7 +102,7 @@ func main() {
 	p.Run()
 }
 
-func createRegistryClient(domain string) (*registry.Registry, error) {
+func createRegistryClient(ctx context.Context, domain string) (*registry.Registry, error) {
 	// Use the auth-url domain if provided.
 	authDomain := authURL
 	if authDomain == "" {
@@ -119,7 +119,7 @@ func createRegistryClient(domain string) (*registry.Registry, error) {
 	}
 
 	// Create the registry client.
-	return registry.New(auth, registry.Opt{
+	return registry.New(ctx, auth, registry.Opt{
 		Domain:   domain,
 		Insecure: insecure,
 		Debug:    debug,

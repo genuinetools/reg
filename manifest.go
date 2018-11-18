@@ -36,7 +36,7 @@ func (cmd *manifestCommand) Run(ctx context.Context, args []string) error {
 	}
 
 	// Create the registry client.
-	r, err := createRegistryClient(image.Domain)
+	r, err := createRegistryClient(ctx, image.Domain)
 	if err != nil {
 		return err
 	}
@@ -44,13 +44,13 @@ func (cmd *manifestCommand) Run(ctx context.Context, args []string) error {
 	var manifest interface{}
 	if cmd.v1 {
 		// Get the v1 manifest if it was explicitly asked for.
-		manifest, err = r.ManifestV1(image.Path, image.Reference())
+		manifest, err = r.ManifestV1(ctx, image.Path, image.Reference())
 		if err != nil {
 			return err
 		}
 	} else {
 		// Get the v2 manifest.
-		manifest, err = r.Manifest(image.Path, image.Reference())
+		manifest, err = r.Manifest(ctx, image.Path, image.Reference())
 		if err != nil {
 			return err
 		}

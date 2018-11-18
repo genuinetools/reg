@@ -1,6 +1,7 @@
 package clair
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -93,8 +94,12 @@ func (c *Clair) url(pathTemplate string, args ...interface{}) string {
 	return url
 }
 
-func (c *Clair) getJSON(url string, response interface{}) (http.Header, error) {
-	resp, err := c.Client.Get(url)
+func (c *Clair) getJSON(ctx context.Context, url string, response interface{}) (http.Header, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.Client.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, err
 	}

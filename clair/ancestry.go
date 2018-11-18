@@ -13,7 +13,7 @@ var (
 )
 
 // GetAncestry displays an ancestry and all of its features and vulnerabilities.
-func (c *Clair) GetAncestry(name string) (*clairpb.GetAncestryResponse_Ancestry, error) {
+func (c *Clair) GetAncestry(ctx context.Context, name string) (*clairpb.GetAncestryResponse_Ancestry, error) {
 	c.Logf("clair.ancestry.get name=%s", name)
 
 	if c.grpcConn == nil {
@@ -22,7 +22,7 @@ func (c *Clair) GetAncestry(name string) (*clairpb.GetAncestryResponse_Ancestry,
 
 	client := clairpb.NewAncestryServiceClient(c.grpcConn)
 
-	resp, err := client.GetAncestry(context.Background(), &clairpb.GetAncestryRequest{
+	resp, err := client.GetAncestry(ctx, &clairpb.GetAncestryRequest{
 		AncestryName: name,
 	})
 	if err != nil {
@@ -41,7 +41,7 @@ func (c *Clair) GetAncestry(name string) (*clairpb.GetAncestryResponse_Ancestry,
 }
 
 // PostAncestry performs the analysis of all layers from the provided path.
-func (c *Clair) PostAncestry(name string, layers []*clairpb.PostAncestryRequest_PostLayer) error {
+func (c *Clair) PostAncestry(ctx context.Context, name string, layers []*clairpb.PostAncestryRequest_PostLayer) error {
 	c.Logf("clair.ancestry.post name=%s", name)
 
 	if c.grpcConn == nil {
@@ -50,7 +50,7 @@ func (c *Clair) PostAncestry(name string, layers []*clairpb.PostAncestryRequest_
 
 	client := clairpb.NewAncestryServiceClient(c.grpcConn)
 
-	resp, err := client.PostAncestry(context.Background(), &clairpb.PostAncestryRequest{
+	resp, err := client.PostAncestry(ctx, &clairpb.PostAncestryRequest{
 		AncestryName: name,
 		Layers:       layers,
 		Format:       "Docker",
