@@ -157,7 +157,7 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	// Generate the tags template.
-	b, err := rc.generateTagsTemplate(r.Context(), repo, rc.cl != nil)
+	b, err := rc.generateTagsTemplate(context.TODO(), repo, rc.cl != nil)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"func":   "tags",
@@ -273,10 +273,10 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 	}
 
 	// Get the vulnerability report.
-	result, err := rc.cl.VulnerabilitiesV3(r.Context(), rc.reg, image.Path, image.Reference())
+	result, err := rc.cl.VulnerabilitiesV3(context.TODO(), rc.reg, image.Path, image.Reference())
 	if err != nil {
 		// Fallback to Clair v2 API.
-		result, err = rc.cl.Vulnerabilities(r.Context(), rc.reg, image.Path, image.Reference())
+		result, err = rc.cl.Vulnerabilities(context.TODO(), rc.reg, image.Path, image.Reference())
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
 				"func":   "vulnerabilities",
