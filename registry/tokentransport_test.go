@@ -147,3 +147,47 @@ func TestTokenTransportTokenDemandErr(t *testing.T) {
 		t.Fatal("Expected body to be closed")
 	}
 }
+
+func TestTokenTransportAuthLeak(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(oauthFlow))
+	authURI = ts.URL + "/oauth2/token?service=my.endpoint.here"
+	callCounter := 0
+	body := &testBody{t: t}
+	tokenTransport := &TokenTransport{
+		Transport: testTransport(func(req *http.Request) (*http.Response, error) {
+			callCounter++
+			switch callCounter {
+			case 1: // failing authentication
+				header := http.Header{}
+				header.Set("www-authenticate", `Bearer realm="`+authURI+`/oauth2/token",service="my.endpoint.here"`)
+				return &http.Response{
+					Body:       body,
+					StatusCode: http.StatusUnauthorized,
+					Header:     header,
+				}, nil
+			case 2: // auth request
+				return ts.Client().Transport.RoundTrip(req)
+			default:
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Body:       &testBody{t: t},
+					Header:     http.Header{},
+				}, nil
+
+			}
+		}),
+	}
+	resp, err := tokenTransport.RoundTrip(httptest.NewRequest(http.MethodGet, "/", nil))
+	if err != nil {
+		t.Fatalf("Unexpected error: %s", err)
+	}
+	if resp == nil {
+		t.Fatal("Response is missing")
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected status code: %d", resp.StatusCode)
+	}
+	if !body.closed {
+		t.Fatal("Expected body to be closed")
+	}
+}
