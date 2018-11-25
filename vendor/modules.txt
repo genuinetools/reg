@@ -197,3 +197,5 @@ google.golang.org/grpc/resolver/passthrough
 google.golang.org/grpc/stats
 google.golang.org/grpc/tap
 google.golang.org/grpc/balancer/base
+# gopkg.in/yaml.v2 v2.2.1
+gopkg.in/yaml.v2
