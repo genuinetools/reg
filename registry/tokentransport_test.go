@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -89,5 +90,104 @@ func TestBothTokenAndAccessTokenWork(t *testing.T) {
 		if token == "" {
 			t.Fatalf("error got empty token")
 		}
+	}
+}
+
+type testTransport func(*http.Request) (*http.Response, error)
+
+func (tt testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	return tt(req)
+}
+
+func TestTokenTransportErrorHandling(t *testing.T) {
+	tokenTransport := &TokenTransport{
+		Transport: testTransport(func(req *http.Request) (*http.Response, error) {
+			return nil, errors.New("transport failed")
+		}),
+	}
+	_, err := tokenTransport.RoundTrip(httptest.NewRequest(http.MethodGet, "/", nil))
+	if err == nil {
+		t.Fatalf("got no error from round trip: %s", err)
+	}
+}
+
+type testBody struct {
+	t      *testing.T
+	closed bool
+}
+
+func (tb *testBody) Read(p []byte) (n int, err error) {
+	tb.t.Helper()
+	panic("unexpected read")
+}
+
+func (tb *testBody) Close() error {
+	tb.closed = true
+	return nil
+}
+
+func TestTokenTransportTokenDemandErr(t *testing.T) {
+	body := &testBody{t: t}
+	tokenTransport := &TokenTransport{
+		Transport: testTransport(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				Body:       body,
+				StatusCode: http.StatusUnauthorized,
+			}, nil
+		}),
+	}
+	resp, err := tokenTransport.RoundTrip(httptest.NewRequest(http.MethodGet, "/", nil))
+	if err == nil {
+		t.Fatal("Expected error due to missing auth challenge header, got none")
+	}
+	if resp != nil {
+		t.Fatal("Expected no response")
+	}
+	if !body.closed {
+		t.Fatal("Expected body to be closed")
+	}
+}
+
+func TestTokenTransportAuthLeak(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(oauthFlow))
+	authURI = ts.URL + "/oauth2/token?service=my.endpoint.here"
+	callCounter := 0
+	body := &testBody{t: t}
+	tokenTransport := &TokenTransport{
+		Transport: testTransport(func(req *http.Request) (*http.Response, error) {
+			callCounter++
+			switch callCounter {
+			case 1: // failing authentication
+				header := http.Header{}
+				header.Set("www-authenticate", `Bearer realm="`+authURI+`/oauth2/token",service="my.endpoint.here"`)
+				return &http.Response{
+					Body:       body,
+					StatusCode: http.StatusUnauthorized,
+					Header:     header,
+				}, nil
+			case 2: // auth request
+				return ts.Client().Transport.RoundTrip(req)
+			default:
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Body:       &testBody{t: t},
+					Header:     http.Header{},
+				}, nil
+
+			}
+		}),
+	}
+	resp, err := tokenTransport.RoundTrip(httptest.NewRequest(http.MethodGet, "/", nil))
+	if err != nil {
+		t.Fatalf("Unexpected error: %s", err)
+	}
+	if resp == nil {
+		t.Fatal("Response is missing")
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected status code: %d", resp.StatusCode)
+	}
+	if !body.closed {
+		t.Fatal("Expected body to be closed")
 	}
 }
