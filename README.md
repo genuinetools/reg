@@ -10,6 +10,21 @@ Docker registry v2 command line client and repo listing generator with security 
 
 <!-- toc -->
 
+- [Installation](#installation)
+    + [Binaries](#binaries)
+    + [Via Go](#via-go)
+- [Usage](#usage)
+  * [Auth](#auth)
+  * [List Repositories and Tags](#list-repositories-and-tags)
+  * [Get a Manifest](#get-a-manifest)
+  * [Get the Digest](#get-the-digest)
+  * [Download a Layer](#download-a-layer)
+  * [Delete an Image](#delete-an-image)
+  * [Vulnerability Reports](#vulnerability-reports)
+  * [Generating Static Website for a Registry](#generating-static-website-for-a-registry)
+  * [Using Self-Signed Certs with a Registry](#using-self-signed-certs-with-a-registry)
+- [Contributing](#contributing)
+
 <!-- tocstop -->
 
 ## Installation
