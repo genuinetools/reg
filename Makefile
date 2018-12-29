@@ -35,10 +35,6 @@ dind: stop-dind ## Starts a docker-in-docker container for running the tests wit
 stop-dind: ## Stops the docker-in-docker container.
 	@docker rm -f $(NAME)-dind >/dev/null 2>&1 || true
 
-.PHONY: image-dev
-image-dev:
-	docker build --rm --force-rm -f Dockerfile.dev -t $(REGISTRY)/$(NAME):dev .
-
 .PHONY: dtest
 dtest: image-dev ## Run the tests in a docker container.
 	docker run --rm -i $(DOCKER_FLAGS) \

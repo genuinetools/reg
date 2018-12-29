@@ -5,6 +5,7 @@ ENV PATH /go/bin:/usr/local/go/bin:$PATH
 ENV GOPATH /go
 
 RUN	apk add --no-cache \
+	bash \
 	ca-certificates
 
 COPY . /go/src/github.com/genuinetools/reg
