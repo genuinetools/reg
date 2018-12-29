@@ -1,3 +1,6 @@
+# Set the shell
+SHELL := /bin/bash
+
 # Set an output prefix, which is the local directory if not specified
 PREFIX?=$(shell pwd)
 
@@ -56,12 +59,16 @@ all: clean build fmt lint test staticcheck vet install ## Runs a clean, build, f
 .PHONY: fmt
 fmt: ## Verifies all files have been `gofmt`ed.
 	@echo "+ $@"
-	@gofmt -s -l . | grep -v '.pb.go:' | grep -v vendor | tee /dev/stderr
+	@if [[ ! -z "$(shell gofmt -s -l . | grep -v '.pb.go:' | grep -v '.twirp.go:' | grep -v vendor | tee /dev/stderr)" ]]; then \
+		exit 1; \
+	fi
 
 .PHONY: lint
 lint: ## Verifies `golint` passes.
 	@echo "+ $@"
-	@golint ./... | grep -v '.pb.go:' | grep -v vendor | tee /dev/stderr
+	@if [[ ! -z "$(shell golint ./... | grep -v '.pb.go:' | grep -v '.twirp.go:' | grep -v vendor | tee /dev/stderr)" ]]; then \
+		exit 1; \
+	fi
 
 .PHONY: test
 test: prebuild ## Runs the go tests.
@@ -71,12 +78,16 @@ test: prebuild ## Runs the go tests.
 .PHONY: vet
 vet: ## Verifies `go vet` passes.
 	@echo "+ $@"
-	@$(GO) vet $(shell $(GO) list ./... | grep -v vendor) | grep -v '.pb.go:' | tee /dev/stderr
+	@if [[ ! -z "$(shell $(GO) vet $(shell $(GO) list ./... | grep -v vendor) | tee /dev/stderr)" ]]; then \
+		exit 1; \
+	fi
 
 .PHONY: staticcheck
 staticcheck: ## Verifies `staticcheck` passes.
 	@echo "+ $@"
-	@staticcheck $(shell $(GO) list ./... | grep -v vendor) | grep -v '.pb.go:' | tee /dev/stderr
+	@if [[ ! -z "$(shell staticcheck $(shell $(GO) list ./... | grep -v vendor) | tee /dev/stderr)" ]]; then \
+		exit 1; \
+	fi
 
 .PHONY: cover
 cover: prebuild ## Runs go test with coverage.
@@ -146,6 +157,10 @@ REGISTRY := r.j3ss.co
 image: ## Create the docker image from the Dockerfile.
 	@docker build --rm --force-rm -t $(REGISTRY)/$(NAME) .
 
+.PHONY: image-dev
+image-dev:
+	@docker build --rm --force-rm -f Dockerfile.dev -t $(REGISTRY)/$(NAME):dev .
+
 .PHONY: AUTHORS
 AUTHORS:
 	@$(file >$@,# This file lists all individuals having contributed content to the repository.)
@@ -154,12 +169,12 @@ AUTHORS:
 
 .PHONY: vendor
 vendor: ## Updates the vendoring directory.
-	@$(RM) Gopkg.toml Gopkg.lock
-	@$(RM) go.mod go.sum
+	@$(RM) go.sum
 	@$(RM) -r vendor
-	@GO111MODULE=on $(GO) mod init
-	@GO111MODULE=on $(GO) mod tidy
-	@GO111MODULE=on $(GO) mod vendor
+	GO111MODULE=on $(GO) mod init || true
+	GO111MODULE=on $(GO) mod tidy
+	GO111MODULE=on $(GO) mod vendor
+	@$(RM) Gopkg.toml Gopkg.lock
 
 .PHONY: clean
 clean: ## Cleanup any build binaries or packages.
@@ -170,3 +185,12 @@ clean: ## Cleanup any build binaries or packages.
 .PHONY: help
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | sed 's/^[^:]*://g' | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
+check_defined = \
+    $(strip $(foreach 1,$1, \
+	$(call __check_defined,$1,$(strip $(value 2)))))
+
+__check_defined = \
+    $(if $(value $1),, \
+    $(error Undefined $1$(if $2, ($2))$(if $(value @), \
+    required by target `$@')))

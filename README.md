@@ -6,20 +6,26 @@
 
 Docker registry v2 command line client and repo listing generator with security checks.
 
- * [Installation](README.md#installation)
-      * [Binaries](README.md#binaries)
-      * [Via Go](README.md#via-go)
- * [Usage](README.md#usage)
-   * [Auth](README.md#auth)
-   * [List Repositories and Tags](README.md#list-repositories-and-tags)
-   * [Get a Manifest](README.md#get-a-manifest)
-   * [Get the Digest](README.md#get-the-digest)
-   * [Download a Layer](README.md#download-a-layer)
-   * [Delete an Image](README.md#delete-an-image)
-   * [Vulnerability Reports](README.md#vulnerability-reports)
-   * [Running a Static UI Server for a Registry](README.md#running-a-static-ui-server-for-a-registry)
-   * [Using Self-Signed Certs with a Registry](README.md#using-self-signed-certs-with-a-registry)
- * [Contributing](README.md#contributing)
+**Table of Contents**
+
+<!-- toc -->
+
+- [Installation](#installation)
+    + [Binaries](#binaries)
+    + [Via Go](#via-go)
+- [Usage](#usage)
+  * [Auth](#auth)
+  * [List Repositories and Tags](#list-repositories-and-tags)
+  * [Get a Manifest](#get-a-manifest)
+  * [Get the Digest](#get-the-digest)
+  * [Download a Layer](#download-a-layer)
+  * [Delete an Image](#delete-an-image)
+  * [Vulnerability Reports](#vulnerability-reports)
+  * [Generating Static Website for a Registry](#generating-static-website-for-a-registry)
+  * [Using Self-Signed Certs with a Registry](#using-self-signed-certs-with-a-registry)
+- [Contributing](#contributing)
+
+<!-- tocstop -->
 
 ## Installation
 
