@@ -1,6 +1,7 @@
 package clair
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -10,7 +11,7 @@ import (
 )
 
 // NewClairLayer will form a layer struct required for a clair scan.
-func (c *Clair) NewClairLayer(r *registry.Registry, image string, fsLayers map[int]distribution.Descriptor, index int) (*Layer, error) {
+func (c *Clair) NewClairLayer(ctx context.Context, r *registry.Registry, image string, fsLayers map[int]distribution.Descriptor, index int) (*Layer, error) {
 	var parentName string
 	if index < len(fsLayers)-1 {
 		parentName = fsLayers[index+1].Digest.String()
@@ -20,7 +21,7 @@ func (c *Clair) NewClairLayer(r *registry.Registry, image string, fsLayers map[i
 	p := strings.Join([]string{r.URL, "v2", image, "blobs", fsLayers[index].Digest.String()}, "/")
 
 	// Get the headers.
-	h, err := r.Headers(p)
+	h, err := r.Headers(ctx, p)
 	if err != nil {
 		return nil, err
 	}
@@ -35,12 +36,12 @@ func (c *Clair) NewClairLayer(r *registry.Registry, image string, fsLayers map[i
 }
 
 // NewClairV3Layer will form a layer struct required for a clair scan.
-func (c *Clair) NewClairV3Layer(r *registry.Registry, image string, fsLayer distribution.Descriptor) (*clairpb.PostAncestryRequest_PostLayer, error) {
+func (c *Clair) NewClairV3Layer(ctx context.Context, r *registry.Registry, image string, fsLayer distribution.Descriptor) (*clairpb.PostAncestryRequest_PostLayer, error) {
 	// Form the path.
 	p := strings.Join([]string{r.URL, "v2", image, "blobs", fsLayer.Digest.String()}, "/")
 
 	// Get the headers.
-	h, err := r.Headers(p)
+	h, err := r.Headers(ctx, p)
 	if err != nil {
 		return nil, err
 	}
@@ -52,10 +53,10 @@ func (c *Clair) NewClairV3Layer(r *registry.Registry, image string, fsLayer dist
 	}, nil
 }
 
-func (c *Clair) getLayers(r *registry.Registry, repo, tag string, filterEmpty bool) (map[int]distribution.Descriptor, string, error) {
+func (c *Clair) getLayers(ctx context.Context, r *registry.Registry, repo, tag string, filterEmpty bool) (map[int]distribution.Descriptor, string, error) {
 	ok := true
 	// Get the manifest to pass to clair.
-	mf, err := r.ManifestV2(repo, tag)
+	mf, err := r.ManifestV2(ctx, repo, tag)
 	if err != nil {
 		ok = false
 		c.Logf("couldn't retrieve manifest v2, falling back to v1")
@@ -76,7 +77,7 @@ func (c *Clair) getLayers(r *registry.Registry, repo, tag string, filterEmpty bo
 		return filteredLayers, mf.Config.Digest.String(), nil
 	}
 
-	m, err := r.ManifestV1(repo, tag)
+	m, err := r.ManifestV1(ctx, repo, tag)
 	if err != nil {
 		return nil, "", fmt.Errorf("getting the v1 manifest for %s:%s failed: %v", repo, tag, err)
 	}

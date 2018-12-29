@@ -30,12 +30,12 @@ func (cmd *listCommand) Run(ctx context.Context, args []string) error {
 	}
 
 	// Create the registry client.
-	r, err := createRegistryClient(args[0])
+	r, err := createRegistryClient(ctx, args[0])
 	if err != nil {
 		return err
 	}
 	// Get the repositories via catalog.
-	repos, err := r.Catalog("")
+	repos, err := r.Catalog(ctx, "")
 	if err != nil {
 		if _, ok := err.(*json.SyntaxError); ok {
 			return fmt.Errorf("Domain %s is not a valid registry", r.Domain)
@@ -56,7 +56,7 @@ func (cmd *listCommand) Run(ctx context.Context, args []string) error {
 	for _, repo := range repos {
 		go func(repo string) {
 			// Get the tags.
-			tags, err := r.Tags(repo)
+			tags, err := r.Tags(ctx, repo)
 			if err != nil {
 				fmt.Printf("Get tags of [%s] error: %s", repo, err)
 			}

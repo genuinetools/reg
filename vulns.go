@@ -49,7 +49,7 @@ func (cmd *vulnsCommand) Run(ctx context.Context, args []string) error {
 	}
 
 	// Create the registry client.
-	r, err := createRegistryClient(image.Domain)
+	r, err := createRegistryClient(ctx, image.Domain)
 	if err != nil {
 		return err
 	}
@@ -65,10 +65,10 @@ func (cmd *vulnsCommand) Run(ctx context.Context, args []string) error {
 	}
 
 	// Get the vulnerability report.
-	report, err := cr.VulnerabilitiesV3(r, image.Path, image.Reference())
+	report, err := cr.VulnerabilitiesV3(ctx, r, image.Path, image.Reference())
 	if err != nil {
 		// Fallback to Clair v2 API.
-		report, err = cr.Vulnerabilities(r, image.Path, image.Reference())
+		report, err = cr.Vulnerabilities(ctx, r, image.Path, image.Reference())
 		if err != nil {
 			return err
 		}

@@ -31,13 +31,13 @@ func (cmd *digestCommand) Run(ctx context.Context, args []string) error {
 	}
 
 	// Create the registry client.
-	r, err := createRegistryClient(image.Domain)
+	r, err := createRegistryClient(ctx, image.Domain)
 	if err != nil {
 		return err
 	}
 
 	// Get the digest.
-	digest, err := r.Digest(image)
+	digest, err := r.Digest(ctx, image)
 	if err != nil {
 		return err
 	}

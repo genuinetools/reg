@@ -38,19 +38,19 @@ func (cmd *layerCommand) Run(ctx context.Context, args []string) error {
 	}
 
 	// Create the registry client.
-	r, err := createRegistryClient(image.Domain)
+	r, err := createRegistryClient(ctx, image.Domain)
 	if err != nil {
 		return err
 	}
 
 	// Get the digest.
-	digest, err := r.Digest(image)
+	digest, err := r.Digest(ctx, image)
 	if err != nil {
 		return err
 	}
 
 	// Download the layer.
-	layer, err := r.DownloadLayer(image.Path, digest)
+	layer, err := r.DownloadLayer(ctx, image.Path, digest)
 	if err != nil {
 		return err
 	}

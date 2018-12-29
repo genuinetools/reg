@@ -1,21 +1,27 @@
 package registry
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/url"
 
 	"fmt"
+
 	"github.com/docker/distribution/reference"
 	"github.com/opencontainers/go-digest"
 )
 
 // DownloadLayer downloads a specific layer by digest for a repository.
-func (r *Registry) DownloadLayer(repository string, digest digest.Digest) (io.ReadCloser, error) {
+func (r *Registry) DownloadLayer(ctx context.Context, repository string, digest digest.Digest) (io.ReadCloser, error) {
 	url := r.url("/v2/%s/blobs/%s", repository, digest)
 	r.Logf("registry.layer.download url=%s repository=%s digest=%s", url, repository, digest)
 
-	resp, err := r.Client.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := r.Client.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -24,8 +30,8 @@ func (r *Registry) DownloadLayer(repository string, digest digest.Digest) (io.Re
 }
 
 // UploadLayer uploads a specific layer by digest for a repository.
-func (r *Registry) UploadLayer(repository string, digest reference.Reference, content io.Reader) error {
-	uploadURL, token, err := r.initiateUpload(repository)
+func (r *Registry) UploadLayer(ctx context.Context, repository string, digest reference.Reference, content io.Reader) error {
+	uploadURL, token, err := r.initiateUpload(ctx, repository)
 	if err != nil {
 		return err
 	}
@@ -42,16 +48,20 @@ func (r *Registry) UploadLayer(repository string, digest reference.Reference, co
 	upload.Header.Set("Content-Type", "application/octet-stream")
 	upload.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
-	_, err = r.Client.Do(upload)
+	_, err = r.Client.Do(upload.WithContext(ctx))
 	return err
 }
 
 // HasLayer returns if the registry contains the specific digest for a repository.
-func (r *Registry) HasLayer(repository string, digest digest.Digest) (bool, error) {
+func (r *Registry) HasLayer(ctx context.Context, repository string, digest digest.Digest) (bool, error) {
 	checkURL := r.url("/v2/%s/blobs/%s", repository, digest)
 	r.Logf("registry.layer.check url=%s repository=%s digest=%s", checkURL, repository, digest)
 
-	resp, err := r.Client.Head(checkURL)
+	req, err := http.NewRequest("HEAD", checkURL, nil)
+	if err != nil {
+		return false, err
+	}
+	resp, err := r.Client.Do(req.WithContext(ctx))
 	if err == nil {
 		defer resp.Body.Close()
 		return resp.StatusCode == http.StatusOK, nil
@@ -72,11 +82,16 @@ func (r *Registry) HasLayer(repository string, digest digest.Digest) (bool, erro
 	return false, err
 }
 
-func (r *Registry) initiateUpload(repository string) (*url.URL, string, error) {
+func (r *Registry) initiateUpload(ctx context.Context, repository string) (*url.URL, string, error) {
 	initiateURL := r.url("/v2/%s/blobs/uploads/", repository)
 	r.Logf("registry.layer.initiate-upload url=%s repository=%s", initiateURL, repository)
 
-	resp, err := r.Client.Post(initiateURL, "application/octet-stream", nil)
+	req, err := http.NewRequest("POST", initiateURL, nil)
+	if err != nil {
+		return nil, "", err
+	}
+	req.Header.Set("Content-Type", "application/octet-stream")
+	resp, err := r.Client.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, "", err
 	}

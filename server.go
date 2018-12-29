@@ -61,7 +61,7 @@ type serverCommand struct {
 
 func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 	// Create the registry client.
-	r, err := createRegistryClient(cmd.registryServer)
+	r, err := createRegistryClient(ctx, cmd.registryServer)
 	if err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 
 	// Create the initial index.
 	logrus.Info("creating initial static index")
-	if err := rc.repositories(staticDir); err != nil {
+	if err := rc.repositories(ctx, staticDir); err != nil {
 		return fmt.Errorf("creating index failed: %v", err)
 	}
 
@@ -142,7 +142,7 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 		// Create more indexes every X minutes based off interval.
 		for range ticker.C {
 			logrus.Info("creating timer based static index")
-			if err := rc.repositories(staticDir); err != nil {
+			if err := rc.repositories(ctx, staticDir); err != nil {
 				logrus.Warnf("creating static index failed: %v", err)
 			}
 		}

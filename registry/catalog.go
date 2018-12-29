@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"context"
 	"net/url"
 
 	"github.com/peterhellberg/link"
@@ -11,7 +12,7 @@ type catalogResponse struct {
 }
 
 // Catalog returns the repositories in a registry.
-func (r *Registry) Catalog(u string) ([]string, error) {
+func (r *Registry) Catalog(ctx context.Context, u string) ([]string, error) {
 	if u == "" {
 		u = "/v2/_catalog"
 	}
@@ -19,7 +20,7 @@ func (r *Registry) Catalog(u string) ([]string, error) {
 	r.Logf("registry.catalog url=%s", uri)
 
 	var response catalogResponse
-	h, err := r.getJSON(uri, &response)
+	h, err := r.getJSON(ctx, uri, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +28,7 @@ func (r *Registry) Catalog(u string) ([]string, error) {
 	for _, l := range link.ParseHeader(h) {
 		if l.Rel == "next" {
 			unescaped, _ := url.QueryUnescape(l.URI)
-			repos, err := r.Catalog(unescaped)
+			repos, err := r.Catalog(ctx, unescaped)
 			if err != nil {
 				return nil, err
 			}

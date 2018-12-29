@@ -2,6 +2,7 @@ package registry
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,7 +21,7 @@ var (
 )
 
 // Manifest returns the manifest for a specific repository:tag.
-func (r *Registry) Manifest(repository, ref string) (distribution.Manifest, error) {
+func (r *Registry) Manifest(ctx context.Context, repository, ref string) (distribution.Manifest, error) {
 	uri := r.url("/v2/%s/manifests/%s", repository, ref)
 	r.Logf("registry.manifests uri=%s repository=%s ref=%s", uri, repository, ref)
 
@@ -31,7 +32,7 @@ func (r *Registry) Manifest(repository, ref string) (distribution.Manifest, erro
 
 	req.Header.Add("Accept", fmt.Sprintf("%s;q=0.9", schema2.MediaTypeManifest))
 
-	resp, err := r.Client.Do(req)
+	resp, err := r.Client.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -52,12 +53,12 @@ func (r *Registry) Manifest(repository, ref string) (distribution.Manifest, erro
 }
 
 // ManifestList gets the registry v2 manifest list.
-func (r *Registry) ManifestList(repository, ref string) (manifestlist.ManifestList, error) {
+func (r *Registry) ManifestList(ctx context.Context, repository, ref string) (manifestlist.ManifestList, error) {
 	uri := r.url("/v2/%s/manifests/%s", repository, ref)
 	r.Logf("registry.manifests uri=%s repository=%s ref=%s", uri, repository, ref)
 
 	var m manifestlist.ManifestList
-	if _, err := r.getJSON(uri, &m); err != nil {
+	if _, err := r.getJSON(ctx, uri, &m); err != nil {
 		r.Logf("registry.manifests response=%v", m)
 		return m, err
 	}
@@ -66,12 +67,12 @@ func (r *Registry) ManifestList(repository, ref string) (manifestlist.ManifestLi
 }
 
 // ManifestV2 gets the registry v2 manifest.
-func (r *Registry) ManifestV2(repository, ref string) (schema2.Manifest, error) {
+func (r *Registry) ManifestV2(ctx context.Context, repository, ref string) (schema2.Manifest, error) {
 	uri := r.url("/v2/%s/manifests/%s", repository, ref)
 	r.Logf("registry.manifests uri=%s repository=%s ref=%s", uri, repository, ref)
 
 	var m schema2.Manifest
-	if _, err := r.getJSON(uri, &m); err != nil {
+	if _, err := r.getJSON(ctx, uri, &m); err != nil {
 		r.Logf("registry.manifests response=%v", m)
 		return m, err
 	}
@@ -84,12 +85,12 @@ func (r *Registry) ManifestV2(repository, ref string) (schema2.Manifest, error) 
 }
 
 // ManifestV1 gets the registry v1 manifest.
-func (r *Registry) ManifestV1(repository, ref string) (schema1.SignedManifest, error) {
+func (r *Registry) ManifestV1(ctx context.Context, repository, ref string) (schema1.SignedManifest, error) {
 	uri := r.url("/v2/%s/manifests/%s", repository, ref)
 	r.Logf("registry.manifests uri=%s repository=%s ref=%s", uri, repository, ref)
 
 	var m schema1.SignedManifest
-	if _, err := r.getJSON(uri, &m); err != nil {
+	if _, err := r.getJSON(ctx, uri, &m); err != nil {
 		r.Logf("registry.manifests response=%v", m)
 		return m, err
 	}
@@ -102,7 +103,7 @@ func (r *Registry) ManifestV1(repository, ref string) (schema1.SignedManifest, e
 }
 
 // PutManifest calls a PUT for the specific manifest for an image.
-func (r *Registry) PutManifest(repository, ref string, manifest distribution.Manifest) error {
+func (r *Registry) PutManifest(ctx context.Context, repository, ref string, manifest distribution.Manifest) error {
 	url := r.url("/v2/%s/manifests/%s", repository, ref)
 	r.Logf("registry.manifest.put url=%s repository=%s reference=%s", url, repository, ref)
 
@@ -117,7 +118,7 @@ func (r *Registry) PutManifest(repository, ref string, manifest distribution.Man
 	}
 
 	req.Header.Set("Content-Type", schema2.MediaTypeManifest)
-	resp, err := r.Client.Do(req)
+	resp, err := r.Client.Do(req.WithContext(ctx))
 	if resp != nil {
 		defer resp.Body.Close()
 	}
