@@ -33,7 +33,7 @@ import (
 func StartRegistry(dcli *client.Client, config, username, password string) (string, string, error) {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
-		return "", "", errors.New("No caller information")
+		return "", "", errors.New("no caller information")
 	}
 
 	image := "registry:2"
@@ -126,7 +126,7 @@ func startClairDB(dcli *client.Client) (string, error) {
 func StartClair(dcli *client.Client) (string, string, error) {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
-		return "", "", errors.New("No caller information")
+		return "", "", errors.New("no caller information")
 	}
 
 	// start the database container.
@@ -284,7 +284,7 @@ func imageExists(dcli *client.Client, image string) (bool, error) {
 func waitForConn(addr, cert, key string) error {
 	tlsCert, err := tls.LoadX509KeyPair(cert, key)
 	if err != nil {
-		return fmt.Errorf("Could not load X509 key pair: %v. Make sure the key is not encrypted", err)
+		return fmt.Errorf("could not load X509 key pair: %v. Make sure the key is not encrypted", err)
 	}
 
 	certPool, err := x509.SystemCertPool()

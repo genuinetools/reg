@@ -195,7 +195,7 @@ func (r *Registry) Token(ctx context.Context, url string) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("Getting token failed with StatusCode != StatusOK but %d", resp.StatusCode)
+		return "", fmt.Errorf("getting token failed with StatusCode != StatusOK but %d", resp.StatusCode)
 	}
 
 	var authToken authToken

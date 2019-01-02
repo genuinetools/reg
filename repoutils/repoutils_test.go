@@ -35,7 +35,7 @@ func TestGetAuthConfig(t *testing.T) {
 		{
 			name:      "invalid config dir",
 			configdir: "testdata/invalid",
-			err:       errors.New("Loading config file failed: "),
+			err:       errors.New("loading config file failed: "),
 			config:    types.AuthConfig{},
 		},
 		{

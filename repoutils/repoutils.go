@@ -31,7 +31,7 @@ func GetAuthConfig(username, password, registry string) (types.AuthConfig, error
 
 	dcfg, err := config.Load(config.Dir())
 	if err != nil {
-		return types.AuthConfig{}, fmt.Errorf("Loading config file failed: %v", err)
+		return types.AuthConfig{}, fmt.Errorf("loading config file failed: %v", err)
 	}
 
 	// return error early if there are no auths saved
@@ -49,7 +49,7 @@ func GetAuthConfig(username, password, registry string) (types.AuthConfig, error
 
 	authConfigs, err := dcfg.GetAllCredentials()
 	if err != nil {
-		return types.AuthConfig{}, fmt.Errorf("Getting credentials failed: %v", err)
+		return types.AuthConfig{}, fmt.Errorf("getting credentials failed: %v", err)
 	}
 
 	// if they passed a specific registry, return those creds _if_ they exist

@@ -78,7 +78,7 @@ func main() {
 	// Set the before function.
 	p.Before = func(ctx context.Context) error {
 		// On ^C, or SIGTERM handle exit.
-		signals := make(chan os.Signal, 0)
+		signals := make(chan os.Signal)
 		signal.Notify(signals, os.Interrupt)
 		signal.Notify(signals, syscall.SIGTERM)
 		_, cancel := context.WithCancel(ctx)
@@ -115,7 +115,7 @@ func createRegistryClient(ctx context.Context, domain string) (*registry.Registr
 
 	// Prevent non-ssl unless explicitly forced
 	if !forceNonSSL && strings.HasPrefix(auth.ServerAddress, "http:") {
-		return nil, fmt.Errorf("Attempted to use insecure protocol! Use force-non-ssl option to force")
+		return nil, fmt.Errorf("attempted to use insecure protocol! Use force-non-ssl option to force")
 	}
 
 	// Create the registry client.

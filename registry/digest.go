@@ -33,7 +33,7 @@ func (r *Registry) Digest(ctx context.Context, image Image) (digest.Digest, erro
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
-		return "", fmt.Errorf("Got status code: %d", resp.StatusCode)
+		return "", fmt.Errorf("got status code: %d", resp.StatusCode)
 	}
 
 	return digest.Parse(resp.Header.Get("Docker-Content-Digest"))

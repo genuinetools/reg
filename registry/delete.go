@@ -32,5 +32,5 @@ func (r *Registry) Delete(ctx context.Context, repository string, digest digest.
 		return nil
 	}
 
-	return fmt.Errorf("Got status code: %d", resp.StatusCode)
+	return fmt.Errorf("got status code: %d", resp.StatusCode)
 }

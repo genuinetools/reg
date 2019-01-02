@@ -85,5 +85,5 @@ func (c *Clair) DeleteLayer(ctx context.Context, name string) error {
 		return nil
 	}
 
-	return fmt.Errorf("Got status code: %d", resp.StatusCode)
+	return fmt.Errorf("got status code: %d", resp.StatusCode)
 }

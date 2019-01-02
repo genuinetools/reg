@@ -38,7 +38,7 @@ func (cmd *listCommand) Run(ctx context.Context, args []string) error {
 	repos, err := r.Catalog(ctx, "")
 	if err != nil {
 		if _, ok := err.(*json.SyntaxError); ok {
-			return fmt.Errorf("Domain %s is not a valid registry", r.Domain)
+			return fmt.Errorf("domain %s is not a valid registry", r.Domain)
 		}
 		return err
 	}
