@@ -119,6 +119,8 @@ func createRegistryClient(ctx context.Context, domain string) (*registry.Registr
 	}
 
 	// Create the registry client.
+	logrus.Infof("domain: %s", domain)
+	logrus.Infof("server address: %s", auth.ServerAddress)
 	return registry.New(ctx, auth, registry.Opt{
 		Domain:   domain,
 		Insecure: insecure,
