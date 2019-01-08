@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/genuinetools/reg/clair"
+	"github.com/genuinetools/reg/internal"
 	"github.com/genuinetools/reg/internal/binutils/static"
 	"github.com/genuinetools/reg/internal/binutils/templates"
 	"github.com/gorilla/mux"
@@ -168,8 +169,8 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 
 	// Serve the static assets.
 	staticAssetsHandler := http.FileServer(static.Assets)
-	mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", staticAssetsHandler))
 	staticHandler := http.FileServer(http.Dir(staticDir))
+	mux.PathPrefix("/static/").Handler(internal.CustomStaticFileServer(http.Dir(staticDir), http.StripPrefix("/static/", staticAssetsHandler)))
 	mux.Handle("/", staticHandler)
 
 	// Set up the server.
