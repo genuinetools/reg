@@ -20,19 +20,19 @@ func (c *Clair) Vulnerabilities(ctx context.Context, r *registry.Registry, repo,
 		VulnsBySeverity: make(map[string][]Vulnerability),
 	}
 
-	filteredLayers, _, err := c.getLayers(ctx, r, repo, tag, true)
+	layers, _, err := c.getLayers(ctx, r, repo, tag)
 	if err != nil {
-		return report, fmt.Errorf("getting filtered layers failed: %v", err)
+		return report, fmt.Errorf("getting layers failed: %v", err)
 	}
 
-	if len(filteredLayers) == 0 {
-		fmt.Printf("No need to analyse image %s:%s as there is no non-emtpy layer", repo, tag)
-		return report, nil
-	}
+	lastPostedLayer := ""
+	for i := len(layers) - 1; i >= 0; i-- {
+		if IsEmptyLayer(layers[i].Digest) {
+			continue
+		}
 
-	for i := len(filteredLayers) - 1; i >= 0; i-- {
 		// Form the clair layer.
-		l, err := c.NewClairLayer(ctx, r, repo, filteredLayers, i)
+		l, err := c.NewClairLayer(ctx, r, repo, layers, i)
 		if err != nil {
 			return report, err
 		}
@@ -41,11 +41,17 @@ func (c *Clair) Vulnerabilities(ctx context.Context, r *registry.Registry, repo,
 		if _, err := c.PostLayer(ctx, l); err != nil {
 			return report, err
 		}
+
+		lastPostedLayer = l.Name
 	}
 
-	report.Name = filteredLayers[0].Digest.String()
+	if lastPostedLayer == "" {
+		fmt.Printf("No need to analyse image %s:%s as there is no non-emtpy layer", repo, tag)
+		return report, nil
+	}
 
-	vl, err := c.GetLayer(ctx, filteredLayers[0].Digest.String(), true, true)
+	report.Name = lastPostedLayer
+	vl, err := c.GetLayer(ctx, lastPostedLayer, true, true)
 	if err != nil {
 		return report, err
 	}
@@ -86,7 +92,7 @@ func (c *Clair) VulnerabilitiesV3(ctx context.Context, r *registry.Registry, rep
 		VulnsBySeverity: make(map[string][]Vulnerability),
 	}
 
-	layers, reportName, err := c.getLayers(ctx, r, repo, tag, false)
+	layers, reportName, err := c.getLayers(ctx, r, repo, tag)
 	if err != nil {
 		return report, fmt.Errorf("getting filtered layers failed: %v", err)
 	}
