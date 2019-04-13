@@ -151,9 +151,9 @@ func (r *Registry) getJSON(ctx context.Context, url string, response interface{}
 
 	switch response.(type) {
 	case *schema2.Manifest:
-		req.Header.Add("Accept", fmt.Sprintf("%s;q=0.9", schema2.MediaTypeManifest))
+		req.Header.Add("Accept", fmt.Sprintf("%s", schema2.MediaTypeManifest))
 	case *manifestlist.ManifestList:
-		req.Header.Add("Accept", fmt.Sprintf("%s;q=0.9", manifestlist.MediaTypeManifestList))
+		req.Header.Add("Accept", fmt.Sprintf("%s", manifestlist.MediaTypeManifestList))
 	}
 
 	resp, err := r.Client.Do(req.WithContext(ctx))
