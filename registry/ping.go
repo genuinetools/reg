@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Pingacle check pingable
+// Pingable checks pingable
 func (r *Registry) Pingable() bool {
 	// Currently *.gcr.io/v2 can't be ping if users have each projects auth
 	if strings.HasSuffix(r.URL, "gcr.io") {
