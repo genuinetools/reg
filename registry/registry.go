@@ -127,7 +127,7 @@ func newFromTransport(ctx context.Context, auth types.AuthConfig, transport http
 		Opt:      opt,
 	}
 
-	if !opt.SkipPing {
+	if registry.Pingable() && !opt.SkipPing {
 		if err := registry.Ping(ctx); err != nil {
 			return nil, err
 		}

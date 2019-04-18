@@ -3,7 +3,17 @@ package registry
 import (
 	"context"
 	"net/http"
+	"strings"
 )
+
+// Pingacle check pingable
+func (r *Registry) Pingable() bool {
+	// Currently *.gcr.io/v2 can't be ping if users have each projects auth
+	if strings.HasSuffix(r.URL, "gcr.io") {
+		return false
+	}
+	return true
+}
 
 // Ping tries to contact a registry URL to make sure it is up and accessible.
 func (r *Registry) Ping(ctx context.Context) error {
