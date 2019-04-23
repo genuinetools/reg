@@ -43,6 +43,10 @@ func (cmd *serverCommand) Register(fs *flag.FlagSet) {
 	fs.StringVar(&cmd.assetPath, "asset-path", "", "Path to assets and templates")
 
 	fs.BoolVar(&cmd.generateAndExit, "once", false, "generate the templates once and then exit")
+
+	sortOpts := []string{sortByCreated}
+	fs.StringVar(&cmd.repoSortBy, "sort", sortByCreated,
+		fmt.Sprintf("generate tag templates sorted by property (one of: %s)", strings.Join(sortOpts, ",")))
 }
 
 type serverCommand struct {
@@ -57,6 +61,7 @@ type serverCommand struct {
 	listenAddress string
 	port          string
 	assetPath     string
+	repoSortBy    string
 }
 
 func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
@@ -66,10 +71,15 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 		return err
 	}
 
+	if cmd.repoSortBy != sortByCreated {
+		return fmt.Errorf("sort option invalid; '%s' is not valid", cmd.repoSortBy)
+	}
+
 	// Create the registry controller for the handlers.
 	rc := registryController{
 		reg:          r,
 		generateOnly: cmd.generateAndExit,
+		repoSortBy:   cmd.repoSortBy,
 	}
 
 	// Create a clair client if the user passed in a server address.

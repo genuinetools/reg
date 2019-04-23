@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -28,6 +29,7 @@ type registryController struct {
 	l            sync.Mutex
 	tmpl         *template.Template
 	generateOnly bool
+	repoSortBy   string
 }
 
 type v1Compatibility struct {
@@ -43,6 +45,16 @@ type Repository struct {
 	URI                 string                    `json:"uri"`
 	VulnerabilityReport clair.VulnerabilityReport `json:"vulnerability"`
 }
+
+const (
+	sortByCreated = "created"
+)
+
+type repoByDate []Repository
+
+func (r repoByDate) Len() int           { return len(r) }
+func (r repoByDate) Less(i, j int) bool { return r[i].Created.Before(r[j].Created) }
+func (r repoByDate) Swap(i, j int)      { r[i], r[j] = r[j], r[i] }
 
 // An AnalysisResult holds all vulnerabilities of a scan
 type AnalysisResult struct {
@@ -226,6 +238,11 @@ func (rc *registryController) generateTagsTemplate(ctx context.Context, repo str
 		}
 
 		result.Repositories = append(result.Repositories, rp)
+	}
+
+	switch rc.repoSortBy {
+	case sortByCreated:
+		sort.Sort(sort.Reverse(repoByDate(result.Repositories)))
 	}
 
 	// Execute the template.
