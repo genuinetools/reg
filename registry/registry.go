@@ -57,6 +57,7 @@ func New(ctx context.Context, auth types.AuthConfig, opt Opt) (*Registry, error)
 
 	if opt.Insecure {
 		transport = &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},
