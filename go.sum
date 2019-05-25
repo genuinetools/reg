@@ -18,9 +18,9 @@ github.com/docker/cli v0.0.0-20180920165730-54c19e67f69c h1:QlAVcyoF7QQVN7zV+xYB
 github.com/docker/cli v0.0.0-20180920165730-54c19e67f69c/go.mod h1:JLrzqnKDaYBop7H2jaqPtU4hHvMKP+vjCwu2uszcLI8=
 github.com/docker/distribution v0.0.0-20180920194744-16128bbac47f h1:hYf+mPizfvpH6VgIxdntnOmQHd1F1mQUc1oG+j3Ol2g=
 github.com/docker/distribution v0.0.0-20180920194744-16128bbac47f/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
-github.com/docker/docker v0.0.0-20180924202107-a9c061deec0f h1:BrSaWINJwChqVJoPy/AR82wCtE+Sa1MAB2UiO3n2zcY=
+github.com/docker/docker v0.0.0-20180924202107-a9c061deec0f h1:W4fbqg0JUwy6lLesoJaV/rE0fwAmtdtinMa64X1CEh0=
 github.com/docker/docker v0.0.0-20180924202107-a9c061deec0f/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
-github.com/docker/docker-ce v0.0.0-20180924210327-f53bd8bb8e43 h1:NDAvq++bKWHxKDxEclVIgl737gMim2WDYoKHFQSBXfA=
+github.com/docker/docker-ce v0.0.0-20180924210327-f53bd8bb8e43 h1:gZ4lWixV821UVbYtr+oz1ZPCHkbtE+ivfmHyZRgyl2Y=
 github.com/docker/docker-ce v0.0.0-20180924210327-f53bd8bb8e43/go.mod h1:l1FUGRYBvbjnZ8MS6A2xOji4aZFlY/Qmgz7p4oXH7ac=
 github.com/docker/docker-credential-helpers v0.6.1 h1:Dq4iIfcM7cNtddhLVWe9h4QDjsi4OER3Z8voPu/I52g=
 github.com/docker/docker-credential-helpers v0.6.1/go.mod h1:WRaJzqw3CTB9bk10avuGsjVBZsD05qeibJ1/TYlvc0Y=
