@@ -31,8 +31,6 @@ github.com/docker/cli v0.0.0-20190429053159-3273c2e23546 h1:MjppZ9NE8BEvA2QdHmz3
 github.com/docker/cli v0.0.0-20190429053159-3273c2e23546/go.mod h1:JLrzqnKDaYBop7H2jaqPtU4hHvMKP+vjCwu2uszcLI8=
 github.com/docker/distribution v0.0.0-20180920194744-16128bbac47f h1:hYf+mPizfvpH6VgIxdntnOmQHd1F1mQUc1oG+j3Ol2g=
 github.com/docker/distribution v0.0.0-20180920194744-16128bbac47f/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
-github.com/docker/distribution v2.7.1+incompatible h1:a5mlkVzth6W5A4fOsS3D2EO5BUmsJpcB+cRlLU7cSug=
-github.com/docker/distribution v2.7.1+incompatible/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
 github.com/docker/docker v0.0.0-20180924202107-a9c061deec0f h1:W4fbqg0JUwy6lLesoJaV/rE0fwAmtdtinMa64X1CEh0=
 github.com/docker/docker v0.0.0-20180924202107-a9c061deec0f/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/docker-ce v0.0.0-20180924210327-f53bd8bb8e43 h1:gZ4lWixV821UVbYtr+oz1ZPCHkbtE+ivfmHyZRgyl2Y=
