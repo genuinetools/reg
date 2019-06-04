@@ -13,7 +13,7 @@ func (r *Registry) Ping(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	resp, err := r.Client.Do(req.WithContext(ctx))
+	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
 	if resp != nil {
 		defer resp.Body.Close()
 	}
