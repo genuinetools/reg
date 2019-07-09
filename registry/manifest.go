@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -30,7 +29,7 @@ func (r *Registry) Manifest(ctx context.Context, repository, ref string) (distri
 		return nil, err
 	}
 
-	req.Header.Add("Accept", fmt.Sprintf("%s;q=0.9", schema2.MediaTypeManifest))
+	req.Header.Add("Accept", schema2.MediaTypeManifest)
 
 	resp, err := r.Client.Do(req.WithContext(ctx))
 	if err != nil {

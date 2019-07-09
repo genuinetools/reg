@@ -127,7 +127,7 @@ func newFromTransport(ctx context.Context, auth types.AuthConfig, transport http
 		Opt:      opt,
 	}
 
-	if !opt.SkipPing {
+	if registry.Pingable() && !opt.SkipPing {
 		if err := registry.Ping(ctx); err != nil {
 			return nil, err
 		}
@@ -151,9 +151,9 @@ func (r *Registry) getJSON(ctx context.Context, url string, response interface{}
 
 	switch response.(type) {
 	case *schema2.Manifest:
-		req.Header.Add("Accept", fmt.Sprintf("%s;q=0.9", schema2.MediaTypeManifest))
+		req.Header.Add("Accept", schema2.MediaTypeManifest)
 	case *manifestlist.ManifestList:
-		req.Header.Add("Accept", fmt.Sprintf("%s;q=0.9", manifestlist.MediaTypeManifestList))
+		req.Header.Add("Accept", manifestlist.MediaTypeManifestList)
 	}
 
 	resp, err := r.Client.Do(req.WithContext(ctx))
