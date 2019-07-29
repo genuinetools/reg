@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/cli/cli/config/types"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/term"

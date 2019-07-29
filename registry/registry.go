@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/cli/cli/config/types"
 	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/docker/distribution/manifest/schema2"
-	"github.com/docker/docker/api/types"
 )
 
 // Registry defines the client for retrieving information from the registry API.

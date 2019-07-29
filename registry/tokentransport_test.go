@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/cli/cli/config/types"
 )
 
 func TestErrBasicAuth(t *testing.T) {
