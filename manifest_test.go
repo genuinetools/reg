@@ -30,6 +30,18 @@ func TestManifestV1(t *testing.T) {
 	}
 }
 
+func TestManifestList(t *testing.T) {
+	out, err := run("manifest", "docker.io/ndeloof/hello-app")
+	if err != nil {
+		t.Fatalf("output: %s, error: %v", out, err)
+	}
+
+	expected := `"schemaVersion": 2,`
+	if !strings.Contains(out, expected) {
+		t.Fatalf("expected: %s\ngot: %s", expected, out)
+	}
+}
+
 func TestManifestWithHubDomain(t *testing.T) {
 	// Regression test for https://github.com/genuinetools/reg/issues/164
 	out, err := run("manifest", "busybox")
@@ -37,7 +49,7 @@ func TestManifestWithHubDomain(t *testing.T) {
 		t.Fatalf("output: %s, error: %v", out, err)
 	}
 
-	expected := `"schemaVersion": 2,`
+	expected := `"schemaVersion": 2`
 	if !strings.Contains(out, expected) {
 		t.Fatalf("expected: %s\ngot: %s", expected, out)
 	}
