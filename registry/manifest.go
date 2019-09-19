@@ -41,7 +41,7 @@ func (r *Registry) Manifest(ctx context.Context, repository, ref string) (distri
 	if err != nil {
 		return nil, err
 	}
-	r.Logf("registry.manifests resp.Status=%s, body=%s", resp.Status, body)
+	r.Logf("registry.manifests resp.Status=%s, type=%s, body=%s", resp.Status, resp.Header.Get("Content-type"), body)
 
 	m, _, err := distribution.UnmarshalManifest(resp.Header.Get("Content-Type"), body)
 	if err != nil {
