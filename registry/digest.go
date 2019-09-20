@@ -3,14 +3,16 @@ package registry
 import (
 	"context"
 	"fmt"
-	"net/http"
-
 	"github.com/docker/distribution/manifest/schema2"
-	digest "github.com/opencontainers/go-digest"
+	"github.com/sirupsen/logrus"
+	"net/http"
+	"strings"
+
+	"github.com/opencontainers/go-digest"
 )
 
 // Digest returns the digest for an image.
-func (r *Registry) Digest(ctx context.Context, image Image) (digest.Digest, error) {
+func (r *Registry) Digest(ctx context.Context, image Image, mediatypes ...string) (digest.Digest, error) {
 	if len(image.Digest) > 1 {
 		// return early if we already have an image digest.
 		return image.Digest, nil
@@ -25,7 +27,12 @@ func (r *Registry) Digest(ctx context.Context, image Image) (digest.Digest, erro
 		return "", err
 	}
 
-	req.Header.Add("Accept", schema2.MediaTypeManifest)
+	if mediatypes == nil {
+		mediatypes = []string{schema2.MediaTypeManifest}
+	}
+	logrus.Debugf("Using media types %s", mediatypes)
+	req.Header.Add("Accept", strings.Join(mediatypes, ", "))
+
 	resp, err := r.Client.Do(req.WithContext(ctx))
 	if err != nil {
 		return "", err

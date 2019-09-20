@@ -16,9 +16,15 @@ func (cmd *digestCommand) ShortHelp() string { return digestHelp }
 func (cmd *digestCommand) LongHelp() string  { return digestHelp }
 func (cmd *digestCommand) Hidden() bool      { return false }
 
-func (cmd *digestCommand) Register(fs *flag.FlagSet) {}
+func (cmd *digestCommand) Register(fs *flag.FlagSet) {
+	fs.BoolVar(&cmd.index, "index", false, "get manifest index (multi-architecture images, docker apps)")
+	fs.BoolVar(&cmd.oci, "oci", false, "use OCI media type only")
+}
 
-type digestCommand struct{}
+type digestCommand struct {
+	index bool
+	oci   bool
+}
 
 func (cmd *digestCommand) Run(ctx context.Context, args []string) error {
 	if len(args) < 1 {
@@ -37,7 +43,7 @@ func (cmd *digestCommand) Run(ctx context.Context, args []string) error {
 	}
 
 	// Get the digest.
-	digest, err := r.Digest(ctx, image)
+	digest, err := r.Digest(ctx, image, mediatypes(cmd.index, cmd.oci)...)
 	if err != nil {
 		return err
 	}

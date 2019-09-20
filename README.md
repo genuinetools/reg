@@ -139,6 +139,12 @@ $ reg manifest r.j3ss.co/htop
  }
 ```
 
+For multi-architecture docker images, `--index` allow to get the Manifest index (a.k.a Manifest List) with
+all supported platforms/architecture listed.
+
+OCI compatibility can be checked using `--oci` option, which will force use of [OCI media types](https://github.com/opencontainers/image-spec/blob/master/media-types.md).
+
+
 ### Get the Digest
 ```console
 $ reg digest r.j3ss.co/htop

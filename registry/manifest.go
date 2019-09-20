@@ -5,8 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/manifestlist"
@@ -20,7 +22,7 @@ var (
 )
 
 // Manifest returns the manifest for a specific repository:tag.
-func (r *Registry) Manifest(ctx context.Context, repository, ref string) (distribution.Manifest, error) {
+func (r *Registry) Manifest(ctx context.Context, repository, ref string, mediatypes ...string) (distribution.Manifest, error) {
 	uri := r.url("/v2/%s/manifests/%s", repository, ref)
 	r.Logf("registry.manifests uri=%s repository=%s ref=%s", uri, repository, ref)
 
@@ -29,7 +31,11 @@ func (r *Registry) Manifest(ctx context.Context, repository, ref string) (distri
 		return nil, err
 	}
 
-	req.Header.Add("Accept", schema2.MediaTypeManifest+", "+manifestlist.MediaTypeManifestList)
+	if mediatypes == nil {
+		mediatypes = []string{schema2.MediaTypeManifest}
+	}
+	logrus.Debugf("Using media types %s", mediatypes)
+	req.Header.Add("Accept", strings.Join(mediatypes, ", "))
 
 	resp, err := r.Client.Do(req.WithContext(ctx))
 	if err != nil {

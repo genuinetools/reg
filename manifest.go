@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-
+	"github.com/docker/distribution/manifest/manifestlist"
+	"github.com/docker/distribution/manifest/schema2"
 	"github.com/genuinetools/reg/registry"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 const manifestHelp = `Get the json manifest for a repository.`
@@ -19,10 +21,14 @@ func (cmd *manifestCommand) Hidden() bool      { return false }
 
 func (cmd *manifestCommand) Register(fs *flag.FlagSet) {
 	fs.BoolVar(&cmd.v1, "v1", false, "force the version of the manifest retrieved to v1")
+	fs.BoolVar(&cmd.index, "index", false, "get manifest index (multi-architecture images, docker apps)")
+	fs.BoolVar(&cmd.oci, "oci", false, "use OCI media type only")
 }
 
 type manifestCommand struct {
-	v1 bool
+	v1    bool
+	index bool
+	oci   bool
 }
 
 func (cmd *manifestCommand) Run(ctx context.Context, args []string) error {
@@ -50,7 +56,7 @@ func (cmd *manifestCommand) Run(ctx context.Context, args []string) error {
 		}
 	} else {
 		// Get the v2 manifest.
-		manifest, err = r.Manifest(ctx, image.Path, image.Reference())
+		manifest, err = r.Manifest(ctx, image.Path, image.Reference(), mediatypes(cmd.index, cmd.oci)...)
 		if err != nil {
 			return err
 		}
@@ -63,4 +69,21 @@ func (cmd *manifestCommand) Run(ctx context.Context, args []string) error {
 
 	fmt.Println(string(b))
 	return nil
+}
+
+func mediatypes(index, oci bool) []string {
+	mediatypes := []string{}
+	if oci {
+		mediatypes = append(mediatypes, v1.MediaTypeImageManifest)
+	} else {
+		mediatypes = append(mediatypes, schema2.MediaTypeManifest)
+	}
+	if index {
+		if oci {
+			mediatypes = append(mediatypes, v1.MediaTypeImageIndex)
+		} else {
+			mediatypes = append(mediatypes, manifestlist.MediaTypeManifestList)
+		}
+	}
+	return mediatypes
 }

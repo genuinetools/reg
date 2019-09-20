@@ -31,12 +31,12 @@ func TestManifestV1(t *testing.T) {
 }
 
 func TestManifestList(t *testing.T) {
-	out, err := run("manifest", "docker.io/ndeloof/hello-app")
+	out, err := run("manifest", "--index", "docker.io/library/busybox")
 	if err != nil {
 		t.Fatalf("output: %s, error: %v", out, err)
 	}
 
-	expected := `"schemaVersion": 2,`
+	expected := `"mediaType": "application\/vnd.docker.distribution.manifest.list.v2+json"`
 	if !strings.Contains(out, expected) {
 		t.Fatalf("expected: %s\ngot: %s", expected, out)
 	}
