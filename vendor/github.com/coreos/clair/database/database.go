@@ -1,4 +1,4 @@
-// Copyright 2017 clair authors
+// Copyright 2019 clair authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package database
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -27,12 +26,20 @@ import (
 var (
 	// ErrBackendException is an error that occurs when the database backend
 	// does not work properly (ie. unreachable).
-	ErrBackendException = errors.New("database: an error occurred when querying the backend")
+	ErrBackendException = NewStorageError("an error occurred when querying the backend")
 
 	// ErrInconsistent is an error that occurs when a database consistency check
 	// fails (i.e. when an entity which is supposed to be unique is detected
 	// twice)
-	ErrInconsistent = errors.New("database: inconsistent database")
+	ErrInconsistent = NewStorageError("inconsistent database")
+
+	// ErrInvalidParameters is an error that occurs when the parameters are not valid.
+	ErrInvalidParameters = NewStorageError("parameters are not valid")
+
+	// ErrMissingEntities is an error that occurs when an associated immutable
+	// entity doesn't exist in the database. This error can indicate a wrong
+	// implementation or corrupted database.
+	ErrMissingEntities = NewStorageError("associated immutable entities are missing in the database")
 )
 
 // RegistrableComponentConfig is a configuration block that can be used to
@@ -99,6 +106,9 @@ type Session interface {
 	// namespaced features. If the ancestry is not found, return false.
 	FindAncestry(name string) (ancestry Ancestry, found bool, err error)
 
+	// PersistDetector inserts a slice of detectors if not in the database.
+	PersistDetectors(detectors []Detector) error
+
 	// PersistFeatures inserts a set of features if not in the database.
 	PersistFeatures(features []Feature) error
 
@@ -120,12 +130,10 @@ type Session interface {
 	// PersistNamespaces inserts a set of namespaces if not in the database.
 	PersistNamespaces([]Namespace) error
 
-	// PersistLayer persists a layer's content in the database. The given
-	// namespaces and features can be partial content of this layer.
+	// PersistLayer appends a layer's content in the database.
 	//
-	// The layer, namespaces and features are expected to be already existing
-	// in the database.
-	PersistLayer(hash string, namespaces []Namespace, features []Feature, processedBy Processors) error
+	// If any feature, namespace, or detector is not in the database, it returns not found error.
+	PersistLayer(hash string, features []LayerFeature, namespaces []LayerNamespace, detectedBy []Detector) error
 
 	// FindLayer returns a layer with all detected features and
 	// namespaces.
@@ -157,8 +165,8 @@ type Session interface {
 	// affected ancestries affected by old or new vulnerability.
 	//
 	// Because the number of affected ancestries maybe large, they are paginated
-	// and their pages are specified by the paination token, which, if empty, are
-	// always considered first page.
+	// and their pages are specified by the pagination token, which should be
+	// considered first page when it's empty.
 	FindVulnerabilityNotification(name string, limit int, oldVulnerabilityPage pagination.Token, newVulnerabilityPage pagination.Token) (noti VulnerabilityNotificationWithVulnerable, found bool, err error)
 
 	// MarkNotificationAsRead marks a Notification as notified now, assuming
@@ -174,23 +182,22 @@ type Session interface {
 	// FindKeyValue retrieves a value from the given key.
 	FindKeyValue(key string) (value string, found bool, err error)
 
-	// Lock creates or renew a Lock in the database with the given name, owner
-	// and duration.
+	// AcquireLock acquires a brand new lock in the database with a given name
+	// for the given duration.
 	//
-	// After the specified duration, the Lock expires by itself if it hasn't been
-	// unlocked, and thus, let other users create a Lock with the same name.
-	// However, the owner can renew its Lock by setting renew to true.
-	// Lock should not block, it should instead returns whether the Lock has been
-	// successfully acquired/renewed. If it's the case, the expiration time of
-	// that Lock is returned as well.
-	Lock(name string, owner string, duration time.Duration, renew bool) (success bool, expiration time.Time, err error)
+	// A lock can only have one owner.
+	// This method should NOT block until a lock is acquired.
+	AcquireLock(name, owner string, duration time.Duration) (acquired bool, expiration time.Time, err error)
 
-	// Unlock releases an existing Lock.
-	Unlock(name, owner string) error
+	// ExtendLock extends an existing lock such that the lock will expire at the
+	// current time plus the provided duration.
+	//
+	// This method should return immediately with an error if the lock does not
+	// exist.
+	ExtendLock(name, owner string, duration time.Duration) (extended bool, expiration time.Time, err error)
 
-	// FindLock returns the owner of a Lock specified by the name, and its
-	// expiration time if it exists.
-	FindLock(name string) (owner string, expiration time.Time, found bool, err error)
+	// ReleaseLock releases an existing lock.
+	ReleaseLock(name, owner string) error
 }
 
 // Datastore represents a persistent data store

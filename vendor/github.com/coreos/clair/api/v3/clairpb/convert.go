@@ -22,6 +22,13 @@ import (
 	"github.com/coreos/clair/ext/versionfmt"
 )
 
+// DatabaseDetectorTypeMapping maps the database detector type to the integer
+// enum proto.
+var DatabaseDetectorTypeMapping = map[database.DetectorType]Detector_DType{
+	database.NamespaceDetectorType: Detector_DType(1),
+	database.FeatureDetectorType:   Detector_DType(2),
+}
+
 // PagedVulnerableAncestriesFromDatabaseModel converts database
 // PagedVulnerableAncestries to api PagedVulnerableAncestries and assigns
 // indexes to ancestries.
@@ -92,6 +99,7 @@ func NotificationFromDatabaseModel(dbNotification database.VulnerabilityNotifica
 	return &noti, nil
 }
 
+// VulnerabilityFromDatabaseModel converts database Vulnerability to api Vulnerability.
 func VulnerabilityFromDatabaseModel(dbVuln database.Vulnerability) (*Vulnerability, error) {
 	metaString := ""
 	if dbVuln.Metadata != nil {
@@ -112,6 +120,7 @@ func VulnerabilityFromDatabaseModel(dbVuln database.Vulnerability) (*Vulnerabili
 	}, nil
 }
 
+// VulnerabilityWithFixedInFromDatabaseModel converts database VulnerabilityWithFixedIn to api Vulnerability.
 func VulnerabilityWithFixedInFromDatabaseModel(dbVuln database.VulnerabilityWithFixedIn) (*Vulnerability, error) {
 	vuln, err := VulnerabilityFromDatabaseModel(dbVuln.Vulnerability)
 	if err != nil {
@@ -122,23 +131,44 @@ func VulnerabilityWithFixedInFromDatabaseModel(dbVuln database.VulnerabilityWith
 	return vuln, nil
 }
 
-// LayerFromDatabaseModel converts database layer to api layer.
-func LayerFromDatabaseModel(dbLayer database.LayerMetadata) *Layer {
-	layer := Layer{Hash: dbLayer.Hash}
-	return &layer
-}
-
 // NamespacedFeatureFromDatabaseModel converts database namespacedFeature to api Feature.
-func NamespacedFeatureFromDatabaseModel(feature database.NamespacedFeature) *Feature {
+func NamespacedFeatureFromDatabaseModel(feature database.AncestryFeature) *Feature {
 	version := feature.Feature.Version
 	if version == versionfmt.MaxVersion {
 		version = "None"
 	}
 
 	return &Feature{
-		Name:          feature.Feature.Name,
-		NamespaceName: feature.Namespace.Name,
+		Name: feature.Feature.Name,
+		Namespace: &Namespace{
+			Name:     feature.Namespace.Name,
+			Detector: DetectorFromDatabaseModel(feature.NamespaceBy),
+		},
 		VersionFormat: feature.Namespace.VersionFormat,
 		Version:       version,
+		Detector:      DetectorFromDatabaseModel(feature.FeatureBy),
+		FeatureType:   string(feature.Type),
 	}
+}
+
+// DetectorFromDatabaseModel converts database detector to api detector.
+func DetectorFromDatabaseModel(detector database.Detector) *Detector {
+	if !detector.Valid() {
+		return nil
+	}
+	return &Detector{
+		Name:    detector.Name,
+		Version: detector.Version,
+		Dtype:   DatabaseDetectorTypeMapping[detector.DType],
+	}
+}
+
+// DetectorsFromDatabaseModel converts database detectors to api detectors.
+func DetectorsFromDatabaseModel(dbDetectors []database.Detector) []*Detector {
+	detectors := make([]*Detector, 0, len(dbDetectors))
+	for _, d := range dbDetectors {
+		detectors = append(detectors, DetectorFromDatabaseModel(d))
+	}
+
+	return detectors
 }
