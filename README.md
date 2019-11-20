@@ -1,31 +1,15 @@
 # reg
 
-[![Travis CI](https://img.shields.io/travis/genuinetools/reg.svg?style=for-the-badge)](https://travis-ci.org/genuinetools/reg)
+![make-all](https://github.com/genuinetools/reg/workflows/make%20all/badge.svg)
+![make-image](https://github.com/genuinetools/reg/workflows/make%20image/badge.svg)
+![make-test](https://github.com/genuinetools/reg/workflows/make%20test/badge.svg)
 [![GoDoc](https://img.shields.io/badge/godoc-reference-5272B4.svg?style=for-the-badge)](https://godoc.org/github.com/genuinetools/reg)
 [![Github All Releases](https://img.shields.io/github/downloads/genuinetools/reg/total.svg?style=for-the-badge)](https://github.com/genuinetools/reg/releases)
 
 Docker registry v2 command line client and repo listing generator with security checks.
 
-**Table of Contents**
-
-<!-- toc -->
-
-- [Installation](#installation)
-    + [Binaries](#binaries)
-    + [Via Go](#via-go)
-- [Usage](#usage)
-  * [Auth](#auth)
-  * [List Repositories and Tags](#list-repositories-and-tags)
-  * [Get a Manifest](#get-a-manifest)
-  * [Get the Digest](#get-the-digest)
-  * [Download a Layer](#download-a-layer)
-  * [Delete an Image](#delete-an-image)
-  * [Vulnerability Reports](#vulnerability-reports)
-  * [Generating Static Website for a Registry](#generating-static-website-for-a-registry)
-  * [Using Self-Signed Certs with a Registry](#using-self-signed-certs-with-a-registry)
-- [Contributing](#contributing)
-
-<!-- tocstop -->
+<!-- START doctoc -->
+<!-- END doctoc -->
 
 ## Installation
 

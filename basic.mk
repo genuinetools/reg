@@ -137,7 +137,7 @@ release: *.go VERSION.txt prebuild ## Builds the cross-compiled binaries, naming
 .PHONY: bump-version
 BUMP := patch
 bump-version: ## Bump the version in the version file. Set BUMP to [ patch | major | minor ].
-	@$(GO) get -u github.com/jessfraz/junk/sembump # update sembump tool
+	@$(GO) get -u github.com/jessfraz/junk/sembump || true # update sembump tool
 	$(eval NEW_VERSION = $(shell sembump --kind $(BUMP) $(VERSION)))
 	@echo "Bumping VERSION.txt from $(VERSION) to $(NEW_VERSION)"
 	echo $(NEW_VERSION) > VERSION.txt
@@ -150,7 +150,7 @@ bump-version: ## Bump the version in the version file. Set BUMP to [ patch | maj
 .PHONY: tag
 tag: ## Create a new git tag to prepare to build a release.
 	git tag -sa $(VERSION) -m "$(VERSION)"
-	@echo "Run git push origin $(VERSION) to push your new tag to GitHub and trigger a travis build."
+	@echo "Run git push origin $(VERSION) to push your new tag to GitHub and trigger a release."
 
 REGISTRY := r.j3ss.co
 .PHONY: image
