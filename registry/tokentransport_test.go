@@ -14,6 +14,7 @@ import (
 func TestErrBasicAuth(t *testing.T) {
 	ctx := context.Background()
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
 		if r.URL.Path == "/" {
 			w.Header().Set("www-authenticate", `Basic realm="Registry Realm",service="Docker registry"`)
 			w.WriteHeader(http.StatusUnauthorized)
@@ -44,6 +45,7 @@ func TestErrBasicAuth(t *testing.T) {
 var authURI string
 
 func oauthFlow(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
 	if strings.HasPrefix(r.URL.Path, "/oauth2/accesstoken") {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)

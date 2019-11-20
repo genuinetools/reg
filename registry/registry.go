@@ -18,13 +18,14 @@ import (
 
 // Registry defines the client for retrieving information from the registry API.
 type Registry struct {
-	URL      string
-	Domain   string
-	Username string
-	Password string
-	Client   *http.Client
-	Logf     LogfCallback
-	Opt      Opt
+	URL        string
+	Domain     string
+	Username   string
+	Password   string
+	Client     *http.Client
+	PingClient *http.Client
+	Logf       LogfCallback
+	Opt        Opt
 }
 
 var reProtocol = regexp.MustCompile("^https?://")
@@ -120,6 +121,13 @@ func newFromTransport(ctx context.Context, auth types.AuthConfig, transport http
 		Client: &http.Client{
 			Timeout:   opt.Timeout,
 			Transport: customTransport,
+		},
+		PingClient: &http.Client{
+			Timeout: opt.Timeout,
+			Transport: &CustomTransport{
+				Transport: transport,
+				Headers:   opt.Headers,
+			},
 		},
 		Username: auth.Username,
 		Password: auth.Password,
