@@ -31,9 +31,14 @@ require (
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/peterhellberg/link v1.0.0
+	github.com/saibing/bingo v0.0.0-20190331051950-76bcd777316d // indirect
 	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749
 	github.com/sirupsen/logrus v1.4.2
+	github.com/sourcegraph/go-lsp v0.0.0-20200117082640-b19bb38222e2 // indirect
+	github.com/sourcegraph/jsonrpc2 v0.0.0-20191222043438-96c4efab7ee2 // indirect
+	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
+	golang.org/x/tools v0.0.0-20200303225724-c5a141475315 // indirect
 	google.golang.org/grpc v1.23.1
 	gotest.tools v2.2.0+incompatible // indirect
 )
