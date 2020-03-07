@@ -38,7 +38,7 @@ func (cmd *tagsCommand) Run(ctx context.Context, args []string) error {
 		return err
 	}
 
-	tags, err := r.Tags(ctx, image.Path)
+	tags, err := r.TagNames(ctx, image.Path)
 	if err != nil {
 		return err
 	}

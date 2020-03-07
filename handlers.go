@@ -196,31 +196,18 @@ func (rc *registryController) generateTagsTemplate(ctx context.Context, repo str
 	}
 
 	for _, tag := range tags {
-		// get the manifest
-		m1, err := rc.reg.ManifestV1(ctx, repo, tag)
+		createdDate, err := tag.CreatedDate(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("getting v1 manifest for %s:%s failed: %v", repo, tag, err)
+			fmt.Errorf("could not get create date. Repo: %s, tag: %s. Error: %v", repo, tag, err)
+			continue;
 		}
-
-		var createdDate time.Time
-		for _, h := range m1.History {
-			var comp v1Compatibility
-
-			if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
-				return nil, fmt.Errorf("unmarshal v1 manifest for %s:%s failed: %v", repo, tag, err)
-			}
-
-			createdDate = comp.Created
-			break
-		}
-
 		repoURI := fmt.Sprintf("%s/%s", rc.reg.Domain, repo)
-		if tag != "latest" {
-			repoURI += ":" + tag
+		if tag.Name != "latest" {
+			repoURI += ":" + tag.Name
 		}
 		rp := Repository{
 			Name:    repo,
-			Tag:     tag,
+			Tag:     tag.Name,
 			URI:     repoURI,
 			Created: createdDate,
 		}
