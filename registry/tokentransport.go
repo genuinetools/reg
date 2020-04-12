@@ -113,7 +113,9 @@ type authService struct {
 
 func (a *authService) Request(username, password string) (*http.Request, error) {
 	q := a.Realm.Query()
-	q.Set("service", a.Service)
+	if len(a.Service) > 0 {
+		q.Set("service", a.Service)
+	}
 	for _, s := range a.Scope {
 		q.Set("scope", s)
 	}
