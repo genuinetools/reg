@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"net/url"
+	"strings"
 
 	"github.com/peterhellberg/link"
 )
@@ -16,7 +17,13 @@ func (r *Registry) Catalog(ctx context.Context, u string) ([]string, error) {
 	if u == "" {
 		u = "/v2/_catalog"
 	}
-	uri := r.url(u)
+
+	var uri string
+	if strings.HasPrefix(u, "/") {
+		uri = r.url(u)
+	} else {
+		uri = u
+	}
 	r.Logf("registry.catalog url=%s", uri)
 
 	var response catalogResponse
