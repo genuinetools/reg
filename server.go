@@ -43,6 +43,7 @@ func (cmd *serverCommand) Register(fs *flag.FlagSet) {
 	fs.StringVar(&cmd.assetPath, "asset-path", "", "Path to assets and templates")
 
 	fs.BoolVar(&cmd.generateAndExit, "once", false, "generate the templates once and then exit")
+	fs.BoolVar(&cmd.generateContinuously, "static", false, "generate the templates on interval, do not start a server")
 }
 
 type serverCommand struct {
@@ -50,7 +51,8 @@ type serverCommand struct {
 	registryServer string
 	clairServer    string
 
-	generateAndExit bool
+	generateAndExit      bool
+	generateContinuously bool
 
 	cert          string
 	key           string
@@ -137,7 +139,8 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 
 	rc.interval = cmd.interval
 	ticker := time.NewTicker(rc.interval)
-	go func() {
+
+	updater := func() {
 		// Create more indexes every X minutes based off interval.
 		for range ticker.C {
 			logrus.Info("creating timer based static index")
@@ -145,7 +148,13 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 				logrus.Warnf("creating static index failed: %v", err)
 			}
 		}
-	}()
+	}
+    if cmd.generateContinuously {
+		updater()
+		return nil
+	}
+
+	go updater()
 
 	// Create mux server.
 	mux := mux.NewRouter()
