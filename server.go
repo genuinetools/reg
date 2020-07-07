@@ -69,7 +69,6 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 	// Create the registry controller for the handlers.
 	rc := registryController{
 		reg:          r,
-		generateOnly: cmd.generateAndExit,
 	}
 
 	// Create a clair client if the user passed in a server address.

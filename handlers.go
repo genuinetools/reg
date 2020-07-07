@@ -27,7 +27,6 @@ type registryController struct {
 	interval     time.Duration
 	l            sync.Mutex
 	tmpl         *template.Template
-	generateOnly bool
 }
 
 type v1Compatibility struct {
@@ -80,11 +79,6 @@ func (rc *registryController) repositories(ctx context.Context, staticDir string
 		}
 
 		result.Repositories = append(result.Repositories, r)
-
-		if !rc.generateOnly {
-			// Continue early because we don't need to generate the tags pages.
-			continue
-		}
 
 		// Generate the tags pages in a go routine.
 		wg.Add(1)
