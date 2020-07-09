@@ -17,18 +17,19 @@ package database
 // DebianReleasesMapping translates Debian code names and class names to version numbers
 var DebianReleasesMapping = map[string]string{
 	// Code names
-	"squeeze": "6",
-	"wheezy":  "7",
-	"jessie":  "8",
-	"stretch": "9",
-	"buster":  "10",
-	"sid":     "unstable",
+	"squeeze":  "6",
+	"wheezy":   "7",
+	"jessie":   "8",
+	"stretch":  "9",
+	"buster":   "10",
+	"bullseye": "11",
+	"sid":      "unstable",
 
 	// Class names
-	"oldoldstable": "7",
-	"oldstable":    "8",
-	"stable":       "9",
-	"testing":      "10",
+	"oldoldstable": "8",
+	"oldstable":    "9",
+	"stable":       "10",
+	"testing":      "11",
 	"unstable":     "unstable",
 }
 
@@ -46,4 +47,6 @@ var UbuntuReleasesMapping = map[string]string{
 	"zesty":   "17.04",
 	"artful":  "17.10",
 	"bionic":  "18.04",
+	"cosmic":  "18.10",
+	"disco":   "19.04",
 }

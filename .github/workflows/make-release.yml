@@ -1,0 +1,29 @@
+on:
+  push:
+    tags:
+      - v*
+name: make release
+jobs:
+  makerelease:
+    name: make release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: make release
+        uses: docker://golang:latest
+        with:
+          args: make release
+      - name: upload assets
+        uses: docker://r.j3ss.co/github-dev
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          entrypoint: bash
+          args: -c "upload-assets ./cross/*"
+      - name: update release body
+        uses: docker://r.j3ss.co/pepper
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          entrypoint: sh
+          args: -c "pepper release --repo $GITHUB_REPOSITORY -d --nouser"

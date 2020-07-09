@@ -30,9 +30,10 @@ type MockSession struct {
 	FctFindAffectedNamespacedFeatures   func(features []NamespacedFeature) ([]NullableAffectedNamespacedFeature, error)
 	FctPersistNamespaces                func([]Namespace) error
 	FctPersistFeatures                  func([]Feature) error
+	FctPersistDetectors                 func(detectors []Detector) error
 	FctPersistNamespacedFeatures        func([]NamespacedFeature) error
 	FctCacheAffectedNamespacedFeatures  func([]NamespacedFeature) error
-	FctPersistLayer                     func(hash string, namespaces []Namespace, features []Feature, processedBy Processors) error
+	FctPersistLayer                     func(hash string, features []LayerFeature, namespaces []LayerNamespace, by []Detector) error
 	FctFindLayer                        func(name string) (Layer, bool, error)
 	FctInsertVulnerabilities            func([]VulnerabilityWithAffected) error
 	FctFindVulnerabilities              func([]VulnerabilityID) ([]NullableVulnerability, error)
@@ -45,9 +46,9 @@ type MockSession struct {
 	FctDeleteNotification     func(name string) error
 	FctUpdateKeyValue         func(key, value string) error
 	FctFindKeyValue           func(key string) (string, bool, error)
-	FctLock                   func(name string, owner string, duration time.Duration, renew bool) (bool, time.Time, error)
-	FctUnlock                 func(name, owner string) error
-	FctFindLock               func(name string) (string, time.Time, bool, error)
+	FctAcquireLock            func(name, owner string, duration time.Duration) (bool, time.Time, error)
+	FctExtendLock             func(name, owner string, duration time.Duration) (bool, time.Time, error)
+	FctReleaseLock            func(name, owner string) error
 }
 
 func (ms *MockSession) Commit() error {
@@ -85,6 +86,13 @@ func (ms *MockSession) FindAffectedNamespacedFeatures(features []NamespacedFeatu
 	panic("required mock function not implemented")
 }
 
+func (ms *MockSession) PersistDetectors(detectors []Detector) error {
+	if ms.FctPersistDetectors != nil {
+		return ms.FctPersistDetectors(detectors)
+	}
+	panic("required mock function not implemented")
+}
+
 func (ms *MockSession) PersistNamespaces(namespaces []Namespace) error {
 	if ms.FctPersistNamespaces != nil {
 		return ms.FctPersistNamespaces(namespaces)
@@ -113,9 +121,9 @@ func (ms *MockSession) CacheAffectedNamespacedFeatures(namespacedFeatures []Name
 	panic("required mock function not implemented")
 }
 
-func (ms *MockSession) PersistLayer(hash string, namespaces []Namespace, features []Feature, processedBy Processors) error {
+func (ms *MockSession) PersistLayer(hash string, features []LayerFeature, namespaces []LayerNamespace, detectors []Detector) error {
 	if ms.FctPersistLayer != nil {
-		return ms.FctPersistLayer(hash, namespaces, features, processedBy)
+		return ms.FctPersistLayer(hash, features, namespaces, detectors)
 	}
 	panic("required mock function not implemented")
 }
@@ -198,23 +206,23 @@ func (ms *MockSession) FindKeyValue(key string) (string, bool, error) {
 	panic("required mock function not implemented")
 }
 
-func (ms *MockSession) Lock(name string, owner string, duration time.Duration, renew bool) (bool, time.Time, error) {
-	if ms.FctLock != nil {
-		return ms.FctLock(name, owner, duration, renew)
+func (ms *MockSession) AcquireLock(name, owner string, duration time.Duration) (bool, time.Time, error) {
+	if ms.FctAcquireLock != nil {
+		return ms.FctAcquireLock(name, owner, duration)
 	}
 	panic("required mock function not implemented")
 }
 
-func (ms *MockSession) Unlock(name, owner string) error {
-	if ms.FctUnlock != nil {
-		return ms.FctUnlock(name, owner)
+func (ms *MockSession) ExtendLock(name, owner string, duration time.Duration) (bool, time.Time, error) {
+	if ms.FctExtendLock != nil {
+		return ms.FctExtendLock(name, owner, duration)
 	}
 	panic("required mock function not implemented")
 }
 
-func (ms *MockSession) FindLock(name string) (string, time.Time, bool, error) {
-	if ms.FctFindLock != nil {
-		return ms.FctFindLock(name)
+func (ms *MockSession) ReleaseLock(name, owner string) error {
+	if ms.FctReleaseLock != nil {
+		return ms.FctReleaseLock(name, owner)
 	}
 	panic("required mock function not implemented")
 }

@@ -1,0 +1,11 @@
+on: push
+name: make test
+jobs:
+  maketest:
+    name: make test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: make test
+        run: DOCKER_API_VERSION=1.39 make dind dtest
+        shell: bash
