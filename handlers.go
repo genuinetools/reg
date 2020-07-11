@@ -115,7 +115,7 @@ func (rc *registryController) repositories(ctx context.Context, staticDir string
 			// Write the tags file.
 			tagsFile := filepath.Join(tagsDir, "index.html")
 			if err := ioutil.WriteFile(tagsFile, b, 0755); err != nil {
-				logrus.Warnf("writing tags template for repo %s to %sfailed: %v", repo, tagsFile, err)
+				logrus.Warnf("writing tags template for repo %s to %s failed: %v", repo, tagsFile, err)
 			}
 
 			if rc.currentScanner() != nil {
