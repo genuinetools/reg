@@ -53,6 +53,17 @@ type AnalysisResult struct {
 	UpdateInterval time.Duration
 }
 
+type scanner interface {
+	ScanImage(ctx context.Context, r *registry.Registry, repo, tag string) (interface{}, error)
+}
+
+func (rc *registryController) currentScanner() scanner {
+	if rc.cl != nil {
+		return rc.cl
+	}
+	return nil
+}
+
 func (rc *registryController) repositories(ctx context.Context, staticDir string) error {
 	rc.l.Lock()
 	defer rc.l.Unlock()
@@ -89,7 +100,7 @@ func (rc *registryController) repositories(ctx context.Context, staticDir string
 			// Parse and execute the tags templates.
 			// If we are generating the tags files, disable vulnerability links in the
 			// templates since they won't go anywhere without a server side component.
-			b, err := rc.generateTagsTemplate(ctx, repo, false)
+			b, err := rc.generateTagsTemplate(ctx, repo, rc.currentScanner() != nil)
 			if err != nil {
 				logrus.Warnf("generating tags template for repo %q failed: %v", repo, err)
 			}
@@ -151,7 +162,7 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	// Generate the tags template.
-	b, err := rc.generateTagsTemplate(context.TODO(), repo, rc.cl != nil)
+	b, err := rc.generateTagsTemplate(context.TODO(), repo, rc.currentScanner() != nil)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"func":   "tags",
@@ -186,7 +197,7 @@ func (rc *registryController) generateTagsTemplate(ctx context.Context, repo str
 		LastUpdated:    time.Now().Local().Format(time.RFC1123),
 		UpdateInterval: rc.interval,
 		Name:           repo,
-		HasVulns:       hasVulns, // if we have a clair client we can return vulns
+		HasVulns:       hasVulns, // if we have a scanner we can return vulns
 	}
 
 	for _, tag := range tags {
@@ -253,20 +264,15 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	// Get the vulnerability report.
-	result, err := rc.cl.VulnerabilitiesV3(context.TODO(), rc.reg, image.Path, image.Reference())
+	result, err := rc.currentScanner().ScanImage(context.TODO(), rc.reg, image.Path, image.Reference())
 	if err != nil {
-		// Fallback to Clair v2 API.
-		result, err = rc.cl.Vulnerabilities(context.TODO(), rc.reg, image.Path, image.Reference())
-		if err != nil {
-			logrus.WithFields(logrus.Fields{
-				"func":   "vulnerabilities",
-				"URL":    r.URL,
-				"method": r.Method,
-			}).Errorf("vulnerability scanning for %s:%s failed: %v", repo, tag, err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+		logrus.WithFields(logrus.Fields{
+			"func":   "vulnerabilities",
+			"URL":    r.URL,
+			"method": r.Method,
+		}).Errorf("vulnerability scanning for %s:%s failed: %v", repo, tag, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	if strings.HasSuffix(r.URL.String(), ".json") {
