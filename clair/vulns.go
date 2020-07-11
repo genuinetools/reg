@@ -38,7 +38,7 @@ func (c *Clair) Vulnerabilities(ctx context.Context, r *registry.Registry, repo,
 	}
 
 	if len(filteredLayers) == 0 {
-		fmt.Printf("No need to analyse image %s:%s as there is no non-emtpy layer", repo, tag)
+		fmt.Printf("No need to analyse image %s:%s as there is no non-empty layer", repo, tag)
 		return report, nil
 	}
 
