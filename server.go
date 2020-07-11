@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/genuinetools/reg/clair"
+	"github.com/genuinetools/reg/trivy"
 	"github.com/genuinetools/reg/internal/binutils/static"
 	"github.com/genuinetools/reg/internal/binutils/templates"
 	"github.com/gorilla/mux"
@@ -35,6 +36,7 @@ func (cmd *serverCommand) Register(fs *flag.FlagSet) {
 	fs.StringVar(&cmd.registryServer, "r", "", "URL to the private registry (ex. r.j3ss.co)")
 
 	fs.StringVar(&cmd.clairServer, "clair", "", "url to clair instance")
+	fs.StringVar(&cmd.trivyLocation, "trivy", "", "path to trivy binary for vulnerability scanning")
 
 	fs.StringVar(&cmd.cert, "cert", "", "path to ssl cert")
 	fs.StringVar(&cmd.key, "key", "", "path to ssl key")
@@ -50,6 +52,7 @@ type serverCommand struct {
 	interval       time.Duration
 	registryServer string
 	clairServer    string
+	trivyLocation  string
 
 	generateAndExit      bool
 	generateContinuously bool
@@ -74,7 +77,7 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 	}
 
 	// Create a clair client if the user passed in a server address.
-	if len(cmd.clairServer) > 0 {
+	if len(cmd.clairServer) > 0 && len(cmd.trivyLocation) == 0 { // trivy >= clair
 		rc.cl, err = clair.New(cmd.clairServer, clair.Opt{
 			Insecure: insecure,
 			Debug:    debug,
@@ -86,6 +89,19 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 	} else {
 		rc.cl = nil
 	}
+	// Create a trivy client if the user passed in a binary location.
+	if len(cmd.trivyLocation) > 0 {
+		rc.trivy, err = trivy.New(cmd.trivyLocation, trivy.Opt{
+			Debug:    debug,
+			Timeout:  timeout,
+		})
+		if err != nil {
+			return fmt.Errorf("creation of trivy client at %s failed: %v", cmd.trivyLocation, err)
+		}
+	} else {
+		rc.trivy = nil
+	}
+	
 	// Get the path to the asset directory.
 	assetDir := cmd.assetPath
 	if len(cmd.assetPath) <= 0 {

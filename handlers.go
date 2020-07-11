@@ -17,6 +17,7 @@ import (
 
 	"github.com/genuinetools/reg/clair"
 	"github.com/genuinetools/reg/registry"
+	"github.com/genuinetools/reg/trivy"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )
@@ -24,6 +25,7 @@ import (
 type registryController struct {
 	reg          *registry.Registry
 	cl           *clair.Clair
+	trivy        *trivy.Trivy
 	interval     time.Duration
 	l            sync.Mutex
 	tmpl         *template.Template
@@ -58,6 +60,9 @@ type scanner interface {
 }
 
 func (rc *registryController) currentScanner() scanner {
+	if rc.trivy != nil {
+		return rc.trivy
+	}
 	if rc.cl != nil {
 		return rc.cl
 	}
@@ -120,7 +125,7 @@ func (rc *registryController) repositories(ctx context.Context, staticDir string
 						logrus.Warnf("generating tags template for repo %q failed: %v", repo, err)
 					}
 					// Create the directory for the static vulnerability files.
-					vulnsDir := filepath.Join(tagsDir, "vulns")
+					vulnsDir := filepath.Join(staticDir, "repo", repo, "tag", tag.Name, "vulns")
 					if err := os.MkdirAll(vulnsDir, 0755); err != nil {
 						logrus.Warn(err)
 					}
@@ -132,8 +137,8 @@ func (rc *registryController) repositories(ctx context.Context, staticDir string
 					}
 
 					// Write the vulnerabilities json
-					vulnsJsonFile := filepath.Join(tagsDir, "vulns.json")
-					if err := ioutil.WriteFile(vulnsJsonFile, bvulnjson, 0755); err != nil {
+					vulnsJsonFile := filepath.Join(staticDir, "repo", repo, "tag", tag.Name, "vulns.json")
+					if err = ioutil.WriteFile(vulnsJsonFile, bvulnjson, 0755); err != nil {
 						logrus.Warnf("writing vulnerabilities json template for repo %s to %s failed: %v", repo, vulnsJsonFile, err)
 					}
 				}
