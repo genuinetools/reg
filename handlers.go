@@ -97,10 +97,7 @@ func (rc *registryController) repositories(ctx context.Context, staticDir string
 			defer wg.Done()
 			logrus.Infof("generating static tags page for repo %s", repo)
 
-			// Parse and execute the tags templates.
-			// If we are generating the tags files, disable vulnerability links in the
-			// templates since they won't go anywhere without a server side component.
-			b, err := rc.generateTagsTemplate(ctx, repo, rc.currentScanner() != nil)
+			b, tags, err := rc.generateTagsTemplate(ctx, repo, rc.currentScanner() != nil)
 			if err != nil {
 				logrus.Warnf("generating tags template for repo %q failed: %v", repo, err)
 			}
@@ -114,6 +111,32 @@ func (rc *registryController) repositories(ctx context.Context, staticDir string
 			tagsFile := filepath.Join(tagsDir, "index.html")
 			if err := ioutil.WriteFile(tagsFile, b, 0755); err != nil {
 				logrus.Warnf("writing tags template for repo %s to %sfailed: %v", repo, tagsFile, err)
+			}
+
+			if rc.currentScanner() != nil {
+				for _, tag := range tags {
+					bvulnhtml, bvulnjson, err := rc.generateVulnerabilityTemplate(ctx, repo, tag, rc.currentScanner())
+					if err != nil {
+						logrus.Warnf("generating tags template for repo %q failed: %v", repo, err)
+					}
+					// Create the directory for the static vulnerability files.
+					vulnsDir := filepath.Join(tagsDir, "vulns")
+					if err := os.MkdirAll(vulnsDir, 0755); err != nil {
+						logrus.Warn(err)
+					}
+
+					// Write the vulnerabilies file.
+					vulnsFile := filepath.Join(vulnsDir, "index.html")
+					if err := ioutil.WriteFile(vulnsFile, bvulnhtml, 0755); err != nil {
+						logrus.Warnf("writing vulnerabilities template for repo %s to %s failed: %v", repo, vulnsFile, err)
+					}
+
+					// Write the vulnerabilities json
+					vulnsJsonFile := filepath.Join(tagsDir, "vulns.json")
+					if err := ioutil.WriteFile(vulnsJsonFile, bvulnjson, 0755); err != nil {
+						logrus.Warnf("writing vulnerabilities json template for repo %s to %s failed: %v", repo, vulnsJsonFile, err)
+					}
+				}
 			}
 		}(repo)
 	}
@@ -162,7 +185,7 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	// Generate the tags template.
-	b, err := rc.generateTagsTemplate(context.TODO(), repo, rc.currentScanner() != nil)
+	b, _, err := rc.generateTagsTemplate(context.TODO(), repo, rc.currentScanner() != nil)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"func":   "tags",
@@ -179,17 +202,17 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 	fmt.Fprint(w, string(b))
 }
 
-func (rc *registryController) generateTagsTemplate(ctx context.Context, repo string, hasVulns bool) ([]byte, error) {
+func (rc *registryController) generateTagsTemplate(ctx context.Context, repo string, hasVulns bool) ([]byte, []registry.Tag, error) {
 	// Get the tags from the server.
 	tags, err := rc.reg.Tags(ctx, repo)
 	if err != nil {
-		return nil, fmt.Errorf("getting tags for %s failed: %v", repo, err)
+		return nil, nil, fmt.Errorf("getting tags for %s failed: %v", repo, err)
 	}
 
 	// Error out if there are no tags / images
 	// (the above err != nil does not error out when nothing has been found)
 	if len(tags) == 0 {
-		return nil, fmt.Errorf("no tags found for repo: %s", repo)
+		return nil, nil, fmt.Errorf("no tags found for repo: %s", repo)
 	}
 
 	result := AnalysisResult{
@@ -223,10 +246,10 @@ func (rc *registryController) generateTagsTemplate(ctx context.Context, repo str
 	// Execute the template.
 	var buf bytes.Buffer
 	if err := rc.tmpl.ExecuteTemplate(&buf, "tags", result); err != nil {
-		return nil, fmt.Errorf("template rendering failed: %v", err)
+		return nil, nil, fmt.Errorf("template rendering failed: %v", err)
 	}
 
-	return buf.Bytes(), nil
+	return buf.Bytes(), tags, nil
 }
 
 func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *http.Request) {
@@ -302,4 +325,20 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+}
+
+func (rc *registryController) generateVulnerabilityTemplate(ctx context.Context, repo string, tag registry.Tag, sc scanner) ([]byte, []byte, error){
+	result, err := rc.currentScanner().ScanImage(context.TODO(), rc.reg, repo, tag.Name)
+	if err != nil {
+		return nil, nil, err
+	}
+	js, err := json.Marshal(result)
+	if err != nil {
+		return nil, nil, err
+	}
+	var html bytes.Buffer
+	if err := rc.tmpl.ExecuteTemplate(&html, "vulns", result); err != nil {
+		return nil, nil, err
+	}
+	return html.Bytes(), js, nil
 }
