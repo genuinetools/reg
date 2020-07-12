@@ -59,31 +59,40 @@ func (c *Trivy) ScanImage(ctx context.Context, r *registry.Registry, repo, tag s
 	}
 	if (len(trivyReport) > 0) {
 		c.Logf("trivy.ScanImage %d targets found for %s/%s:%s", len(trivyReport), r.Domain, repo, tag)
+		lgth := 0
+		for _, v := range trivyReport {
+			lgth += len(v.Vulnerabilities)
+		}
+		alltitles := make(map[string]bool, lgth)
 		for i, _ := range trivyReport {
-			err = c.copyFromTrivyToRegReport(trivyReport, i,  &report)
+			err = c.copyFromTrivyToRegReport(trivyReport, i,  &report, alltitles)
 			if err != nil {
 				// what else would we do with this?
 				c.Logf("trivy.ScanImage got error from copyFromTrivyToRegReport: %v", err)
 			}
 		}
+		for _, v := range report.Vulns {
+			vulns := report.VulnsBySeverity[v.Severity]
+			report.VulnsBySeverity[v.Severity] = append(vulns, v)
+		}
+		// Clair defines this with Pascal-cased sev names like "high", "critical" and "defcon1"
+		// Trivy has HIGH/CRITICAL only. We converted these to Pascal case
+		// (see toVulnerability) to match
+		report.BadVulns = len(report.VulnsBySeverity["High"]) + len(report.VulnsBySeverity["Critical"])
 	}
 	return report, nil
 }
 
-func (c *Trivy) copyFromTrivyToRegReport(tReport TrivyVulnerabilityReport, inx int, report *VulnerabilityReport) (error) {
+func (c *Trivy) copyFromTrivyToRegReport(tReport TrivyVulnerabilityReport, inx int, report *VulnerabilityReport, existing map[string]bool) (error) {
 	report.Name = tReport[inx].Target
 
 	for _, v := range tReport[inx].Vulnerabilities {
-		report.Vulns = append(report.Vulns, v.toVulnerability())
+		vuln := v.toVulnerability()
+		if !existing[vuln.Name] {
+			existing[vuln.Name] = true
+			report.Vulns = append(report.Vulns, vuln)
+		}
 	}
-	for _, v := range report.Vulns {
-		vulns := report.VulnsBySeverity[v.Severity]
-		report.VulnsBySeverity[v.Severity] = append(vulns, v)
-	}
-	// Clair defines this with Pascal-cased sev names like "high", "critical" and "defcon1"
-	// Trivy has HIGH/CRITICAL only. We converted these to Pascal case
-	// (see toVulnerability) to match
-	report.BadVulns = len(report.VulnsBySeverity["High"]) + len(report.VulnsBySeverity["Critical"])
 	return nil
 }
 
