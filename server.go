@@ -144,6 +144,7 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 
 	// Create the initial index.
 	logrus.Info("creating initial static index")
+	rc.interval = cmd.interval
 	if err := rc.repositories(ctx, staticDir); err != nil {
 		return fmt.Errorf("creating index failed: %v", err)
 	}
@@ -153,7 +154,6 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 		return nil
 	}
 
-	rc.interval = cmd.interval
 	ticker := time.NewTicker(rc.interval)
 
 	updater := func() {
