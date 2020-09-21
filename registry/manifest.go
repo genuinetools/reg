@@ -30,6 +30,8 @@ func (r *Registry) Manifest(ctx context.Context, repository, ref string) (distri
 	}
 
 	req.Header.Add("Accept", schema2.MediaTypeManifest)
+	req.Header.Add("Accept", schema1.MediaTypeManifest)
+	req.Header.Add("Accept", manifestlist.MediaTypeManifestList)
 
 	resp, err := r.Client.Do(req.WithContext(ctx))
 	if err != nil {
