@@ -25,6 +25,7 @@ Docker registry v2 command line client and repo listing generator with security 
   - [Vulnerability Reports](#vulnerability-reports)
   - [Generating Static Website for a Registry](#generating-static-website-for-a-registry)
   - [Using Self-Signed Certs with a Registry](#using-self-signed-certs-with-a-registry)
+  - [nginx Example](#nginx-example)
 - [Contributing](#contributing)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -269,6 +270,51 @@ the CA certificate directory (as root):
 
 ```console
 $ cp cacert.pem /usr/share/ca-certificates
+```
+
+### nginx Example
+
+When setting up a private registry, you will probably want both the index and docker registry behind the same URL. nginx can help you do this:
+
+```
+server {
+  listen 443;
+  server_name docker.example.com;
+
+  # Set some reasonable timeouts
+  proxy_connect_timeout 5;
+  proxy_read_timeout 5;
+  proxy_send_timeout 5;
+
+  # Extra headers to make docker registry work
+  proxy_set_header Host $host;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $scheme;
+
+  # Proxy to reg for the registry index
+  location / {
+    proxy_pass http://127.0.0.1:8080;
+  }
+
+  # Proxy to the docker registry API
+  location /v2/ {
+    proxy_pass http://127.0.0.1:5000;
+
+    # Disable proxy buffering so we don't block on disk i/o
+    proxy_buffering off;
+
+    # Enable large layers for Windows containers
+    client_max_body_size 15G;
+  }
+}
+```
+
+Then start reg and the docker registry, e.g:
+
+```
+$ docker run -p :8080 r.j3ss.co/reg:v0.16.1 server -r https://docker.example.com --interval 10m
+$ docker run -p :5000 registry:v2.7.1
 ```
 
 ## Contributing
