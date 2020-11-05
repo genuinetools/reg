@@ -28,6 +28,7 @@ type registryController struct {
 	l            sync.Mutex
 	tmpl         *template.Template
 	generateOnly bool
+	PathPrefix   string
 }
 
 type v1Compatibility struct {
@@ -51,6 +52,7 @@ type AnalysisResult struct {
 	Name           string       `json:"name"`
 	LastUpdated    string       `json:"lastUpdated"`
 	HasVulns       bool         `json:"hasVulns"`
+	PathPrefix     string       `json:"pathPrefix"`
 	UpdateInterval time.Duration
 }
 
@@ -64,6 +66,7 @@ func (rc *registryController) repositories(ctx context.Context, staticDir string
 		RegistryDomain: rc.reg.Domain,
 		LastUpdated:    time.Now().Local().Format(time.RFC1123),
 		UpdateInterval: rc.interval,
+		PathPrefix:     rc.PathPrefix,
 	}
 
 	repoList, err := rc.reg.Catalog(ctx, "")
@@ -192,6 +195,7 @@ func (rc *registryController) generateTagsTemplate(ctx context.Context, repo str
 		LastUpdated:    time.Now().Local().Format(time.RFC1123),
 		UpdateInterval: rc.interval,
 		Name:           repo,
+		PathPrefix:     rc.PathPrefix,
 		HasVulns:       hasVulns, // if we have a clair client we can return vulns
 	}
 
