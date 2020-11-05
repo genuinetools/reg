@@ -41,6 +41,7 @@ func (cmd *serverCommand) Register(fs *flag.FlagSet) {
 	fs.StringVar(&cmd.listenAddress, "listen-address", "", "address to listen on")
 	fs.StringVar(&cmd.port, "port", "8080", "port for server to run on")
 	fs.StringVar(&cmd.assetPath, "asset-path", "", "Path to assets and templates")
+	fs.StringVar(&cmd.prefixPath, "prefix-path", "", "Prefix path of gui. Default /.")
 
 	fs.BoolVar(&cmd.generateAndExit, "once", false, "generate the templates once and then exit")
 }
@@ -57,6 +58,7 @@ type serverCommand struct {
 	listenAddress string
 	port          string
 	assetPath     string
+	prefixPath    string
 }
 
 func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
@@ -70,6 +72,7 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 	rc := registryController{
 		reg:          r,
 		generateOnly: cmd.generateAndExit,
+		PathPrefix:   cmd.prefixPath,
 	}
 
 	// Create a clair client if the user passed in a server address.
@@ -150,27 +153,29 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 
 	// Create mux server.
 	mux := mux.NewRouter()
+	mux.StrictSlash(true)
 	mux.UseEncodedPath()
+	s := mux.PathPrefix(cmd.prefixPath).Subrouter()
 
 	// Static files handler.
-	mux.HandleFunc("/repo/{repo}/tags", rc.tagsHandler)
-	mux.HandleFunc("/repo/{repo}/tags/", rc.tagsHandler)
-	mux.HandleFunc("/repo/{repo}/tag/{tag}", rc.vulnerabilitiesHandler)
-	mux.HandleFunc("/repo/{repo}/tag/{tag}/", rc.vulnerabilitiesHandler)
+	s.HandleFunc("/repo/{repo}/tags", rc.tagsHandler)
+	s.HandleFunc("/repo/{repo}/tags/", rc.tagsHandler)
+	s.HandleFunc("/repo/{repo}/tag/{tag}", rc.vulnerabilitiesHandler)
+	s.HandleFunc("/repo/{repo}/tag/{tag}/", rc.vulnerabilitiesHandler)
 
 	// Add the vulns endpoints if we have a client for a clair server.
 	if rc.cl != nil {
 		logrus.Infof("adding clair handlers...")
-		mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns", rc.vulnerabilitiesHandler)
-		mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns/", rc.vulnerabilitiesHandler)
-		mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns.json", rc.vulnerabilitiesHandler)
+		s.HandleFunc("/repo/{repo}/tag/{tag}/vulns", rc.vulnerabilitiesHandler)
+		s.HandleFunc("/repo/{repo}/tag/{tag}/vulns/", rc.vulnerabilitiesHandler)
+		s.HandleFunc("/repo/{repo}/tag/{tag}/vulns.json", rc.vulnerabilitiesHandler)
 	}
 
 	// Serve the static assets.
 	staticAssetsHandler := http.FileServer(static.Assets)
-	mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", staticAssetsHandler))
 	staticHandler := http.FileServer(http.Dir(staticDir))
-	mux.Handle("/", staticHandler)
+	s.PathPrefix("/static/").Handler(http.StripPrefix(cmd.prefixPath+"/static/", staticAssetsHandler))
+	s.PathPrefix("/").Handler(http.StripPrefix(cmd.prefixPath, staticHandler))
 
 	// Set up the server.
 	server := &http.Server{
