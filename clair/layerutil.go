@@ -53,7 +53,7 @@ func (c *Clair) NewClairV3Layer(ctx context.Context, r *registry.Registry, image
 	}, nil
 }
 
-func (c *Clair) getLayers(ctx context.Context, r *registry.Registry, repo, tag string, filterEmpty bool) (map[int]distribution.Descriptor, string, error) {
+func (c *Clair) getLayers(ctx context.Context, r *registry.Registry, repo, tag string) (map[int]distribution.Descriptor, string, error) {
 	ok := true
 	// Get the manifest to pass to clair.
 	mf, err := r.ManifestV2(ctx, repo, tag)
@@ -67,11 +67,7 @@ func (c *Clair) getLayers(ctx context.Context, r *registry.Registry, repo, tag s
 	// Filter out the empty layers.
 	if ok {
 		for i := 0; i < len(mf.Layers); i++ {
-			if filterEmpty && IsEmptyLayer(mf.Layers[i].Digest) {
-				continue
-			} else {
-				filteredLayers[len(mf.Layers)-i-1] = mf.Layers[i]
-			}
+			filteredLayers[len(mf.Layers)-i-1] = mf.Layers[i]
 		}
 
 		return filteredLayers, mf.Config.Digest.String(), nil
@@ -83,12 +79,8 @@ func (c *Clair) getLayers(ctx context.Context, r *registry.Registry, repo, tag s
 	}
 
 	for i := 0; i < len(m.FSLayers); i++ {
-		if filterEmpty && IsEmptyLayer(m.FSLayers[i].BlobSum) {
-			continue
-		} else {
-			filteredLayers[i] = distribution.Descriptor{
-				Digest: m.FSLayers[i].BlobSum,
-			}
+		filteredLayers[i] = distribution.Descriptor{
+			Digest: m.FSLayers[i].BlobSum,
 		}
 	}
 
