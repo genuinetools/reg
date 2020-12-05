@@ -227,22 +227,24 @@ Run a static UI server for a registry.
 
 Flags:
 
-  -u, --username       username for the registry (default: <none>)
-  --listen-address     address to listen on (default: <none>)
   --asset-path         Path to assets and templates (default: <none>)
-  -f, --force-non-ssl  force allow use of non-ssl (default: false)
-  --once               generate the templates once and then exit (default: false)
-  --skip-ping          skip pinging the registry while establishing connection (default: false)
-  --timeout            timeout for HTTP requests (default: 1m0s)
+  --auth-url           alternate URL for registry authentication (ex. auth.docker.io) (default: <none>)
   --cert               path to ssl cert (default: <none>)
+  --clair              url to clair instance (default: <none>)
   -d                   enable debug logging (default: false)
+  -f, --force-non-ssl  force allow use of non-ssl (default: false)
+  --interval           interval to generate new index.html's at (default: 1h0m0s)
+  -k, --insecure       do not verify tls certificates (default: false)
   --key                path to ssl key (default: <none>)
+  --listen-address     address to listen on (default: <none>)
+  --once               generate the templates once and then exit (default: false)
+  -p, --password       password for the registry (default: <none>)
   --port               port for server to run on (default: 8080)
   -r, --registry       URL to the private registry (ex. r.j3ss.co) (default: <none>)
-  --clair              url to clair instance (default: <none>)
-  -k, --insecure       do not verify tls certificates (default: false)
-  --interval           interval to generate new index.html's at (default: 1h0m0s)
-  -p, --password       password for the registry (default: <none>)
+  --skip-ping          skip pinging the registry while establishing connection (default: false)
+  --sort               generate tag templates sorted by property (one of: created) (default: created)
+  --timeout            timeout for HTTP requests (default: 1m0s)
+  -u, --username       username for the registry (default: <none>)
 ```
 
 **Screenshots:**
