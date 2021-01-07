@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -43,6 +44,20 @@ type Repository struct {
 	Created             time.Time                 `json:"created"`
 	URI                 string                    `json:"uri"`
 	VulnerabilityReport clair.VulnerabilityReport `json:"vulnerability"`
+}
+
+type Repositories []Repository
+
+func (r Repositories) Len() int{
+	return len(r)
+}
+
+func (r Repositories) Less(i, j int) bool {
+	return r[i].Created.Unix() < r[j].Created.Unix()
+}
+
+func (r Repositories) Swap(i, j int) {
+	r[i], r[j] = r[j], r[i]
 }
 
 // An AnalysisResult holds all vulnerabilities of a scan
@@ -247,6 +262,7 @@ func (rc *registryController) generateTagsTemplate(ctx context.Context, repo str
 
 		result.Repositories = append(result.Repositories, rp)
 	}
+	sort.Sort(sort.Reverse(Repositories(result.Repositories)))
 
 	// Execute the template.
 	var buf bytes.Buffer
