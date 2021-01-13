@@ -54,6 +54,44 @@ function loadVulnerabilityCount(url){
   xhr.send();
 }
 
+function summarizeMultiArchImages(){
+  const rows=document.querySelectorAll('table tr');
+  const allcells=Array.from(rows.entries()).map(r => {
+    return {
+      innerText : r[1].childNodes[3].innerText,
+      row: r[1],
+      cell: r[1].childNodes[3]
+    }
+  });
+
+  rows.forEach((r, i) => {
+    const tagCell = r.childNodes[3];
+    const tag = tagCell.innerText;
+    // The rest of this code is specific to how my tags are named...
+    if (!tag || tag.match('_')) { return; }
+    const re = new RegExp('^' + tag + '__(\\w*)_(\\w*)$');
+    const matchedCells = allcells.map
+                            (cell => {
+                              const match = cell.innerText.match(re);
+                              if (!match) return null;
+                              return {
+                                match,
+                                cell
+                              };
+                            }).filter(c => !!c).sort(
+                              (a,b) => a.match[1] + a.match[2] > b.match[1] + b.match[2]
+                            );
+    matchedCells.forEach(c => {
+      const newnode = c.cell.cell.childNodes[1].cloneNode();
+      newnode.innerText = c.match[1] + '/' + c.match[2];
+      newnode.className = 'arch-variant';
+      tagCell.childNodes[1].className = 'tag';
+      tagCell.appendChild(newnode);
+      c.cell.row.remove();
+    });
+  });
+}
+
 var el = document.querySelectorAll('tr:nth-child(2)')[0].querySelectorAll('td:nth-child(2)')[0];
 if (el.textContent == 'Parent Directory'){
     var parent_row = document.querySelectorAll('tr:nth-child(2)')[0];
@@ -64,6 +102,13 @@ if (el.textContent == 'Parent Directory'){
     }
 }
 
+// Tag page - adjust multi-arch images into pretty format
+var el = document.querySelectorAll('tr th:nth-child(2)')[0];
+if (el.textContent === 'Tag') {
+  summarizeMultiArchImages();
+}
+
+// Adjust links from server
 var cells = document.querySelectorAll('td a');
 Array.prototype.forEach.call(cells, function(item, index){
     var link = item.getAttribute('href');

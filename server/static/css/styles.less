@@ -209,6 +209,14 @@ tr.parent a {
 .parent a:hover {
 	color:#2a2a2a;
 }
+.tag, .arch-variant {
+  display:  inline-block;
+  padding-right: 1em;
+}
+.arch-variant {  font-size: 0.9em;
+}
+.arch-variant::before {/*! content: "(" */}
+.arch-variant::after {/*! content: ")" */}
 /*------------------------------------*\
     Footer
 \*------------------------------------*/
