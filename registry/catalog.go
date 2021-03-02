@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"net/url"
+	"strings"
 
 	"github.com/peterhellberg/link"
 )
@@ -23,6 +24,18 @@ func (r *Registry) Catalog(ctx context.Context, u string) ([]string, error) {
 	h, err := r.getJSON(ctx, uri, &response)
 	if err != nil {
 		return nil, err
+	}
+
+	o, err := url.Parse(uri)
+	if err != nil {
+		return nil, err
+	}
+	last := o.Query().Get("last")
+	for i := 0; i < len(response.Repositories); i++ {
+		if !strings.HasPrefix(response.Repositories[i], last) {
+			response.Repositories = append([]string{}, response.Repositories[:i]...)
+			return response.Repositories, nil
+		}
 	}
 
 	for _, l := range link.ParseHeader(h) {
