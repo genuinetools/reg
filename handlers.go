@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/docker/go-units"
 	"github.com/genuinetools/reg/clair"
 	"github.com/genuinetools/reg/registry"
 	"github.com/gorilla/mux"
@@ -42,6 +43,7 @@ type Repository struct {
 	Created             time.Time                 `json:"created"`
 	URI                 string                    `json:"uri"`
 	VulnerabilityReport clair.VulnerabilityReport `json:"vulnerability"`
+	Size                string                    `json:"size"`
 }
 
 // An AnalysisResult holds all vulnerabilities of a scan
@@ -214,6 +216,15 @@ func (rc *registryController) generateTagsTemplate(ctx context.Context, repo str
 			break
 		}
 
+		m2, err := rc.reg.ManifestV2(ctx, repo, tag)
+		if err != nil {
+			return nil, fmt.Errorf("getting v2 manifest for %s:%s failed: %v", repo, tag, err)
+		}
+		var size float64
+		for _, layer := range m2.Layers {
+			size += float64(layer.Size)
+		}
+
 		repoURI := fmt.Sprintf("%s/%s", rc.reg.Domain, repo)
 		if tag != "latest" {
 			repoURI += ":" + tag
@@ -223,6 +234,7 @@ func (rc *registryController) generateTagsTemplate(ctx context.Context, repo str
 			Tag:     tag,
 			URI:     repoURI,
 			Created: createdDate,
+			Size:    units.BytesSize(size),
 		}
 
 		result.Repositories = append(result.Repositories, rp)

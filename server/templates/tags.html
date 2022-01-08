@@ -19,6 +19,7 @@
             <tr>
                 <th>Name</th>
                 <th>Tag</th>
+                <th>Size</th>
                 <th>Created</th>
                 {{if .HasVulns}}<th>Vulnerabilities</th>{{end}}
             </tr>
@@ -33,6 +34,9 @@
                     {{if $.HasVulns}}<a href="/repo/{{ $value.Name | urlquery }}/tag/{{ $value.Tag }}/vulns">{{end}}
                     {{ $value.Tag }}
                     {{if $.HasVulns}}</a>{{end}}
+                </td>
+                <td align="right" nowrap>
+                    {{ $value.Size }}
                 </td>
                 <td align="right" nowrap>
                     {{ $value.Created.Format "02 Jan, 2006 15:04:05 UTC" }}
