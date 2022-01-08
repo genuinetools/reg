@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/docker/go-units"
 	"github.com/genuinetools/reg/clair"
 	"github.com/genuinetools/reg/registry"
 	"github.com/gorilla/mux"
@@ -42,6 +43,7 @@ type Repository struct {
 	Created             time.Time                 `json:"created"`
 	URI                 string                    `json:"uri"`
 	VulnerabilityReport clair.VulnerabilityReport `json:"vulnerability"`
+	Size                string                    `json:"size"`
 }
 
 // An AnalysisResult holds all vulnerabilities of a scan
@@ -196,33 +198,62 @@ func (rc *registryController) generateTagsTemplate(ctx context.Context, repo str
 	}
 
 	for _, tag := range tags {
-		// get the manifest
-		m1, err := rc.reg.ManifestV1(ctx, repo, tag)
-		if err != nil {
-			return nil, fmt.Errorf("getting v1 manifest for %s:%s failed: %v", repo, tag, err)
+		rp := Repository{
+			Name: repo,
+			Tag:  tag,
 		}
 
-		var createdDate time.Time
-		for _, h := range m1.History {
-			var comp v1Compatibility
-
-			if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
-				return nil, fmt.Errorf("unmarshal v1 manifest for %s:%s failed: %v", repo, tag, err)
+		ch := make(chan error)
+		go func() {
+			// get the manifest
+			m1, err := rc.reg.ManifestV1(ctx, repo, tag)
+			if err != nil {
+				ch <- fmt.Errorf("getting v1 manifest for %s:%s failed: %v", repo, tag, err)
+				return
 			}
 
-			createdDate = comp.Created
-			break
-		}
+			var createdDate time.Time
+			for _, h := range m1.History {
+				var comp v1Compatibility
+
+				if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
+					ch <- fmt.Errorf("unmarshal v1 manifest for %s:%s failed: %v", repo, tag, err)
+					return
+				}
+
+				createdDate = comp.Created
+				break
+			}
+			rp.Created = createdDate
+			ch <- nil
+		}()
+
+		go func() {
+			m2, err := rc.reg.ManifestV2(ctx, repo, tag)
+			if err != nil {
+				ch <- fmt.Errorf("getting v2 manifest for %s:%s failed: %v", repo, tag, err)
+				return
+			}
+			var size float64
+			for _, layer := range m2.Layers {
+				size += float64(layer.Size)
+			}
+
+			rp.Size = units.BytesSize(size)
+			ch <- nil
+		}()
 
 		repoURI := fmt.Sprintf("%s/%s", rc.reg.Domain, repo)
 		if tag != "latest" {
 			repoURI += ":" + tag
 		}
-		rp := Repository{
-			Name:    repo,
-			Tag:     tag,
-			URI:     repoURI,
-			Created: createdDate,
+		rp.URI = repoURI
+
+		for i := 0; i < 2; i++ {
+			err := <-ch
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		result.Repositories = append(result.Repositories, rp)

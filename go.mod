@@ -17,7 +17,7 @@ require (
 	github.com/docker/docker v1.4.2-0.20190916154449-92cc603036dd
 	github.com/docker/docker-credential-helpers v0.6.3 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
-	github.com/docker/go-units v0.4.0 // indirect
+	github.com/docker/go-units v0.4.0
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/fernet/fernet-go v0.0.0-20180830025343-9eac43b88a5e // indirect
 	github.com/genuinetools/pkg v0.0.0-20181022210355-2fcf164d37cb
