@@ -150,7 +150,7 @@ sha256:791158756cc0f5b27ef8c5c546284568fc9b7f4cf1429fb736aff3ee2d2e340f
 ### Download a Layer
 
 ```console
-$ reg layer -o r.j3ss.co/chrome@sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
+$ reg layer -o layer.tar r.j3ss.co/chrome@sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
 OR
 $ reg layer r.j3ss.co/chrome@sha256:a3ed95caeb0.. > layer.tar
 ```
