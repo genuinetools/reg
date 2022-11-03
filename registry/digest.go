@@ -2,6 +2,7 @@ package registry
 
 import (
 	"context"
+	_ "crypto/sha256"
 	"fmt"
 	"net/http"
 
@@ -36,5 +37,16 @@ func (r *Registry) Digest(ctx context.Context, image Image) (digest.Digest, erro
 		return "", fmt.Errorf("got status code: %d", resp.StatusCode)
 	}
 
-	return digest.Parse(resp.Header.Get("Docker-Content-Digest"))
+	d := resp.Header.Get("Docker-Content-Digest")
+	if d == "" {
+		// Get the v2 manifest.
+		m, err := r.Manifest(ctx, image.Path, image.Reference())
+		if err != nil {
+			return "", err
+		}
+		_, p, _ := m.Payload()
+		return digest.FromBytes(p), nil
+	}
+
+	return digest.Parse(d)
 }
