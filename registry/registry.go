@@ -14,12 +14,14 @@ import (
 	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/docker/distribution/manifest/schema2"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/go-connections/tlsconfig"
 )
 
 // Registry defines the client for retrieving information from the registry API.
 type Registry struct {
 	URL      string
 	Domain   string
+	Insecure bool
 	Username string
 	Password string
 	Client   *http.Client
@@ -43,6 +45,9 @@ func Log(format string, args ...interface{}) {
 // Opt holds the options for a new registry.
 type Opt struct {
 	Domain   string
+	CAFile   string
+	CertFile string
+	KeyFile  string
 	Insecure bool
 	Debug    bool
 	SkipPing bool
@@ -60,6 +65,16 @@ func New(ctx context.Context, auth types.AuthConfig, opt Opt) (*Registry, error)
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},
+		}
+	} else {
+		tlsClientConfig, _ := tlsconfig.Client(
+			tlsconfig.Options{
+				CAFile:   opt.CAFile,
+				CertFile: opt.CertFile,
+				KeyFile:  opt.KeyFile,
+			})
+		transport = &http.Transport{
+			TLSClientConfig: tlsClientConfig,
 		}
 	}
 

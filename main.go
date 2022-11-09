@@ -28,6 +28,10 @@ var (
 	username string
 	password string
 
+	tlsCACert string
+	tlsCert   string
+	tlsKey    string
+
 	debug bool
 )
 
@@ -72,6 +76,10 @@ func main() {
 
 	p.FlagSet.StringVar(&password, "password", "", "password for the registry")
 	p.FlagSet.StringVar(&password, "p", "", "password for the registry")
+
+	p.FlagSet.StringVar(&tlsCACert, "tlscacert", "", "Trust certs signed only by this CA")
+	p.FlagSet.StringVar(&tlsCert, "tlscert", "", "Path to TLS certificate file")
+	p.FlagSet.StringVar(&tlsKey, "tlskey", "", "Path to TLS key file")
 
 	p.FlagSet.BoolVar(&debug, "d", false, "enable debug logging")
 
@@ -122,6 +130,9 @@ func createRegistryClient(ctx context.Context, domain string) (*registry.Registr
 	logrus.Infof("domain: %s", domain)
 	logrus.Infof("server address: %s", auth.ServerAddress)
 	return registry.New(ctx, auth, registry.Opt{
+		CAFile:   tlsCACert,
+		CertFile: tlsCert,
+		KeyFile:  tlsKey,
 		Domain:   domain,
 		Insecure: insecure,
 		Debug:    debug,
