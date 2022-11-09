@@ -10,6 +10,8 @@ import (
 	digest "github.com/opencontainers/go-digest"
 )
 
+var useHead bool = true
+
 // Digest returns the digest for an image.
 func (r *Registry) Digest(ctx context.Context, image Image) (digest.Digest, error) {
 	if len(image.Digest) > 1 {
@@ -38,6 +40,28 @@ func (r *Registry) Digest(ctx context.Context, image Image) (digest.Digest, erro
 	}
 
 	d := resp.Header.Get("Docker-Content-Digest")
+	if d == "" {
+		req, err := http.NewRequest("HEAD", url, nil)
+		if err != nil {
+			return "", err
+		}
+
+		req.Header.Add("Accept", schema2.MediaTypeManifest)
+		resp, err := r.Client.Do(req.WithContext(ctx))
+		if err != nil {
+			return "", err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
+			return "", fmt.Errorf("got status code: %d", resp.StatusCode)
+		}
+
+		d = resp.Header.Get("Docker-Content-Digest")
+		if d == "" {
+			useHead = false
+		}
+	}
 	if d == "" {
 		// Get the v2 manifest.
 		m, err := r.Manifest(ctx, image.Path, image.Reference())
