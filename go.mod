@@ -33,6 +33,7 @@ require (
 	github.com/peterhellberg/link v1.0.0
 	github.com/saibing/bingo v0.0.0-20190331051950-76bcd777316d // indirect
 	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749
+	github.com/shurcooL/vfsgen v0.0.0-20200627165143-92b8a710ab6c // indirect
 	github.com/sirupsen/logrus v1.4.2
 	github.com/sourcegraph/go-lsp v0.0.0-20200117082640-b19bb38222e2 // indirect
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20191222043438-96c4efab7ee2 // indirect
