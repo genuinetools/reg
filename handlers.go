@@ -11,12 +11,14 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/genuinetools/reg/clair"
 	"github.com/genuinetools/reg/registry"
+	"github.com/genuinetools/reg/trivy"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )
@@ -24,10 +26,10 @@ import (
 type registryController struct {
 	reg          *registry.Registry
 	cl           *clair.Clair
+	trivy        *trivy.Trivy
 	interval     time.Duration
 	l            sync.Mutex
 	tmpl         *template.Template
-	generateOnly bool
 }
 
 type v1Compatibility struct {
@@ -44,6 +46,20 @@ type Repository struct {
 	VulnerabilityReport clair.VulnerabilityReport `json:"vulnerability"`
 }
 
+type Repositories []Repository
+
+func (r Repositories) Len() int{
+	return len(r)
+}
+
+func (r Repositories) Less(i, j int) bool {
+	return r[i].Created.Unix() < r[j].Created.Unix()
+}
+
+func (r Repositories) Swap(i, j int) {
+	r[i], r[j] = r[j], r[i]
+}
+
 // An AnalysisResult holds all vulnerabilities of a scan
 type AnalysisResult struct {
 	Repositories   []Repository `json:"repositories"`
@@ -52,6 +68,20 @@ type AnalysisResult struct {
 	LastUpdated    string       `json:"lastUpdated"`
 	HasVulns       bool         `json:"hasVulns"`
 	UpdateInterval time.Duration
+}
+
+type scanner interface {
+	ScanImage(ctx context.Context, r *registry.Registry, repo, tag string) (interface{}, error)
+}
+
+func (rc *registryController) currentScanner() scanner {
+	if rc.trivy != nil {
+		return rc.trivy
+	}
+	if rc.cl != nil {
+		return rc.cl
+	}
+	return nil
 }
 
 func (rc *registryController) repositories(ctx context.Context, staticDir string) error {
@@ -81,21 +111,13 @@ func (rc *registryController) repositories(ctx context.Context, staticDir string
 
 		result.Repositories = append(result.Repositories, r)
 
-		if !rc.generateOnly {
-			// Continue early because we don't need to generate the tags pages.
-			continue
-		}
-
 		// Generate the tags pages in a go routine.
 		wg.Add(1)
 		go func(repo string) {
 			defer wg.Done()
 			logrus.Infof("generating static tags page for repo %s", repo)
 
-			// Parse and execute the tags templates.
-			// If we are generating the tags files, disable vulnerability links in the
-			// templates since they won't go anywhere without a server side component.
-			b, err := rc.generateTagsTemplate(ctx, repo, false)
+			b, tags, err := rc.generateTagsTemplate(ctx, repo, rc.currentScanner() != nil)
 			if err != nil {
 				logrus.Warnf("generating tags template for repo %q failed: %v", repo, err)
 			}
@@ -108,7 +130,33 @@ func (rc *registryController) repositories(ctx context.Context, staticDir string
 			// Write the tags file.
 			tagsFile := filepath.Join(tagsDir, "index.html")
 			if err := ioutil.WriteFile(tagsFile, b, 0755); err != nil {
-				logrus.Warnf("writing tags template for repo %s to %sfailed: %v", repo, tagsFile, err)
+				logrus.Warnf("writing tags template for repo %s to %s failed: %v", repo, tagsFile, err)
+			}
+
+			if rc.currentScanner() != nil {
+				for _, tag := range tags {
+					bvulnhtml, bvulnjson, err := rc.generateVulnerabilityTemplate(ctx, repo, tag, rc.currentScanner())
+					if err != nil {
+						logrus.Warnf("generating tags template for repo %q failed: %v", repo, err)
+					}
+					// Create the directory for the static vulnerability files.
+					vulnsDir := filepath.Join(staticDir, "repo", repo, "tag", tag.Name, "vulns")
+					if err := os.MkdirAll(vulnsDir, 0755); err != nil {
+						logrus.Warn(err)
+					}
+
+					// Write the vulnerabilies file.
+					vulnsFile := filepath.Join(vulnsDir, "index.html")
+					if err := ioutil.WriteFile(vulnsFile, bvulnhtml, 0755); err != nil {
+						logrus.Warnf("writing vulnerabilities template for repo %s to %s failed: %v", repo, vulnsFile, err)
+					}
+
+					// Write the vulnerabilities json
+					vulnsJsonFile := filepath.Join(staticDir, "repo", repo, "tag", tag.Name, "vulns.json")
+					if err = ioutil.WriteFile(vulnsJsonFile, bvulnjson, 0755); err != nil {
+						logrus.Warnf("writing vulnerabilities json template for repo %s to %s failed: %v", repo, vulnsJsonFile, err)
+					}
+				}
 			}
 		}(repo)
 	}
@@ -157,7 +205,7 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	// Generate the tags template.
-	b, err := rc.generateTagsTemplate(context.TODO(), repo, rc.cl != nil)
+	b, _, err := rc.generateTagsTemplate(context.TODO(), repo, rc.currentScanner() != nil)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"func":   "tags",
@@ -174,17 +222,17 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 	fmt.Fprint(w, string(b))
 }
 
-func (rc *registryController) generateTagsTemplate(ctx context.Context, repo string, hasVulns bool) ([]byte, error) {
+func (rc *registryController) generateTagsTemplate(ctx context.Context, repo string, hasVulns bool) ([]byte, []registry.Tag, error) {
 	// Get the tags from the server.
 	tags, err := rc.reg.Tags(ctx, repo)
 	if err != nil {
-		return nil, fmt.Errorf("getting tags for %s failed: %v", repo, err)
+		return nil, nil, fmt.Errorf("getting tags for %s failed: %v", repo, err)
 	}
 
 	// Error out if there are no tags / images
 	// (the above err != nil does not error out when nothing has been found)
 	if len(tags) == 0 {
-		return nil, fmt.Errorf("no tags found for repo: %s", repo)
+		return nil, nil, fmt.Errorf("no tags found for repo: %s", repo)
 	}
 
 	result := AnalysisResult{
@@ -192,49 +240,37 @@ func (rc *registryController) generateTagsTemplate(ctx context.Context, repo str
 		LastUpdated:    time.Now().Local().Format(time.RFC1123),
 		UpdateInterval: rc.interval,
 		Name:           repo,
-		HasVulns:       hasVulns, // if we have a clair client we can return vulns
+		HasVulns:       hasVulns, // if we have a scanner we can return vulns
 	}
 
 	for _, tag := range tags {
-		// get the manifest
-		m1, err := rc.reg.ManifestV1(ctx, repo, tag)
+		createdDate, err := tag.CreatedDate(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("getting v1 manifest for %s:%s failed: %v", repo, tag, err)
+			fmt.Errorf("could not get create date. Repo: %s, tag: %s. Error: %v", repo, tag, err)
+			continue;
 		}
-
-		var createdDate time.Time
-		for _, h := range m1.History {
-			var comp v1Compatibility
-
-			if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
-				return nil, fmt.Errorf("unmarshal v1 manifest for %s:%s failed: %v", repo, tag, err)
-			}
-
-			createdDate = comp.Created
-			break
-		}
-
 		repoURI := fmt.Sprintf("%s/%s", rc.reg.Domain, repo)
-		if tag != "latest" {
-			repoURI += ":" + tag
+		if tag.Name != "latest" {
+			repoURI += ":" + tag.Name
 		}
 		rp := Repository{
 			Name:    repo,
-			Tag:     tag,
+			Tag:     tag.Name,
 			URI:     repoURI,
 			Created: createdDate,
 		}
 
 		result.Repositories = append(result.Repositories, rp)
 	}
+	sort.Sort(sort.Reverse(Repositories(result.Repositories)))
 
 	// Execute the template.
 	var buf bytes.Buffer
 	if err := rc.tmpl.ExecuteTemplate(&buf, "tags", result); err != nil {
-		return nil, fmt.Errorf("template rendering failed: %v", err)
+		return nil, nil, fmt.Errorf("template rendering failed: %v", err)
 	}
 
-	return buf.Bytes(), nil
+	return buf.Bytes(), tags, nil
 }
 
 func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *http.Request) {
@@ -272,20 +308,15 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	// Get the vulnerability report.
-	result, err := rc.cl.VulnerabilitiesV3(context.TODO(), rc.reg, image.Path, image.Reference())
+	result, err := rc.currentScanner().ScanImage(context.TODO(), rc.reg, image.Path, image.Reference())
 	if err != nil {
-		// Fallback to Clair v2 API.
-		result, err = rc.cl.Vulnerabilities(context.TODO(), rc.reg, image.Path, image.Reference())
-		if err != nil {
-			logrus.WithFields(logrus.Fields{
-				"func":   "vulnerabilities",
-				"URL":    r.URL,
-				"method": r.Method,
-			}).Errorf("vulnerability scanning for %s:%s failed: %v", repo, tag, err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+		logrus.WithFields(logrus.Fields{
+			"func":   "vulnerabilities",
+			"URL":    r.URL,
+			"method": r.Method,
+		}).Errorf("vulnerability scanning for %s:%s failed: %v", repo, tag, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	if strings.HasSuffix(r.URL.String(), ".json") {
@@ -315,4 +346,20 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+}
+
+func (rc *registryController) generateVulnerabilityTemplate(ctx context.Context, repo string, tag registry.Tag, sc scanner) ([]byte, []byte, error){
+	result, err := rc.currentScanner().ScanImage(context.TODO(), rc.reg, repo, tag.Name)
+	if err != nil {
+		return nil, nil, err
+	}
+	js, err := json.Marshal(result)
+	if err != nil {
+		return nil, nil, err
+	}
+	var html bytes.Buffer
+	if err := rc.tmpl.ExecuteTemplate(&html, "vulns", result); err != nil {
+		return nil, nil, err
+	}
+	return html.Bytes(), js, nil
 }

@@ -56,7 +56,7 @@ func (cmd *listCommand) Run(ctx context.Context, args []string) error {
 	for _, repo := range repos {
 		go func(repo string) {
 			// Get the tags.
-			tags, err := r.Tags(ctx, repo)
+			tags, err := r.TagNames(ctx, repo)
 			if err != nil {
 				fmt.Printf("Get tags of [%s] error: %s", repo, err)
 			}

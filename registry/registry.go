@@ -143,6 +143,26 @@ func (r *Registry) url(pathTemplate string, args ...interface{}) string {
 	return url
 }
 
+func (r *Registry) getBlob(ctx context.Context, url string, response interface{}) (http.Header, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := r.Client.Do(req.WithContext(ctx))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	r.Logf("registry.registry resp.Status=%s", resp.Status)
+
+	if err := json.NewDecoder(resp.Body).Decode(response); err != nil {
+		return nil, err
+	}
+
+	return resp.Header, nil
+}
+
 func (r *Registry) getJSON(ctx context.Context, url string, response interface{}) (http.Header, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

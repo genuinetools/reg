@@ -1,5 +1,4 @@
 
-@import url('http://fonts.googleapis.com/css?family=Open+Sans:400,300');
 /* Have to use @import for the font, as you can only specify a single stylesheet */
 * {
 	margin:0;
@@ -16,7 +15,7 @@ html {
 	color:#61666c;
 	font-weight:300;
 	font-size:1em;
-	font-family:'Open Sans', sans-serif;
+	font-family: Candara, Calibri, Segoe, Segoe UI, Optima, Arial, Noto Sans, sans-serif;
 	line-height:2em;
 }
 body {
@@ -56,7 +55,6 @@ h1 {
 	text-align:center;
 	font-size:1.4em;
 	line-height:3em;
-	font-family:'Museo Slab','Open Sans',monospace;
 }
 form {
 	text-align:center;
@@ -211,6 +209,14 @@ tr.parent a {
 .parent a:hover {
 	color:#2a2a2a;
 }
+.tag, .arch-variant {
+  display:  inline-block;
+  padding-right: 1em;
+}
+.arch-variant {  font-size: 0.9em;
+}
+.arch-variant::before {/*! content: "(" */}
+.arch-variant::after {/*! content: ")" */}
 /*------------------------------------*\
     Footer
 \*------------------------------------*/

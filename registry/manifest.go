@@ -20,7 +20,7 @@ var (
 )
 
 // Manifest returns the manifest for a specific repository:tag.
-func (r *Registry) Manifest(ctx context.Context, repository, ref string) (distribution.Manifest, error) {
+func (r *Registry) Manifest(ctx context.Context, repository, ref string) ([]byte, error) {
 	uri := r.url("/v2/%s/manifests/%s", repository, ref)
 	r.Logf("registry.manifests uri=%s repository=%s ref=%s", uri, repository, ref)
 
@@ -29,7 +29,7 @@ func (r *Registry) Manifest(ctx context.Context, repository, ref string) (distri
 		return nil, err
 	}
 
-	req.Header.Add("Accept", schema2.MediaTypeManifest)
+	req.Header.Add("Accept", schema2.MediaTypeManifest + ", application/vnd.oci.image.manifest.v1+json")
 
 	resp, err := r.Client.Do(req.WithContext(ctx))
 	if err != nil {
@@ -41,14 +41,14 @@ func (r *Registry) Manifest(ctx context.Context, repository, ref string) (distri
 	if err != nil {
 		return nil, err
 	}
-	r.Logf("registry.manifests resp.Status=%s, body=%s", resp.Status, body)
-
-	m, _, err := distribution.UnmarshalManifest(resp.Header.Get("Content-Type"), body)
+	cType := resp.Header.Get("Content-Type")
+	r.Logf("registry.manifests resp.Status=%s, cType=%s, body=%s", resp.Status, cType, body)
 	if err != nil {
+		r.Logf("registry.manifests error unmarshalling: %s", err)
 		return nil, err
 	}
 
-	return m, nil
+	return body, nil
 }
 
 // ManifestList gets the registry v2 manifest list.

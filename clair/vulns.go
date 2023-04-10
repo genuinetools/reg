@@ -10,6 +10,18 @@ import (
 	"github.com/genuinetools/reg/registry"
 )
 
+func (c *Clair) ScanImage(ctx context.Context, r *registry.Registry, repo, tag string) (interface{}, error) {
+	result, err := c.VulnerabilitiesV3(ctx, r, repo, tag)
+	if err != nil {
+		// Fallback to Clair v2 API.
+		result, err = c.Vulnerabilities(ctx, r, repo, tag)
+		if err != nil {
+			return result, err
+		}
+	}
+	return result, nil
+}
+
 // Vulnerabilities scans the given repo and tag.
 func (c *Clair) Vulnerabilities(ctx context.Context, r *registry.Registry, repo, tag string) (VulnerabilityReport, error) {
 	report := VulnerabilityReport{
@@ -26,7 +38,7 @@ func (c *Clair) Vulnerabilities(ctx context.Context, r *registry.Registry, repo,
 	}
 
 	if len(filteredLayers) == 0 {
-		fmt.Printf("No need to analyse image %s:%s as there is no non-emtpy layer", repo, tag)
+		fmt.Printf("No need to analyse image %s:%s as there is no non-empty layer", repo, tag)
 		return report, nil
 	}
 

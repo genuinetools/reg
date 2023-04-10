@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/genuinetools/reg/clair"
+	"github.com/genuinetools/reg/trivy"
 	"github.com/genuinetools/reg/internal/binutils/static"
 	"github.com/genuinetools/reg/internal/binutils/templates"
 	"github.com/gorilla/mux"
@@ -35,6 +36,7 @@ func (cmd *serverCommand) Register(fs *flag.FlagSet) {
 	fs.StringVar(&cmd.registryServer, "r", "", "URL to the private registry (ex. r.j3ss.co)")
 
 	fs.StringVar(&cmd.clairServer, "clair", "", "url to clair instance")
+	fs.StringVar(&cmd.trivyLocation, "trivy", "", "path to trivy binary for vulnerability scanning")
 
 	fs.StringVar(&cmd.cert, "cert", "", "path to ssl cert")
 	fs.StringVar(&cmd.key, "key", "", "path to ssl key")
@@ -43,14 +45,17 @@ func (cmd *serverCommand) Register(fs *flag.FlagSet) {
 	fs.StringVar(&cmd.assetPath, "asset-path", "", "Path to assets and templates")
 
 	fs.BoolVar(&cmd.generateAndExit, "once", false, "generate the templates once and then exit")
+	fs.BoolVar(&cmd.generateContinuously, "static", false, "generate the templates on interval, do not start a server")
 }
 
 type serverCommand struct {
 	interval       time.Duration
 	registryServer string
 	clairServer    string
+	trivyLocation  string
 
-	generateAndExit bool
+	generateAndExit      bool
+	generateContinuously bool
 
 	cert          string
 	key           string
@@ -69,11 +74,10 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 	// Create the registry controller for the handlers.
 	rc := registryController{
 		reg:          r,
-		generateOnly: cmd.generateAndExit,
 	}
 
 	// Create a clair client if the user passed in a server address.
-	if len(cmd.clairServer) > 0 {
+	if len(cmd.clairServer) > 0 && len(cmd.trivyLocation) == 0 { // trivy >= clair
 		rc.cl, err = clair.New(cmd.clairServer, clair.Opt{
 			Insecure: insecure,
 			Debug:    debug,
@@ -85,6 +89,19 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 	} else {
 		rc.cl = nil
 	}
+	// Create a trivy client if the user passed in a binary location.
+	if len(cmd.trivyLocation) > 0 {
+		rc.trivy, err = trivy.New(cmd.trivyLocation, trivy.Opt{
+			Debug:    debug,
+			Timeout:  timeout,
+		})
+		if err != nil {
+			return fmt.Errorf("creation of trivy client at %s failed: %v", cmd.trivyLocation, err)
+		}
+	} else {
+		rc.trivy = nil
+	}
+	
 	// Get the path to the asset directory.
 	assetDir := cmd.assetPath
 	if len(cmd.assetPath) <= 0 {
@@ -127,6 +144,7 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 
 	// Create the initial index.
 	logrus.Info("creating initial static index")
+	rc.interval = cmd.interval
 	if err := rc.repositories(ctx, staticDir); err != nil {
 		return fmt.Errorf("creating index failed: %v", err)
 	}
@@ -136,9 +154,9 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 		return nil
 	}
 
-	rc.interval = cmd.interval
 	ticker := time.NewTicker(rc.interval)
-	go func() {
+
+	updater := func() {
 		// Create more indexes every X minutes based off interval.
 		for range ticker.C {
 			logrus.Info("creating timer based static index")
@@ -146,7 +164,13 @@ func (cmd *serverCommand) Run(ctx context.Context, args []string) error {
 				logrus.Warnf("creating static index failed: %v", err)
 			}
 		}
-	}()
+	}
+    if cmd.generateContinuously {
+		updater()
+		return nil
+	}
+
+	go updater()
 
 	// Create mux server.
 	mux := mux.NewRouter()

@@ -50,17 +50,22 @@ func (cmd *manifestCommand) Run(ctx context.Context, args []string) error {
 		}
 	} else {
 		// Get the v2 manifest.
-		manifest, err = r.Manifest(ctx, image.Path, image.Reference())
+		manifestV2, err := r.Manifest(ctx, image.Path, image.Reference())
 		if err != nil {
 			return err
 		}
+		var jsn map[string]interface{}
+		err = json.Unmarshal(manifestV2, &jsn)
+		if err != nil {
+			return err
+		}
+		manifest = jsn
 	}
 
-	b, err := json.MarshalIndent(manifest, " ", "  ")
+	manifestBytes, err := json.MarshalIndent(manifest, " ", "  ")
 	if err != nil {
 		return err
 	}
-
-	fmt.Println(string(b))
+	fmt.Println(string(manifestBytes))
 	return nil
 }
