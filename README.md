@@ -105,7 +105,7 @@ hardened
 latest
 stable
 
-# or for an offical image
+# or for an official image
 $ reg tags debian
 6
 6.0
