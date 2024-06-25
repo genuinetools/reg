@@ -38,7 +38,9 @@ For installation instructions from binaries please visit the [Releases Page](htt
 #### Via Go
 
 ```console
-$ go get github.com/genuinetools/reg
+$ git clone https://github.com/genuinetools/reg
+$ cd reg
+$ go install .
 ```
 
 ## Usage
